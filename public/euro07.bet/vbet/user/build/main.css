@@ -705,3 +705,32 @@ html.session-restoring body::before{content:'';position:fixed;left:calc(50% - 48
   .meta{font-size:10px;line-height:14px}
   .sports-fixture-odds .odd,.sports-live-row>.odd,.live-detail-option{font-size:14px}
 }
+
+/* Fit the device viewport and avoid focus zoom on mobile browsers. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.app,.shell,.center,.workspace,.leftcontent{min-width:0;max-width:100%}
+@media(max-width:1100px){
+  input,select,textarea,.form input,.form select,.live-search input,.sideSearch input,.mybetsDateRow input,.mybetsTopFilters input,.filters input,.filters select,.stakeInput,.controlForm input,.controlForm select,.rowCredit input,#authModal input{font-size:16px}
+  .modal{padding:12px;box-sizing:border-box}
+  .modalbox{max-width:100%;max-height:calc(100dvh - 24px);box-sizing:border-box}
+  .sports-live-row{min-width:0;grid-template-columns:36px minmax(0,1fr) 24px repeat(3,minmax(0,15%))}
+  .sports-live-row>button,.sports-live-teams{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .sports-live-teams{font-size:12px;overflow-wrap:anywhere}
+  .sports-fixture{min-width:0;flex-basis:clamp(170px,65%,320px)}
+  .live-league-head,.live-row{grid-template-columns:minmax(0,1fr) repeat(3,17%)}
+  .mybetsDateRow{display:flex;flex-wrap:wrap;gap:8px;height:auto;padding:8px}
+  .mybetsDateRow input{flex:1 1 115px;min-width:0;max-width:100%}
+  .mybetsDateRow button{flex:0 0 auto}
+  .mybetsTopFilters{flex-wrap:wrap}
+  .filters{grid-template-columns:repeat(auto-fit,minmax(min(130px,100%),1fr))}
+}
+@media(max-width:650px){
+  .app{min-height:100dvh}
+  .sidebar.sports-drawer{top:56px;max-width:85vw}
+  .live-row{height:auto;min-height:76px}
+  .live-league-head .lname{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .live-info{grid-template-columns:12px 32px minmax(0,1fr) 16px;gap:3px}
+  .top .actions .balance,.top .actions .balance b{font-size:clamp(10px,2.8vw,12px)}
+  .mobile-slip-bar{padding-bottom:env(safe-area-inset-bottom);height:calc(40px + env(safe-area-inset-bottom));box-sizing:border-box}
+  .workspace,.live-page .workspace{padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+}
