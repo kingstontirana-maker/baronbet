@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="sq">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111e31"><title>EURO97 · Qendra</title>
+  <link rel="stylesheet" href="/backoffice.css?v=acceptance-1">
+</head>
+<body style="visibility:hidden">
+  <a class="skip-link" href="#content">Kalo te përmbajtja</a>
+  <div class="mobile-shade" id="mobileShade"></div>
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="#/dashboard"><span class="brand-symbol">97<span>●</span></span><span>EURO<span class="brand-number">97</span><small>CONTROL CENTER</small></span></a>
+    <div class="workspace-label"><span class="workspace-dot"></span><span id="workspaceLabel">Qendra e administrimit</span><span class="workspace-tag">HQ</span></div>
+    <nav id="navigation" aria-label="Navigimi kryesor"></nav>
+    <div class="sidebar-bottom"><div class="sidebar-caption">NJË PLATFORMË. KONTROLL I PLOTË.</div><div class="profile"><span class="avatar" id="avatar">Q</span><span><strong id="identity">Duke u lidhur…</strong><small id="roleLabel">Administrimi</small></span><button class="icon-button" id="logout" aria-label="Dil nga llogaria" title="Dil nga llogaria">↪</button></div></div>
+  </aside>
+  <div class="main-shell">
+    <header class="topbar">
+      <div class="topbar-left"><button class="icon-button mobile-toggle" id="mobileToggle" aria-label="Hap navigimin" aria-expanded="false">☰</button><span class="breadcrumb">Workspace <span>/</span> <b id="breadcrumb">Pasqyra</b></span></div>
+      <div class="topbar-right"><form class="global-search" id="search"><span aria-hidden="true">⌕</span><input name="q" aria-label="Kërkim global" placeholder="Kërko llogari, biletë, transaksion…" autocomplete="off"><kbd>↵</kbd></form><span class="connection" id="connection"><i></i><span>Duke u lidhur</span></span><span class="top-avatar" id="topAvatar">Q</span></div>
+    </header>
+    <main id="main">
+      <div class="page-heading"><div><div class="eyebrow" id="eyebrow">PAMJA E PËRGJITHSHME</div><h1 id="title">Pasqyra e platformës</h1><p id="description">Të gjitha operacionet, në një qendër të vetme.</p></div><div class="page-actions" id="pageActions"></div></div>
+      <div id="message" class="notice" role="status" hidden></div>
+      <section id="content" tabindex="-1" aria-live="polite"><div class="loading"><span class="spinner"></span>Duke ngarkuar panelin…</div></section>
+      <footer class="page-footer"><span>EURO97 <b>Control Center</b></span><span id="updated">Të dhëna nga platforma</span></footer>
+    </main>
+  </div>
+  <dialog id="dialog" aria-labelledby="dialogTitle"><div class="dialog-heading"><div><div class="eyebrow" id="dialogEyebrow">MENAXHIMI</div><h2 id="dialogTitle"></h2></div><button class="icon-button" id="dialogClose" aria-label="Mbyll">×</button></div><div id="dialogMessage" role="alert" hidden></div><div id="dialogBody"></div></dialog>
+  <script src="/api-client.js"></script>
+<script src="/backoffice.js?v=acceptance-optional-2"></script>
+</body>
+</html>

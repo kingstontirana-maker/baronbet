@@ -1,0 +1,10 @@
+V11 - CREDIT HIERARCHY RULES
+
+CENTER: UNLIMITED source; can credit direct Operators only; no debit of Center wallet.
+OPERATOR: can credit direct Admin children only; must have enough available balance.
+ADMIN: can credit direct Supermanager children only; must have enough available balance.
+SUPERMANAGER: can credit direct Agent children only; must have enough available balance.
+AGENT: can credit direct User children only; must have enough available balance.
+USER: cannot credit anyone.
+
+The UI exposes “Shto kredit” only inside Lista e Përdoruesve for the direct child roles.

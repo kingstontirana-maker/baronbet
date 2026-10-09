@@ -1,0 +1,3504 @@
+{
+  "checkedAt": "2026-10-06T23:22:46.214Z",
+  "summary": {
+    "tickets": 51,
+    "stakes": 519,
+    "payouts": 323.55,
+    "bySelection": {
+      "lost": 33,
+      "won": 12,
+      "pending": 3,
+      "half_won": 1,
+      "void": 1,
+      "half_lost": 1
+    },
+    "mismatches": [
+      137
+    ]
+  },
+  "details": [
+    {
+      "ticket": 94,
+      "ticket_status": "lost",
+      "stake": 19,
+      "payout": 0,
+      "total_odds": 51,
+      "potential_win": 969,
+      "settled_at": "2026-10-06T23:19:13.011Z",
+      "id": 109,
+      "bet_id": 94,
+      "game_id": "3008248",
+      "coef_id": "26701",
+      "market_id": "6575",
+      "league": "Elite Club Friendlies",
+      "home_team": "VfB Stuttgart",
+      "away_team": "Greuther Furth",
+      "market": "Rezultat Final",
+      "selection": "2",
+      "odd": 51,
+      "event_time": "17:30:00",
+      "result_status": "lost",
+      "special_value": "",
+      "game_api_id": "14660264",
+      "original_odd": 51,
+      "league_id": "237280",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 132,
+          "type": "bet",
+          "amount": -19,
+          "balance_before": 7866032.22,
+          "balance_after": 7866013.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":19,\"odds\":51}",
+          "created_at": "2026-10-01 16:34:27"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:34:27"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":94,\"gameId\":\"3008248\",\"marketId\":\"6575\",\"market\":\"Rezultat Final\",\"selection\":\"2\",\"score\":{\"home\":5,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660264\"}",
+          "created_at": "2026-10-06 23:19:12"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:13"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 95,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 10.9,
+      "total_odds": 1.09,
+      "potential_win": 10.9,
+      "settled_at": "2026-10-06T23:19:13.265Z",
+      "id": 110,
+      "bet_id": 95,
+      "game_id": "3008324",
+      "coef_id": "535538881",
+      "market_id": "6575",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Rezultat Final",
+      "selection": "1",
+      "odd": 1.09,
+      "event_time": "",
+      "result_status": "won",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 1.09,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "won",
+      "expectedPayout": 10.9,
+      "evaluated": {
+        "status": "won",
+        "factor": 1.09
+      },
+      "ledger": [
+        {
+          "id": 133,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7866013.22,
+          "balance_after": 7866003.22
+        },
+        {
+          "id": 188,
+          "type": "payout",
+          "amount": 10.9,
+          "balance_before": 7865654.92,
+          "balance_after": 7865665.82
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.09}",
+          "created_at": "2026-10-01 16:43:56"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:43:56"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":95,\"gameId\":\"3008324\",\"marketId\":\"6575\",\"market\":\"Rezultat Final\",\"selection\":\"1\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"won\",\"factor\":1.09},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:13"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":10.9,\"selections\":[{\"status\":\"won\",\"factor\":1.09}]}",
+          "created_at": "2026-10-06 23:19:13"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 96,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 10.4,
+      "total_odds": 1.04,
+      "potential_win": 10.4,
+      "settled_at": "2026-10-01T16:52:39.637Z",
+      "id": 111,
+      "bet_id": 96,
+      "game_id": "3008324",
+      "coef_id": "535539049",
+      "market_id": "6576",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Rezultati Pjesa I",
+      "selection": "1",
+      "odd": 1.04,
+      "event_time": "",
+      "result_status": "won",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 1.04,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "won",
+      "expectedPayout": 10.4,
+      "evaluated": {
+        "status": "won",
+        "factor": 1.04
+      },
+      "ledger": [
+        {
+          "id": 134,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7866003.22,
+          "balance_after": 7865993.22
+        },
+        {
+          "id": 183,
+          "type": "payout",
+          "amount": 10.4,
+          "balance_before": 7865513.22,
+          "balance_after": 7865523.62
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.04}",
+          "created_at": "2026-10-01 16:44:32"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:32"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":96,\"gameId\":\"3008324\",\"marketId\":\"6576\",\"market\":\"Rezultati Pjesa I\",\"selection\":\"1\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"won\",\"factor\":1.04},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-01 16:52:39"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":10.4,\"selections\":[{\"status\":\"won\",\"factor\":1.04}]}",
+          "created_at": "2026-10-01 16:52:39"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 97,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 1.8,
+      "potential_win": 18,
+      "settled_at": "2026-10-06T23:19:13.413Z",
+      "id": 112,
+      "bet_id": 97,
+      "game_id": "3008324",
+      "coef_id": "535538960",
+      "market_id": "6577",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Numri i Golave ne Ndeshje",
+      "selection": "Lart 2.5",
+      "odd": 1.8,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "2.5",
+      "game_api_id": "14660427",
+      "original_odd": 1.8,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 135,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865993.22,
+          "balance_after": 7865983.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.8}",
+          "created_at": "2026-10-01 16:44:33"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:33"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":97,\"gameId\":\"3008324\",\"marketId\":\"6577\",\"market\":\"Numri i Golave ne Ndeshje\",\"selection\":\"Lart 2.5\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:13"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:13"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 98,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 1.17,
+      "potential_win": 11.7,
+      "settled_at": "2026-10-06T23:19:13.504Z",
+      "id": 113,
+      "bet_id": 98,
+      "game_id": "3008324",
+      "coef_id": "535539018",
+      "market_id": "6579",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Numri i Golave ne Ndeshje",
+      "selection": "Lart 1.5",
+      "odd": 1.17,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "1.5",
+      "game_api_id": "14660427",
+      "original_odd": 1.17,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 136,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865983.22,
+          "balance_after": 7865973.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.17}",
+          "created_at": "2026-10-01 16:44:34"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:34"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":98,\"gameId\":\"3008324\",\"marketId\":\"6579\",\"market\":\"Numri i Golave ne Ndeshje\",\"selection\":\"Lart 1.5\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:13"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:13"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 99,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 1.53,
+      "potential_win": 15.3,
+      "settled_at": "2026-10-06T23:19:13.585Z",
+      "id": 114,
+      "bet_id": 99,
+      "game_id": "3008324",
+      "coef_id": "535560116",
+      "market_id": "6581",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Shenon golin e dyte (skuadra)",
+      "selection": "1",
+      "odd": 1.53,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 1.53,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 137,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865973.22,
+          "balance_after": 7865963.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.53}",
+          "created_at": "2026-10-01 16:44:34"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:34"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":99,\"gameId\":\"3008324\",\"marketId\":\"6581\",\"market\":\"Shenon golin e dyte (skuadra)\",\"selection\":\"1\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:13"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:13"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 100,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 3.4,
+      "potential_win": 34,
+      "settled_at": "2026-10-06T23:19:13.643Z",
+      "id": 115,
+      "bet_id": 100,
+      "game_id": "3008324",
+      "coef_id": "535538949",
+      "market_id": "6589",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Numri i Golave ne Ndeshje",
+      "selection": "Lart 3.5",
+      "odd": 3.4,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "3.5",
+      "game_api_id": "14660427",
+      "original_odd": 3.4,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 138,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865963.22,
+          "balance_after": 7865953.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":3.4}",
+          "created_at": "2026-10-01 16:44:35"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:35"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":100,\"gameId\":\"3008324\",\"marketId\":\"6589\",\"market\":\"Numri i Golave ne Ndeshje\",\"selection\":\"Lart 3.5\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:13"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:13"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 101,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 7.5,
+      "potential_win": 75,
+      "settled_at": "2026-10-06T23:19:13.778Z",
+      "id": 116,
+      "bet_id": 101,
+      "game_id": "3008324",
+      "coef_id": "535538962",
+      "market_id": "6590",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Numri i Golave ne Ndeshje",
+      "selection": "Lart 4.5",
+      "odd": 7.5,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "4.5",
+      "game_api_id": "14660427",
+      "original_odd": 7.5,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 139,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865953.22,
+          "balance_after": 7865943.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":7.5}",
+          "created_at": "2026-10-01 16:44:36"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:36"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":101,\"gameId\":\"3008324\",\"marketId\":\"6590\",\"market\":\"Numri i Golave ne Ndeshje\",\"selection\":\"Lart 4.5\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:13"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:13"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 102,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 12,
+      "potential_win": 120,
+      "settled_at": "2026-10-06T23:19:13.860Z",
+      "id": 117,
+      "bet_id": 102,
+      "game_id": "3008324",
+      "coef_id": "535538941",
+      "market_id": "6591",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Numri i Golave ne Ndeshje",
+      "selection": "Lart 5.5",
+      "odd": 12,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "5.5",
+      "game_api_id": "14660427",
+      "original_odd": 12,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 140,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865943.22,
+          "balance_after": 7865933.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":12}",
+          "created_at": "2026-10-01 16:44:36"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:36"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":102,\"gameId\":\"3008324\",\"marketId\":\"6591\",\"market\":\"Numri i Golave ne Ndeshje\",\"selection\":\"Lart 5.5\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:13"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:13"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 103,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 4.5,
+      "potential_win": 45,
+      "settled_at": "2026-10-01T16:52:39.686Z",
+      "id": 118,
+      "bet_id": 103,
+      "game_id": "3008324",
+      "coef_id": "535538922",
+      "market_id": "6631",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Sa Gola Shënohen në Pjesën e 1re",
+      "selection": "Lart 1.5",
+      "odd": 4.5,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "1.5",
+      "game_api_id": "14660427",
+      "original_odd": 4.5,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 141,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865933.22,
+          "balance_after": 7865923.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":4.5}",
+          "created_at": "2026-10-01 16:44:37"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:37"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":103,\"gameId\":\"3008324\",\"marketId\":\"6631\",\"market\":\"Sa Gola Shënohen në Pjesën e 1re\",\"selection\":\"Lart 1.5\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-01 16:52:39"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-01 16:52:39"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 104,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 6.5,
+      "potential_win": 65,
+      "settled_at": "2026-10-06T23:19:13.912Z",
+      "id": 119,
+      "bet_id": 104,
+      "game_id": "3008324",
+      "coef_id": "535538820",
+      "market_id": "6653",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "DopioShans Live",
+      "selection": "X2",
+      "odd": 6.5,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 6.5,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 142,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865923.22,
+          "balance_after": 7865913.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":6.5}",
+          "created_at": "2026-10-01 16:44:38"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:38"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":104,\"gameId\":\"3008324\",\"marketId\":\"6653\",\"market\":\"DopioShans Live\",\"selection\":\"X2\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:13"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:13"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 105,
+      "ticket_status": "accepted",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 1.02,
+      "potential_win": 10.2,
+      "settled_at": null,
+      "id": 120,
+      "bet_id": 105,
+      "game_id": "3008324",
+      "coef_id": "535538927",
+      "market_id": "6661",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Fitore / Fitore",
+      "selection": "1",
+      "odd": 1.02,
+      "event_time": "",
+      "result_status": "pending",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 1.02,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "unknown",
+      "expectedPayout": null,
+      "evaluated": null,
+      "ledger": [
+        {
+          "id": 143,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865913.22,
+          "balance_after": 7865903.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.02}",
+          "created_at": "2026-10-01 16:44:39"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:39"
+        }
+      ],
+      "selectionMatches": null,
+      "payoutMatches": null,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 106,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 1.67,
+      "potential_win": 16.7,
+      "settled_at": "2026-10-06T23:19:14.011Z",
+      "id": 121,
+      "bet_id": 106,
+      "game_id": "3008324",
+      "coef_id": "535538998",
+      "market_id": "6662",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Rezultati i Pjeses se Dyte",
+      "selection": "1",
+      "odd": 1.67,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 1.67,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 144,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865903.22,
+          "balance_after": 7865893.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.67}",
+          "created_at": "2026-10-01 16:44:39"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:39"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":106,\"gameId\":\"3008324\",\"marketId\":\"6662\",\"market\":\"Rezultati i Pjeses se Dyte\",\"selection\":\"1\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:13"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:14"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 107,
+      "ticket_status": "accepted",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 1.14,
+      "potential_win": 11.4,
+      "settled_at": null,
+      "id": 122,
+      "bet_id": 107,
+      "game_id": "3008324",
+      "coef_id": "535538874",
+      "market_id": "6663",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Pjesa pare / Pjesa dyte",
+      "selection": "1-1",
+      "odd": 1.1400000000000001,
+      "event_time": "",
+      "result_status": "pending",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 1.1400000000000001,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "unknown",
+      "expectedPayout": null,
+      "evaluated": null,
+      "ledger": [
+        {
+          "id": 145,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865893.22,
+          "balance_after": 7865883.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.14}",
+          "created_at": "2026-10-01 16:44:40"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:40"
+        }
+      ],
+      "selectionMatches": null,
+      "payoutMatches": null,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 108,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 14,
+      "total_odds": 1.4,
+      "potential_win": 14,
+      "settled_at": "2026-10-06T23:19:14.218Z",
+      "id": 123,
+      "bet_id": 108,
+      "game_id": "3008324",
+      "coef_id": "535546242",
+      "market_id": "6665",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Aziatik",
+      "selection": "1 -0.25",
+      "odd": 1.4,
+      "event_time": "",
+      "result_status": "won",
+      "special_value": "-0.25",
+      "game_api_id": "14660427",
+      "original_odd": 1.4,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "won",
+      "expectedPayout": 14,
+      "evaluated": {
+        "status": "won",
+        "factor": 1.4
+      },
+      "ledger": [
+        {
+          "id": 146,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865883.22,
+          "balance_after": 7865873.22
+        },
+        {
+          "id": 189,
+          "type": "payout",
+          "amount": 14,
+          "balance_before": 7865665.82,
+          "balance_after": 7865679.82
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.4}",
+          "created_at": "2026-10-01 16:44:40"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:40"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":108,\"gameId\":\"3008324\",\"marketId\":\"6665\",\"market\":\"Handikap Aziatik\",\"selection\":\"1 -0.25\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"won\",\"factor\":1.4},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:14"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":14,\"selections\":[{\"status\":\"won\",\"factor\":1.4}]}",
+          "created_at": "2026-10-06 23:19:14"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 109,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 16.3,
+      "total_odds": 1.63,
+      "potential_win": 16.3,
+      "settled_at": "2026-10-06T23:19:14.341Z",
+      "id": 124,
+      "bet_id": 109,
+      "game_id": "3008324",
+      "coef_id": "535538893",
+      "market_id": "6666",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Aziatik",
+      "selection": "1 -0.5",
+      "odd": 1.63,
+      "event_time": "",
+      "result_status": "won",
+      "special_value": "-0.5",
+      "game_api_id": "14660427",
+      "original_odd": 1.63,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "won",
+      "expectedPayout": 16.3,
+      "evaluated": {
+        "status": "won",
+        "factor": 1.63
+      },
+      "ledger": [
+        {
+          "id": 147,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865873.22,
+          "balance_after": 7865863.22
+        },
+        {
+          "id": 190,
+          "type": "payout",
+          "amount": 16.3,
+          "balance_before": 7865679.82,
+          "balance_after": 7865696.12
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.63}",
+          "created_at": "2026-10-01 16:44:41"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:41"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":109,\"gameId\":\"3008324\",\"marketId\":\"6666\",\"market\":\"Handikap Aziatik\",\"selection\":\"1 -0.5\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"won\",\"factor\":1.63},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:14"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":16.3,\"selections\":[{\"status\":\"won\",\"factor\":1.63}]}",
+          "created_at": "2026-10-06 23:19:14"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 110,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 14.25,
+      "total_odds": 1.85,
+      "potential_win": 18.5,
+      "settled_at": "2026-10-06T23:19:14.428Z",
+      "id": 125,
+      "bet_id": 110,
+      "game_id": "3008324",
+      "coef_id": "535538992",
+      "market_id": "6667",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Aziatik",
+      "selection": "1 -0.75",
+      "odd": 1.85,
+      "event_time": "",
+      "result_status": "half_won",
+      "special_value": "-0.75",
+      "game_api_id": "14660427",
+      "original_odd": 1.85,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "half_won",
+      "expectedPayout": 14.25,
+      "evaluated": {
+        "status": "half_won",
+        "factor": 1.425
+      },
+      "ledger": [
+        {
+          "id": 148,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865863.22,
+          "balance_after": 7865853.22
+        },
+        {
+          "id": 191,
+          "type": "payout",
+          "amount": 14.25,
+          "balance_before": 7865696.12,
+          "balance_after": 7865710.37
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.85}",
+          "created_at": "2026-10-01 16:44:42"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:42"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":110,\"gameId\":\"3008324\",\"marketId\":\"6667\",\"market\":\"Handikap Aziatik\",\"selection\":\"1 -0.75\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"half_won\",\"factor\":1.425},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:14"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":14.25,\"selections\":[{\"status\":\"half_won\",\"factor\":1.425}]}",
+          "created_at": "2026-10-06 23:19:14"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 111,
+      "ticket_status": "void",
+      "stake": 10,
+      "payout": 10,
+      "total_odds": 2.3,
+      "potential_win": 23,
+      "settled_at": "2026-10-06T23:19:14.780Z",
+      "id": 126,
+      "bet_id": 111,
+      "game_id": "3008324",
+      "coef_id": "535538986",
+      "market_id": "6668",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Aziatik",
+      "selection": "1 -1.0",
+      "odd": 2.3,
+      "event_time": "",
+      "result_status": "void",
+      "special_value": "-1.0",
+      "game_api_id": "14660427",
+      "original_odd": 2.3,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "void",
+      "expectedPayout": 10,
+      "evaluated": {
+        "status": "void",
+        "factor": 1
+      },
+      "ledger": [
+        {
+          "id": 149,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865853.22,
+          "balance_after": 7865843.22
+        },
+        {
+          "id": 192,
+          "type": "refund",
+          "amount": 10,
+          "balance_before": 7865710.37,
+          "balance_after": 7865720.37
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":2.3}",
+          "created_at": "2026-10-01 16:44:43"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:43"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":111,\"gameId\":\"3008324\",\"marketId\":\"6668\",\"market\":\"Handikap Aziatik\",\"selection\":\"1 -1.0\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"void\",\"factor\":1},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:14"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"void\",\"payout\":10,\"selections\":[{\"status\":\"void\",\"factor\":1}]}",
+          "created_at": "2026-10-06 23:19:14"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 112,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 5,
+      "total_odds": 2.68,
+      "potential_win": 26.8,
+      "settled_at": "2026-10-06T23:19:15.022Z",
+      "id": 127,
+      "bet_id": 112,
+      "game_id": "3008324",
+      "coef_id": "535538825",
+      "market_id": "6669",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Aziatik",
+      "selection": "1 -1.25",
+      "odd": 2.6799999999999997,
+      "event_time": "",
+      "result_status": "half_lost",
+      "special_value": "-1.25",
+      "game_api_id": "14660427",
+      "original_odd": 2.6799999999999997,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "half_lost",
+      "expectedPayout": 5,
+      "evaluated": {
+        "status": "half_lost",
+        "factor": 0.5
+      },
+      "ledger": [
+        {
+          "id": 150,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865843.22,
+          "balance_after": 7865833.22
+        },
+        {
+          "id": 193,
+          "type": "payout",
+          "amount": 5,
+          "balance_before": 7865720.37,
+          "balance_after": 7865725.37
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":2.68}",
+          "created_at": "2026-10-01 16:44:43"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:43"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":112,\"gameId\":\"3008324\",\"marketId\":\"6669\",\"market\":\"Handikap Aziatik\",\"selection\":\"1 -1.25\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"half_lost\",\"factor\":0.5},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:14"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":5,\"selections\":[{\"status\":\"half_lost\",\"factor\":0.5}]}",
+          "created_at": "2026-10-06 23:19:15"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 113,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 13.5,
+      "total_odds": 1.35,
+      "potential_win": 13.5,
+      "settled_at": "2026-10-01T16:52:39.737Z",
+      "id": 128,
+      "bet_id": 113,
+      "game_id": "3008324",
+      "coef_id": "535539052",
+      "market_id": "6689",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Aziatik Pjesa 1-rë",
+      "selection": "1 0",
+      "odd": 1.35,
+      "event_time": "",
+      "result_status": "won",
+      "special_value": "0",
+      "game_api_id": "14660427",
+      "original_odd": 1.35,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "won",
+      "expectedPayout": 13.5,
+      "evaluated": {
+        "status": "won",
+        "factor": 1.35
+      },
+      "ledger": [
+        {
+          "id": 151,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865833.22,
+          "balance_after": 7865823.22
+        },
+        {
+          "id": 184,
+          "type": "payout",
+          "amount": 13.5,
+          "balance_before": 7865523.62,
+          "balance_after": 7865537.12
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.35}",
+          "created_at": "2026-10-01 16:44:44"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:44"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":113,\"gameId\":\"3008324\",\"marketId\":\"6689\",\"market\":\"Handikap Aziatik Pjesa 1-rë\",\"selection\":\"1 0\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"won\",\"factor\":1.35},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-01 16:52:39"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":13.5,\"selections\":[{\"status\":\"won\",\"factor\":1.35}]}",
+          "created_at": "2026-10-01 16:52:39"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 114,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 40,
+      "total_odds": 4,
+      "potential_win": 40,
+      "settled_at": "2026-10-01T16:52:39.780Z",
+      "id": 129,
+      "bet_id": 114,
+      "game_id": "3008324",
+      "coef_id": "535538935",
+      "market_id": "6690",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Aziatik Pjesa 1-rë",
+      "selection": "1 -0.25",
+      "odd": 4,
+      "event_time": "",
+      "result_status": "won",
+      "special_value": "-0.25",
+      "game_api_id": "14660427",
+      "original_odd": 4,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "won",
+      "expectedPayout": 40,
+      "evaluated": {
+        "status": "won",
+        "factor": 4
+      },
+      "ledger": [
+        {
+          "id": 152,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865823.22,
+          "balance_after": 7865813.22
+        },
+        {
+          "id": 185,
+          "type": "payout",
+          "amount": 40,
+          "balance_before": 7865537.12,
+          "balance_after": 7865577.12
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":4}",
+          "created_at": "2026-10-01 16:44:45"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:45"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":114,\"gameId\":\"3008324\",\"marketId\":\"6690\",\"market\":\"Handikap Aziatik Pjesa 1-rë\",\"selection\":\"1 -0.25\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"won\",\"factor\":4},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-01 16:52:39"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":40,\"selections\":[{\"status\":\"won\",\"factor\":4}]}",
+          "created_at": "2026-10-01 16:52:39"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 115,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 66,
+      "total_odds": 6.6,
+      "potential_win": 66,
+      "settled_at": "2026-10-01T16:52:39.817Z",
+      "id": 130,
+      "bet_id": 115,
+      "game_id": "3008324",
+      "coef_id": "535538999",
+      "market_id": "6691",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Aziatik Pjesa 1-rë",
+      "selection": "1 -0.5",
+      "odd": 6.6,
+      "event_time": "",
+      "result_status": "won",
+      "special_value": "-0.5",
+      "game_api_id": "14660427",
+      "original_odd": 6.6,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "won",
+      "expectedPayout": 66,
+      "evaluated": {
+        "status": "won",
+        "factor": 6.6
+      },
+      "ledger": [
+        {
+          "id": 153,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865813.22,
+          "balance_after": 7865803.22
+        },
+        {
+          "id": 186,
+          "type": "payout",
+          "amount": 66,
+          "balance_before": 7865577.12,
+          "balance_after": 7865643.12
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":6.6}",
+          "created_at": "2026-10-01 16:44:47"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:47"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":115,\"gameId\":\"3008324\",\"marketId\":\"6691\",\"market\":\"Handikap Aziatik Pjesa 1-rë\",\"selection\":\"1 -0.5\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"won\",\"factor\":6.6},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-01 16:52:39"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":66,\"selections\":[{\"status\":\"won\",\"factor\":6.6}]}",
+          "created_at": "2026-10-01 16:52:39"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 116,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 1.3,
+      "potential_win": 13,
+      "settled_at": "2026-10-06T23:19:15.505Z",
+      "id": 131,
+      "bet_id": 116,
+      "game_id": "3008324",
+      "coef_id": "535538838",
+      "market_id": "6712",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Lart/Poshtë Gola Aziatikë",
+      "selection": "Lart 2.0",
+      "odd": 1.3,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "2.0",
+      "game_api_id": "14660427",
+      "original_odd": 1.3,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 154,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865803.22,
+          "balance_after": 7865793.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.3}",
+          "created_at": "2026-10-01 16:44:47"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:47"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":116,\"gameId\":\"3008324\",\"marketId\":\"6712\",\"market\":\"Lart/Poshtë Gola Aziatikë\",\"selection\":\"Lart 2.0\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:15"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:15"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 117,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 1.55,
+      "potential_win": 15.5,
+      "settled_at": "2026-10-06T23:19:15.652Z",
+      "id": 132,
+      "bet_id": 117,
+      "game_id": "3008324",
+      "coef_id": "535538833",
+      "market_id": "6713",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Lart/Poshtë Gola Aziatikë",
+      "selection": "Lart 2.25",
+      "odd": 1.55,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "2.25",
+      "game_api_id": "14660427",
+      "original_odd": 1.55,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 155,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865793.22,
+          "balance_after": 7865783.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.55}",
+          "created_at": "2026-10-01 16:44:48"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:48"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":117,\"gameId\":\"3008324\",\"marketId\":\"6713\",\"market\":\"Lart/Poshtë Gola Aziatikë\",\"selection\":\"Lart 2.25\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:15"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:15"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 118,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 2.1,
+      "potential_win": 21,
+      "settled_at": "2026-10-06T23:19:15.993Z",
+      "id": 133,
+      "bet_id": 118,
+      "game_id": "3008324",
+      "coef_id": "535560106",
+      "market_id": "6715",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Lart/Poshtë Gola Aziatikë",
+      "selection": "Lart 2.75",
+      "odd": 2.1,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "2.75",
+      "game_api_id": "14660427",
+      "original_odd": 2.1,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 156,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865783.22,
+          "balance_after": 7865773.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":2.1}",
+          "created_at": "2026-10-01 16:44:49"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:49"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":118,\"gameId\":\"3008324\",\"marketId\":\"6715\",\"market\":\"Lart/Poshtë Gola Aziatikë\",\"selection\":\"Lart 2.75\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:15"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:15"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 119,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 2.68,
+      "potential_win": 26.8,
+      "settled_at": "2026-10-06T23:19:16.055Z",
+      "id": 134,
+      "bet_id": 119,
+      "game_id": "3008324",
+      "coef_id": "535560104",
+      "market_id": "6716",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Lart/Poshtë Gola Aziatikë",
+      "selection": "Lart 3.0",
+      "odd": 2.6799999999999997,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "3.0",
+      "game_api_id": "14660427",
+      "original_odd": 2.6799999999999997,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 157,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865773.22,
+          "balance_after": 7865763.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":2.68}",
+          "created_at": "2026-10-01 16:44:50"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:50"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":119,\"gameId\":\"3008324\",\"marketId\":\"6716\",\"market\":\"Lart/Poshtë Gola Aziatikë\",\"selection\":\"Lart 3.0\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 120,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 18,
+      "total_odds": 1.8,
+      "potential_win": 18,
+      "settled_at": "2026-10-06T23:19:16.184Z",
+      "id": 135,
+      "bet_id": 120,
+      "game_id": "3008324",
+      "coef_id": "535538862",
+      "market_id": "6757",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Tek/Cift Live",
+      "selection": "Tek",
+      "odd": 1.8,
+      "event_time": "",
+      "result_status": "won",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 1.8,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "won",
+      "expectedPayout": 18,
+      "evaluated": {
+        "status": "won",
+        "factor": 1.8
+      },
+      "ledger": [
+        {
+          "id": 158,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865763.22,
+          "balance_after": 7865753.22
+        },
+        {
+          "id": 194,
+          "type": "payout",
+          "amount": 18,
+          "balance_before": 7865725.37,
+          "balance_after": 7865743.37
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.8}",
+          "created_at": "2026-10-01 16:44:51"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:51"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":120,\"gameId\":\"3008324\",\"marketId\":\"6757\",\"market\":\"Tek/Cift Live\",\"selection\":\"Tek\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"won\",\"factor\":1.8},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":18,\"selections\":[{\"status\":\"won\",\"factor\":1.8}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 121,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 8.5,
+      "potential_win": 85,
+      "settled_at": "2026-10-06T23:19:16.342Z",
+      "id": 136,
+      "bet_id": 121,
+      "game_id": "3008324",
+      "coef_id": "535538988",
+      "market_id": "6759",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Sa Gola do shenohen nga ekipi udhetues",
+      "selection": "Lart 1.5",
+      "odd": 8.5,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "1.5",
+      "game_api_id": "14660427",
+      "original_odd": 8.5,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 159,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865753.22,
+          "balance_after": 7865743.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":8.5}",
+          "created_at": "2026-10-01 16:44:52"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:52"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":121,\"gameId\":\"3008324\",\"marketId\":\"6759\",\"market\":\"Sa Gola do shenohen nga ekipi udhetues\",\"selection\":\"Lart 1.5\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 122,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 1.3,
+      "potential_win": 13,
+      "settled_at": "2026-10-06T23:19:16.371Z",
+      "id": 137,
+      "bet_id": 122,
+      "game_id": "3008324",
+      "coef_id": "535538821",
+      "market_id": "6763",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Sa Gola do shenohen nga ekipi vendas",
+      "selection": "Lart 1.5",
+      "odd": 1.3,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "1.5",
+      "game_api_id": "14660427",
+      "original_odd": 1.3,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 160,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865743.22,
+          "balance_after": 7865733.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.3}",
+          "created_at": "2026-10-01 16:44:52"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:52"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":122,\"gameId\":\"3008324\",\"marketId\":\"6763\",\"market\":\"Sa Gola do shenohen nga ekipi vendas\",\"selection\":\"Lart 1.5\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 123,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 2.5,
+      "potential_win": 25,
+      "settled_at": "2026-10-06T23:19:16.429Z",
+      "id": 138,
+      "bet_id": 123,
+      "game_id": "3008324",
+      "coef_id": "535538887",
+      "market_id": "6764",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Sa Gola do shenohen nga ekipi vendas",
+      "selection": "Lart 2.5",
+      "odd": 2.5,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "2.5",
+      "game_api_id": "14660427",
+      "original_odd": 2.5,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 161,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865733.22,
+          "balance_after": 7865723.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":2.5}",
+          "created_at": "2026-10-01 16:44:53"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:53"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":123,\"gameId\":\"3008324\",\"marketId\":\"6764\",\"market\":\"Sa Gola do shenohen nga ekipi vendas\",\"selection\":\"Lart 2.5\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 124,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 5.5,
+      "potential_win": 55,
+      "settled_at": "2026-10-06T23:19:16.466Z",
+      "id": 139,
+      "bet_id": 124,
+      "game_id": "3008324",
+      "coef_id": "535538847",
+      "market_id": "6765",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Sa Gola do shenohen nga ekipi vendas",
+      "selection": "Lart 3.5",
+      "odd": 5.5,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "3.5",
+      "game_api_id": "14660427",
+      "original_odd": 5.5,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 162,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865723.22,
+          "balance_after": 7865713.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":5.5}",
+          "created_at": "2026-10-01 16:44:54"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:54"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":124,\"gameId\":\"3008324\",\"marketId\":\"6765\",\"market\":\"Sa Gola do shenohen nga ekipi vendas\",\"selection\":\"Lart 3.5\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 125,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 10.5,
+      "potential_win": 105,
+      "settled_at": "2026-10-06T23:19:16.524Z",
+      "id": 140,
+      "bet_id": 125,
+      "game_id": "3008324",
+      "coef_id": "535538912",
+      "market_id": "6766",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Sa Gola do shenohen nga ekipi vendas",
+      "selection": "Lart 4.5",
+      "odd": 10.5,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "4.5",
+      "game_api_id": "14660427",
+      "original_odd": 10.5,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 163,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865713.22,
+          "balance_after": 7865703.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":10.5}",
+          "created_at": "2026-10-01 16:44:54"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:54"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":125,\"gameId\":\"3008324\",\"marketId\":\"6766\",\"market\":\"Sa Gola do shenohen nga ekipi vendas\",\"selection\":\"Lart 4.5\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 126,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 2.63,
+      "potential_win": 26.3,
+      "settled_at": "2026-10-06T23:19:16.560Z",
+      "id": 141,
+      "bet_id": 126,
+      "game_id": "3008324",
+      "coef_id": "535538871",
+      "market_id": "6780",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Gol Jo Gol Live",
+      "selection": "Po",
+      "odd": 2.63,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 2.63,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 164,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865703.22,
+          "balance_after": 7865693.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":2.63}",
+          "created_at": "2026-10-01 16:44:55"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:55"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":126,\"gameId\":\"3008324\",\"marketId\":\"6780\",\"market\":\"Gol Jo Gol Live\",\"selection\":\"Po\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 127,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 45,
+      "total_odds": 4.5,
+      "potential_win": 45,
+      "settled_at": "2026-10-06T23:19:16.598Z",
+      "id": 142,
+      "bet_id": 127,
+      "game_id": "3008324",
+      "coef_id": "535539036",
+      "market_id": "6798",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Rezultati Sakte Live",
+      "selection": "1-0",
+      "odd": 4.5,
+      "event_time": "",
+      "result_status": "won",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 4.5,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "won",
+      "expectedPayout": 45,
+      "evaluated": {
+        "status": "won",
+        "factor": 4.5
+      },
+      "ledger": [
+        {
+          "id": 165,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865693.22,
+          "balance_after": 7865683.22
+        },
+        {
+          "id": 195,
+          "type": "payout",
+          "amount": 45,
+          "balance_before": 7865743.37,
+          "balance_after": 7865788.37
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":4.5}",
+          "created_at": "2026-10-01 16:44:56"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:56"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":127,\"gameId\":\"3008324\",\"marketId\":\"6798\",\"market\":\"Rezultati Sakte Live\",\"selection\":\"1-0\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"won\",\"factor\":4.5},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":45,\"selections\":[{\"status\":\"won\",\"factor\":4.5}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 128,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 11.8,
+      "total_odds": 1.18,
+      "potential_win": 11.8,
+      "settled_at": "2026-10-01T16:52:39.883Z",
+      "id": 143,
+      "bet_id": 128,
+      "game_id": "3008324",
+      "coef_id": "535538910",
+      "market_id": "6799",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Rezultati Sakte Pjesa 1 Live",
+      "selection": "1-0",
+      "odd": 1.18,
+      "event_time": "",
+      "result_status": "won",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 1.18,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "won",
+      "expectedPayout": 11.8,
+      "evaluated": {
+        "status": "won",
+        "factor": 1.18
+      },
+      "ledger": [
+        {
+          "id": 166,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865683.22,
+          "balance_after": 7865673.22
+        },
+        {
+          "id": 187,
+          "type": "payout",
+          "amount": 11.8,
+          "balance_before": 7865643.12,
+          "balance_after": 7865654.92
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.18}",
+          "created_at": "2026-10-01 16:44:57"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:57"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":128,\"gameId\":\"3008324\",\"marketId\":\"6799\",\"market\":\"Rezultati Sakte Pjesa 1 Live\",\"selection\":\"1-0\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"won\",\"factor\":1.18},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-01 16:52:39"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":11.8,\"selections\":[{\"status\":\"won\",\"factor\":1.18}]}",
+          "created_at": "2026-10-01 16:52:39"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 129,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 5.01,
+      "potential_win": 50.1,
+      "settled_at": "2026-10-01T16:52:39.923Z",
+      "id": 144,
+      "bet_id": 129,
+      "game_id": "3008324",
+      "coef_id": "535560118",
+      "market_id": "6801",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Shenon Golin e 2 Pjesa1",
+      "selection": "1",
+      "odd": 5.01,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 5.01,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 167,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865673.22,
+          "balance_after": 7865663.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":5.01}",
+          "created_at": "2026-10-01 16:44:59"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:59"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":129,\"gameId\":\"3008324\",\"marketId\":\"6801\",\"market\":\"Shenon Golin e 2 Pjesa1\",\"selection\":\"1\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-01 16:52:39"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-01 16:52:39"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 130,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 9,
+      "potential_win": 90,
+      "settled_at": "2026-10-01T16:52:39.942Z",
+      "id": 145,
+      "bet_id": 130,
+      "game_id": "3008324",
+      "coef_id": "535539012",
+      "market_id": "6809",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Gol JoGol Pjesa 1 Live",
+      "selection": "1",
+      "odd": 9,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 9,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 168,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865663.22,
+          "balance_after": 7865653.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":9}",
+          "created_at": "2026-10-01 16:44:59"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:44:59"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":130,\"gameId\":\"3008324\",\"marketId\":\"6809\",\"market\":\"Gol JoGol Pjesa 1 Live\",\"selection\":\"1\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-01 16:52:39"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-01 16:52:39"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 131,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 1.76,
+      "potential_win": 17.6,
+      "settled_at": "2026-10-06T23:19:16.631Z",
+      "id": 146,
+      "bet_id": 131,
+      "game_id": "3008324",
+      "coef_id": "535538884",
+      "market_id": "6810",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Rezultati Final Gola 3+",
+      "selection": "1|3+",
+      "odd": 1.76,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 1.76,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 169,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865653.22,
+          "balance_after": 7865643.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.76}",
+          "created_at": "2026-10-01 16:45:00"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:00"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":131,\"gameId\":\"3008324\",\"marketId\":\"6810\",\"market\":\"Rezultati Final Gola 3+\",\"selection\":\"1|3+\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 132,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 4,
+      "potential_win": 40,
+      "settled_at": "2026-10-06T23:19:16.655Z",
+      "id": 147,
+      "bet_id": 132,
+      "game_id": "3008324",
+      "coef_id": "535538955",
+      "market_id": "6811",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Gol / Jo Gol Ne P2",
+      "selection": "1",
+      "odd": 4,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 4,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 170,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865643.22,
+          "balance_after": 7865633.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":4}",
+          "created_at": "2026-10-01 16:45:02"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:02"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":132,\"gameId\":\"3008324\",\"marketId\":\"6811\",\"market\":\"Gol / Jo Gol Ne P2\",\"selection\":\"1\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 133,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 34,
+      "total_odds": 3.4,
+      "potential_win": 34,
+      "settled_at": "2026-10-06T23:19:16.717Z",
+      "id": 148,
+      "bet_id": 133,
+      "game_id": "3008324",
+      "coef_id": "535538855",
+      "market_id": "6812",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Nr-Gola Pritesi",
+      "selection": "1 Gol",
+      "odd": 3.4,
+      "event_time": "",
+      "result_status": "won",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 3.4,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "won",
+      "expectedPayout": 34,
+      "evaluated": {
+        "status": "won",
+        "factor": 3.4
+      },
+      "ledger": [
+        {
+          "id": 171,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865633.22,
+          "balance_after": 7865623.22
+        },
+        {
+          "id": 196,
+          "type": "payout",
+          "amount": 34,
+          "balance_before": 7865788.37,
+          "balance_after": 7865822.37
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":3.4}",
+          "created_at": "2026-10-01 16:45:03"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:03"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":133,\"gameId\":\"3008324\",\"marketId\":\"6812\",\"market\":\"Nr-Gola Pritesi\",\"selection\":\"1 Gol\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"won\",\"factor\":3.4},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":34,\"selections\":[{\"status\":\"won\",\"factor\":3.4}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 134,
+      "ticket_status": "won",
+      "stake": 10,
+      "payout": 14.4,
+      "total_odds": 1.44,
+      "potential_win": 14.4,
+      "settled_at": "2026-10-06T23:19:16.746Z",
+      "id": 149,
+      "bet_id": 134,
+      "game_id": "3008324",
+      "coef_id": "535539055",
+      "market_id": "6813",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Nr-Gola Udhetuesi",
+      "selection": "0 Gola",
+      "odd": 1.44,
+      "event_time": "",
+      "result_status": "won",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 1.44,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "won",
+      "expectedPayout": 14.4,
+      "evaluated": {
+        "status": "won",
+        "factor": 1.44
+      },
+      "ledger": [
+        {
+          "id": 172,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865623.22,
+          "balance_after": 7865613.22
+        },
+        {
+          "id": 197,
+          "type": "payout",
+          "amount": 14.4,
+          "balance_before": 7865822.37,
+          "balance_after": 7865836.77
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.44}",
+          "created_at": "2026-10-01 16:45:03"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:03"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":134,\"gameId\":\"3008324\",\"marketId\":\"6813\",\"market\":\"Nr-Gola Udhetuesi\",\"selection\":\"0 Gola\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"won\",\"factor\":1.44},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"won\",\"payout\":14.4,\"selections\":[{\"status\":\"won\",\"factor\":1.44}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 135,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 1.4,
+      "potential_win": 14,
+      "settled_at": "2026-10-06T23:19:16.778Z",
+      "id": 150,
+      "bet_id": 135,
+      "game_id": "3008324",
+      "coef_id": "535539013",
+      "market_id": "6818",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Shenon Pritesi ne P2",
+      "selection": "Po",
+      "odd": 1.4,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 1.4,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 173,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865613.22,
+          "balance_after": 7865603.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.4}",
+          "created_at": "2026-10-01 16:45:04"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:04"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":135,\"gameId\":\"3008324\",\"marketId\":\"6818\",\"market\":\"Shenon Pritesi ne P2\",\"selection\":\"Po\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 136,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 2.75,
+      "potential_win": 27.5,
+      "settled_at": "2026-10-06T23:19:16.807Z",
+      "id": 151,
+      "bet_id": 136,
+      "game_id": "3008324",
+      "coef_id": "535538875",
+      "market_id": "6819",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Shenon Udhetuesi ne P2",
+      "selection": "Po",
+      "odd": 2.75,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 2.75,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 174,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865603.22,
+          "balance_after": 7865593.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":2.75}",
+          "created_at": "2026-10-01 16:45:42"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:42"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":136,\"gameId\":\"3008324\",\"marketId\":\"6819\",\"market\":\"Shenon Udhetuesi ne P2\",\"selection\":\"Po\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 137,
+      "ticket_status": "accepted",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 3.75,
+      "potential_win": 37.5,
+      "settled_at": null,
+      "id": 152,
+      "bet_id": 137,
+      "game_id": "3008324",
+      "coef_id": "535539008",
+      "market_id": "6840",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Rezultat Final/Gol-Gol",
+      "selection": "1|G",
+      "odd": 3.75,
+      "event_time": "",
+      "result_status": "pending",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 3.75,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": null,
+      "ledger": [
+        {
+          "id": 175,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865593.22,
+          "balance_after": 7865583.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":3.75}",
+          "created_at": "2026-10-01 16:45:43"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:43"
+        }
+      ],
+      "selectionMatches": false,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 138,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 3.21,
+      "potential_win": 32.1,
+      "settled_at": "2026-10-06T23:19:16.831Z",
+      "id": 153,
+      "bet_id": 138,
+      "game_id": "3008324",
+      "coef_id": "535538883",
+      "market_id": "8999",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Rezultati Final Gola 4+",
+      "selection": "1|4+",
+      "odd": 3.21,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "",
+      "game_api_id": "14660427",
+      "original_odd": 3.21,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 176,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865583.22,
+          "balance_after": 7865573.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":3.21}",
+          "created_at": "2026-10-01 16:45:44"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:44"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":138,\"gameId\":\"3008324\",\"marketId\":\"8999\",\"market\":\"Rezultati Final Gola 4+\",\"selection\":\"1|4+\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 139,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 1.62,
+      "potential_win": 16.2,
+      "settled_at": "2026-10-06T23:19:16.853Z",
+      "id": 154,
+      "bet_id": 139,
+      "game_id": "3008324",
+      "coef_id": "535538928",
+      "market_id": "9086",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Europian (0:1)",
+      "selection": "1 0:1",
+      "odd": 1.62,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "0:1",
+      "game_api_id": "14660427",
+      "original_odd": 1.62,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 177,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865573.22,
+          "balance_after": 7865563.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":1.62}",
+          "created_at": "2026-10-01 16:45:45"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:45"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":139,\"gameId\":\"3008324\",\"marketId\":\"9086\",\"market\":\"Handikap Europian (0:1)\",\"selection\":\"1 0:1\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 140,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 3.25,
+      "potential_win": 32.5,
+      "settled_at": "2026-10-06T23:19:16.882Z",
+      "id": 155,
+      "bet_id": 140,
+      "game_id": "3008324",
+      "coef_id": "535538934",
+      "market_id": "9087",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Europian (0:2)",
+      "selection": "1 0:2",
+      "odd": 3.25,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "0:2",
+      "game_api_id": "14660427",
+      "original_odd": 3.25,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 178,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865563.22,
+          "balance_after": 7865553.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":3.25}",
+          "created_at": "2026-10-01 16:45:46"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:46"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":140,\"gameId\":\"3008324\",\"marketId\":\"9087\",\"market\":\"Handikap Europian (0:2)\",\"selection\":\"1 0:2\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 141,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 8,
+      "potential_win": 80,
+      "settled_at": "2026-10-06T23:19:16.968Z",
+      "id": 156,
+      "bet_id": 141,
+      "game_id": "3008324",
+      "coef_id": "535538938",
+      "market_id": "9088",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Europian (0:3)",
+      "selection": "1 0:3",
+      "odd": 8,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "0:3",
+      "game_api_id": "14660427",
+      "original_odd": 8,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 179,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865553.22,
+          "balance_after": 7865543.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":8}",
+          "created_at": "2026-10-01 16:45:47"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:47"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":141,\"gameId\":\"3008324\",\"marketId\":\"9088\",\"market\":\"Handikap Europian (0:3)\",\"selection\":\"1 0:3\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:16"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:16"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 142,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 21,
+      "potential_win": 210,
+      "settled_at": "2026-10-06T23:19:17.035Z",
+      "id": 157,
+      "bet_id": 142,
+      "game_id": "3008324",
+      "coef_id": "535560114",
+      "market_id": "9089",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Europian (0:4)",
+      "selection": "1 0:4",
+      "odd": 21,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "0:4",
+      "game_api_id": "14660427",
+      "original_odd": 21,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 180,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865543.22,
+          "balance_after": 7865533.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":21}",
+          "created_at": "2026-10-01 16:45:48"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:48"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":142,\"gameId\":\"3008324\",\"marketId\":\"9089\",\"market\":\"Handikap Europian (0:4)\",\"selection\":\"1 0:4\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-06 23:19:17"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-06 23:19:17"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 143,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 8,
+      "potential_win": 80,
+      "settled_at": "2026-10-01T16:52:39.963Z",
+      "id": 158,
+      "bet_id": 143,
+      "game_id": "3008324",
+      "coef_id": "535539019",
+      "market_id": "9099",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Live Pjesa Pare (0:1)",
+      "selection": "1 0:1",
+      "odd": 8,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "0:1",
+      "game_api_id": "14660427",
+      "original_odd": 8,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 181,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865533.22,
+          "balance_after": 7865523.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":8}",
+          "created_at": "2026-10-01 16:45:49"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:49"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":143,\"gameId\":\"3008324\",\"marketId\":\"9099\",\"market\":\"Handikap Live Pjesa Pare (0:1)\",\"selection\":\"1 0:1\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-01 16:52:39"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-01 16:52:39"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    },
+    {
+      "ticket": 144,
+      "ticket_status": "lost",
+      "stake": 10,
+      "payout": 0,
+      "total_odds": 101,
+      "potential_win": 1010,
+      "settled_at": "2026-10-01T16:52:39.989Z",
+      "id": 159,
+      "bet_id": 144,
+      "game_id": "3008324",
+      "coef_id": "535538970",
+      "market_id": "9100",
+      "league": "Africa Cup of Nations Qualification",
+      "home_team": "Guinea",
+      "away_team": "Kenya",
+      "market": "Handikap Live Pjesa Pare (0:2)",
+      "selection": "1 0:2",
+      "odd": 101,
+      "event_time": "",
+      "result_status": "lost",
+      "special_value": "0:2",
+      "game_api_id": "14660427",
+      "original_odd": 101,
+      "league_id": "237758",
+      "sport_id": "1",
+      "expected": "lost",
+      "expectedPayout": 0,
+      "evaluated": {
+        "status": "lost",
+        "factor": 0
+      },
+      "ledger": [
+        {
+          "id": 182,
+          "type": "bet",
+          "amount": -10,
+          "balance_before": 7865523.22,
+          "balance_after": 7865513.22
+        }
+      ],
+      "audit": [
+        {
+          "action": "ticket_created",
+          "details": "{\"stake\":10,\"odds\":101}",
+          "created_at": "2026-10-01 16:45:50"
+        },
+        {
+          "action": "ticket_auto_accepted",
+          "details": "{\"configVersion\":3,\"types\":[\"live\"],\"rules\":{\"live\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":5000,\"maxOdds\":null,\"maxSelections\":null},\"prematch\":{\"enabled\":true,\"maxStake\":1000,\"maxPayout\":500,\"maxOdds\":null,\"maxSelections\":null}}}",
+          "created_at": "2026-10-01 16:45:50"
+        },
+        {
+          "action": "auto_selection_settled",
+          "details": "{\"betId\":144,\"gameId\":\"3008324\",\"marketId\":\"9100\",\"market\":\"Handikap Live Pjesa Pare (0:2)\",\"selection\":\"1 0:2\",\"score\":{\"home\":1,\"away\":0},\"outcome\":{\"status\":\"lost\",\"factor\":0},\"apiGameId\":\"14660427\"}",
+          "created_at": "2026-10-01 16:52:39"
+        },
+        {
+          "action": "auto_ticket_settled",
+          "details": "{\"status\":\"lost\",\"payout\":0,\"selections\":[{\"status\":\"lost\",\"factor\":0}]}",
+          "created_at": "2026-10-01 16:52:39"
+        }
+      ],
+      "selectionMatches": true,
+      "payoutMatches": true,
+      "ledgerMatches": true
+    }
+  ]
+}

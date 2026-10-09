@@ -1,0 +1,358 @@
+{
+  "14632384": [
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "1",
+      "value": "1",
+      "game_status": "1",
+      "minute": "19:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "1",
+      "game_status": "1",
+      "minute": "23:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "2",
+      "game_status": "1",
+      "minute": "23:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "3",
+      "game_status": "1",
+      "minute": "34:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "1",
+      "value": "2",
+      "game_status": "1",
+      "minute": "36:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "1",
+      "value": "3",
+      "game_status": "1",
+      "minute": "39:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "2",
+      "value": "4",
+      "game_status": "1",
+      "minute": "41:00"
+    },
+    {
+      "type": "End of the first half",
+      "type_id": "5",
+      "team": "0",
+      "value": "0",
+      "game_status": "2",
+      "minute": "0-0"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "4",
+      "game_status": "3",
+      "minute": "51:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "5",
+      "game_status": "3",
+      "minute": "54:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "6",
+      "game_status": "3",
+      "minute": "55:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "7",
+      "game_status": "3",
+      "minute": "64:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "8",
+      "game_status": "3",
+      "minute": "70:00"
+    },
+    {
+      "type": "Goal",
+      "type_id": "1",
+      "team": "2",
+      "value": "1",
+      "game_status": "3",
+      "minute": "74:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "9",
+      "game_status": "3",
+      "minute": "77:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "10",
+      "game_status": "3",
+      "minute": "77:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "2",
+      "value": "5",
+      "game_status": "3",
+      "minute": "85:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "11",
+      "game_status": "3",
+      "minute": "91:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "12",
+      "game_status": "3",
+      "minute": "92:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "13",
+      "game_status": "3",
+      "minute": "92:00"
+    },
+    {
+      "type": "End of the match",
+      "type_id": "6",
+      "team": "0",
+      "value": "0",
+      "game_status": "255",
+      "minute": "0-1"
+    }
+  ],
+  "14633085": [
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "1",
+      "game_status": "1",
+      "minute": "03:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "2",
+      "game_status": "1",
+      "minute": "07:00"
+    },
+    {
+      "type": "Goal",
+      "type_id": "1",
+      "team": "1",
+      "value": "1",
+      "game_status": "1",
+      "minute": "14:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "2",
+      "value": "1",
+      "game_status": "1",
+      "minute": "15:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "3",
+      "game_status": "1",
+      "minute": "19:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "4",
+      "game_status": "1",
+      "minute": "20:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "1",
+      "value": "2",
+      "game_status": "1",
+      "minute": "27:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "2",
+      "value": "3",
+      "game_status": "1",
+      "minute": "38:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "5",
+      "game_status": "1",
+      "minute": "40:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "6",
+      "game_status": "1",
+      "minute": "42:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "2",
+      "value": "4",
+      "game_status": "1",
+      "minute": "48:00"
+    },
+    {
+      "type": "End of the first half",
+      "type_id": "5",
+      "team": "0",
+      "value": "0",
+      "game_status": "2",
+      "minute": "1-0"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "7",
+      "game_status": "3",
+      "minute": "53:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "8",
+      "game_status": "3",
+      "minute": "58:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "2",
+      "value": "5",
+      "game_status": "3",
+      "minute": "67:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "9",
+      "game_status": "3",
+      "minute": "70:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "10",
+      "game_status": "3",
+      "minute": "74:00"
+    },
+    {
+      "type": "Red card",
+      "type_id": "3",
+      "team": "2",
+      "value": "1",
+      "game_status": "3",
+      "minute": "83:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "11",
+      "game_status": "3",
+      "minute": "87:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "12",
+      "game_status": "3",
+      "minute": "88:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "2",
+      "value": "6",
+      "game_status": "3",
+      "minute": "94:00"
+    },
+    {
+      "type": "Goal",
+      "type_id": "1",
+      "team": "1",
+      "value": "2",
+      "game_status": "3",
+      "minute": "97:00"
+    },
+    {
+      "type": "End of the match",
+      "type_id": "6",
+      "team": "0",
+      "value": "0",
+      "game_status": "255",
+      "minute": "2-0"
+    }
+  ]
+}

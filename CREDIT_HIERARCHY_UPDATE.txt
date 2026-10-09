@@ -1,0 +1,11 @@
+V9 CREDIT HIERARCHY UPDATE
+
+In Lista e Përdoruesve, each role now has an inline "Shto kredit" action for only the direct child role allowed by the hierarchy:
+- Center -> Operator
+- Operator -> Admin
+- Admin -> Supermanager
+- Supermanager -> Agent
+- Agent -> User
+
+Center is unlimited and can add credit to direct Operators without reducing its own unlimited balance.
+The backend authorization remains enforced by /api/staff/:id/credit, so the UI button cannot bypass the hierarchy.

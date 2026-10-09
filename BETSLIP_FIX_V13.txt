@@ -1,0 +1,11 @@
+BETSLIP FIX V13
+
+Root cause found in V12:
+placeBet() called refreshSlipState() immediately before POST /api/bets. That function re-read the in-memory feed cache and could mark the selected odd(s) as invalid when the refreshed cache temporarily had a missing/1/placeholder value. placeBet() then returned before calling /api/bets, so no pending ticket was created and the slip displayed LOCK for the selections.
+
+V13 behavior:
+- The odd captured when the user clicks is preserved until submission.
+- placeBet() no longer performs the stale-cache invalidation step.
+- The browser only blocks obviously invalid local values (missing/non-numeric/<=1).
+- /api/bets remains the authoritative server-side validation point and only selections actually rejected by the provider validation are marked LOCK.
+- A valid ticket response creates status=pending and is visible to the Operator/Center ticket queue.

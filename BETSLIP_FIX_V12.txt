@@ -1,0 +1,6 @@
+BETSLIP FIX V12
+
+The selected odd is now kept exactly as clicked, matching the supplied source Bet Slip behavior.
+The previous V11 called refreshSlipState() on every render, which could re-read a transient/mismatched feed value and immediately mark the selected odd as LOCK even though the user had just selected a valid coefficient.
+
+V12 no longer performs that client-side invalidation during normal slip rendering. The definitive odds validation remains on ticket placement in server.js, against the live prematch feed. If the provider actually removes or changes a selection, /api/bets returns invalidSelections and the slip then marks that selection as LOCK with the provider validation reason.

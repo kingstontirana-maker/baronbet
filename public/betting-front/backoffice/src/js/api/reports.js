@@ -1,0 +1,1 @@
+/* Backoffice API module boundary. Runtime endpoints remain on server.js. */

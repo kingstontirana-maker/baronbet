@@ -1,0 +1,483 @@
+<!doctype html><html lang="sq"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sportsbook PRO</title>
+<script src="/api-client.js"></script>
+<script>
+// The maintained application is served by Node on port 3000. When this legacy
+// XAMPP entry is opened locally, route it to the active frontend instead of
+// rendering a stale duplicate of the interface.
+if (location.hostname === 'localhost' && location.port !== '3000') location.replace('http://localhost:3000/');
+</script>
+<style>
+:root{--green:#148765;--green2:#11815f;--dark:#292929;--dark2:#333;--mid:#666;--line:#777;--yellow:#ffe500;--text:#f2f2f2;--muted:#b8b8b8;--red:#e50046}
+*{box-sizing:border-box}html,body{margin:0;width:100%;min-height:100%;background:#666;color:#eee;font:14px Arial,Helvetica,sans-serif}button,input,select{font:inherit}button{cursor:pointer}.app{min-height:100vh;background:#666}
+.top{height:66px;background:var(--green);display:grid;grid-template-columns:226px minmax(0,1fr) 331px;align-items:center;padding:0;position:sticky;top:0;z-index:200}.brand{height:66px;display:flex;align-items:center;padding-left:38px;background:var(--green);font-size:0}.brand:after{content:'€7';font-size:45px;font-weight:900;letter-spacing:-4px;color:#ffe9a8}.brand b{display:none}.mainnav{height:66px;display:flex;justify-content:center;align-items:center;gap:45px}.mainnav button{height:66px;border:0;background:none;color:#fff;font-weight:500;font-size:14px;position:relative;padding:0 4px}.mainnav button.active:after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:#ffd900}.actions{height:66px;display:flex;align-items:center;justify-content:flex-end;padding-right:16px;gap:15px}.actions button,.adminBtn{border:0;background:none;color:#fff;padding:6px 8px}.actions .join{color:#fff}.account{display:flex;align-items:center;gap:12px}.balance{border:0;background:none;padding:0;color:#fff;font-size:13px}.balance b{font-weight:400;color:#fff}.account:after{content:'◯';width:28px;height:28px;border:1px solid #8bc8b4;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#8bc8b4;font-size:20px}.account button{display:none}
+.shell{display:grid;grid-template-columns:226px minmax(0,1fr) 331px;min-height:calc(100vh - 66px)}
+.sidebar{background:#292929;color:#ddd;border-right:1px solid #444;overflow:hidden}.sideSearch{height:37px;border-bottom:1px solid #aaa;display:flex;align-items:center;padding:0 9px;color:#aaa}.sideSearch span{font-size:19px;margin-right:9px}.sideSearch input{width:100%;border:0;outline:0;background:transparent;color:#fff;font-size:13px}.sideTools{height:63px;display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #444}.sideTool{border:0;background:none;color:#aaa;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-size:11px}.sideTool.active{color:#00d99a}.sideTool i{font-style:normal;font-size:20px}.sideList{padding-top:3px}.sideRow{height:29px;padding:0 15px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3c3c3c;color:#c8c8c8;font-size:13px}.sideRow.home{color:#fff;font-weight:700}.sideRow .star{color:#aaa;font-size:18px}.sideRow:hover{background:#333}
+.center{min-width:0;background:#666;overflow:visible}.sportsbar{height:89px;background:#666;border-bottom:1px solid #777;display:flex;align-items:stretch;gap:0;padding:0;overflow:hidden}.sport{height:89px;min-width:76px;border:0;border-right:1px solid #777;background:#666;color:#ddd;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;position:relative;padding:0 5px}.sport .ico{font-size:26px;line-height:28px}.sport span:last-child{font-size:11px;white-space:nowrap}.sport.active{color:#fff}.sport.active:after{content:"";position:absolute;bottom:0;left:0;right:0;height:4px;background:#ffe000}
+.workspace{padding:0 5px 35px;background:#666;min-width:0}.contenttop,.controls{display:none}.mainlayout{display:block}.leftcontent{min-width:0}.dayhead{height:43px;background:#138360;color:#fff;border-bottom:1px solid #72aa98;padding:0 10px;display:flex;align-items:center;font-size:14px}.league{margin:0 0 9px;border-radius:0;overflow:hidden}.matchgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.leaguehead{height:34px;background:#138360;border:0;border-bottom:1px solid #77ae9c;display:flex;align-items:center;font-weight:400;color:#fff}.leaguehead .name{padding-left:10px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.leaguehead .col{display:none}.leaguehead:after{content:'⌄';font-size:18px;padding:0 10px}.match{height:133px;display:grid;grid-template-columns:minmax(0,1fr) 1fr 1fr;background:#626262;border:0;border-right:1px solid #777;border-bottom:1px solid #777;margin:0;overflow:hidden}.matchinfo{grid-column:1/-1;height:76px;padding:9px 9px 2px;display:grid;grid-template-columns:minmax(0,1fr) 42px;grid-template-rows:1fr auto;align-items:start;min-width:0}.teams{font-size:12px;font-weight:400;line-height:22px;min-width:0}.team{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.team:before{content:'♟';display:inline-block;color:#69a9df;margin-right:9px;font-size:16px}.team:nth-child(2):before{color:#e0004f}.score{display:none}.meta{grid-column:1/-1;color:#eee;font-size:9px;display:flex;justify-content:space-between;gap:5px;min-height:12px}.odd{height:40px;margin:0;border:0;border-right:1px solid #777;border-top:1px solid #777;border-radius:0;background:#626262;color:#ffe500;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:11px}.odd:before{color:#fff;content:''}.odd:hover{background:#707070}.odd.selected{background:#6e6e6e;box-shadow:inset 0 -3px 0 #ffe000}.odd.locked{color:#999;font-size:9px;cursor:not-allowed;background:#5d5d5d}
+
+/* LIVE layout: flat full-width rows, matching the live reference */
+.live-page .sportsbar{height:61px}
+.live-page .sport{height:61px;min-width:84px;gap:4px}
+.live-page .sport .ico{font-size:25px;line-height:25px;filter:grayscale(1)}
+.live-page .sport span:last-child{font-size:11px}
+.live-page .sport.active{color:#ffe000}
+.live-page .workspace{padding:0 5px 35px}
+.live-toolbar{height:53px;background:#11815f;color:#fff;display:flex;align-items:center;border-bottom:1px solid #78ae9d}
+.account.userAccount:after{display:none}.account .userAvatar{display:grid;width:30px;height:30px;padding:0;border:1px solid #8bc8b4;border-radius:50%;place-items:center;color:#8bc8b4;font-size:0;line-height:1;cursor:pointer;position:relative}.account .userAvatar:before{content:'';position:absolute;top:6px;width:7px;height:7px;border:1px solid currentColor;border-radius:50%}.account .userAvatar:after{content:'';position:absolute;bottom:5px;width:13px;height:7px;border:1px solid currentColor;border-radius:8px 8px 5px 5px;border-bottom:0}.account .userAvatar:hover{background:#ffffff14;color:#fff;border-color:#fff}.userMenu{display:none;position:fixed;top:66px;right:9px;width:360px;max-width:calc(100vw - 18px);z-index:900;background:#e8e8e8;color:#555;box-shadow:0 10px 25px #0004}.userMenu.show{display:block}.userMenuHead{padding:18px 12px 10px;border-bottom:1px solid #c8c8c8}.userMenuHead b{display:block;font-size:12px;font-weight:400;color:#666}.userMenuHead strong{display:inline-block;margin-top:3px;font-size:20px;font-weight:400;color:#5a5a5a}.userMenuHead em{font-style:normal;font-size:13px;margin-left:4px}.userMenu button{display:block;width:100%;height:40px;border:0;border-bottom:1px solid #cfcfcf;background:transparent;color:#555;text-align:left;padding:0 12px;font-size:13px;cursor:pointer}.userMenu button:hover{background:#ddd}.userMenu button:last-child{border-bottom:0}
+.live-search{height:53px;display:flex;align-items:center;gap:12px;padding:0 10px;flex:1;min-width:0}
+.live-search .glass{font-size:22px;line-height:1}
+.live-search input{border:0;outline:0;background:transparent;color:#fff;width:100%;font-size:13px}
+.live-search input::placeholder{color:#fff;opacity:1}
+.live-result{height:53px;display:flex;align-items:center;gap:8px;padding:0 10px;font-size:12px;font-weight:700}
+.live-result:after{content:'⌄';font-size:18px}
+.live-table{width:100%;overflow:hidden}
+.live-league{margin:0}
+.live-league-head{height:22px;background:#b4b4b4;color:#333;display:grid;grid-template-columns:minmax(0,1fr) repeat(3,120px);align-items:center;font-size:12px}
+.live-league-head .lname{padding-left:10px}
+.live-league-head span:not(.lname){text-align:center}
+.live-row{min-height:61px;background:#626262;color:#fff;border-bottom:1px solid #777;display:grid;grid-template-columns:minmax(0,1fr) repeat(3,120px)}
+.live-info{min-width:0;padding:7px 9px;display:grid;grid-template-columns:21px 1fr 30px;align-items:center}
+.live-monitor{font-size:12px;color:#bbb;align-self:start;padding-top:2px}
+.live-teams{min-width:0;font-size:13px;line-height:20px}
+.live-team{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live-team .live-shirt{display:inline-block;width:15px;margin-right:7px;color:#65a9df}
+.live-team:nth-child(2) .live-shirt{color:#e0004f}
+.live-score{font-size:13px;line-height:20px;text-align:right;color:#ffe500;font-weight:700}
+.live-odd{border-left:1px solid #777;background:#626262;display:flex;align-items:center;justify-content:center;color:#ffe500;font-size:13px;font-weight:700;cursor:pointer}
+.live-odd:hover{background:#707070}
+.live-odd.selected{box-shadow:inset 0 -3px 0 #ffe000;background:#6e6e6e}
+.live-odd.locked{color:#999;cursor:not-allowed;background:#5d5d5d}
+.live-empty{padding:45px 15px;text-align:center;background:#666;color:#ddd}
+
+.mainlayout>.betslip{display:none}
+.desktopSlip{background:#e9e9e9;color:#222;border-left:1px solid #c4c4c4;overflow:hidden;position:sticky;top:66px;align-self:start;height:calc(100vh - 66px);display:flex;flex-direction:column;z-index:100}.sliphead{height:52px;min-height:52px;background:#e9e9e9;border-bottom:1px solid #c8c8c8;color:#222;display:flex;justify-content:space-between;align-items:center;padding:0 10px}.sliptabs{display:flex;align-items:center;min-width:0}.sliptabs button{border:0;background:none;color:#222;padding:0 10px;height:52px;font-weight:400;font-size:15px}.sliptabs button.active{color:#111;border-bottom:2px solid #138360}.slipcount{background:#087a5b;color:#fff;border-radius:50%;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:4px}.slipclose{display:none;border:0;background:none;color:#666;font-size:26px}.slipbody{padding:0;flex:1;overflow:auto;background:#efefef}.pick{position:relative;background:#666;border:0;border-bottom:1px solid #777;border-radius:0;color:#fff;padding:9px 11px;margin:0}.pick .remove{right:5px;top:4px;color:#ddd}.pick .leagueName{color:#d5d5d5}.pick .game{font-size:12px}.pick .pickodd{color:#fff200}.pick .marketName{color:#ddd}.emptySlip{color:#777;padding:34px 12px;background:#efefef}.betfooter{border-top:1px solid #bdbdbd;padding:0;background:#ededed;color:#222}.betrow{margin:0;padding:8px 12px;color:#555;border-bottom:1px solid #d2d2d2}.betrow strong{color:#222}.stakeBox{margin:0;padding:10px 12px}.stakeBox label{color:#555}.stakeInput{height:40px;background:#fff;border:1px solid #b8b8b8;color:#222}.quick{display:flex;gap:5px;margin-top:6px}.quick button{flex:1;background:#e2e2e2;border:1px solid #bdbdbd;color:#333;border-radius:0;padding:6px 2px;font-size:11px}.place{width:100%;height:43px;border:0;border-radius:0;background:#555;color:#fff;font-weight:800}.place.enabled{background:#138360;color:#fff}.notice{padding:0 12px 8px;color:#666}.error{color:#e50046!important}.ok{color:#168866!important}
+.mybets{display:none;padding:9px}.mybets.active{display:block}.filters{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:9px}.filters input,.filters select{height:38px;background:#fff;border:1px solid #bbb;color:#222}.betcard{background:#666;border:1px solid #777;border-radius:0;margin-bottom:8px;overflow:hidden}.bethead{padding:9px 10px;display:flex;justify-content:space-between;border-bottom:1px solid #777}.statusP{text-transform:uppercase;font-size:10px;font-weight:800}.pending{color:#f2d15b}.won{color:#5ee49a}.lost{color:#ff7777}.void{color:#b6c0bc}.selline{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:11px}.selline span:last-child{color:var(--yellow);font-weight:800}.betbody{padding:8px 10px}.wallet{margin-top:12px;border-top:1px solid #777;padding-top:9px}.tx{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #777;font-size:11px}.credit{color:#63e49a}.debit{color:#ff8b8b}.rowCredit{display:flex;gap:5px;align-items:center;justify-content:flex-start}.rowCredit input{width:82px;height:30px;padding:0 6px;border:1px solid #aaa;background:#fff;color:#222}.listBalance{font-weight:700}
+.modal{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:300}.modal.show{display:flex}.modalbox{width:min(430px,calc(100% - 25px));max-height:90vh;overflow:auto;background:#292929;border:1px solid #555;border-radius:4px;padding:20px;box-shadow:0 25px 70px #000}.modalClose{float:right;background:none;border:0;color:#ddd;font-size:23px}.authTabs,.adminTabs{display:flex;border-bottom:1px solid #555;margin:10px 0 15px}.authTabs button,.adminTabs button{flex:1;background:none;border:0;color:#aaa;padding:10px}.authTabs button.active,.adminTabs button.active{color:#fff;border-bottom:3px solid #00d99a}.form input,.form select{width:100%;height:42px;margin-bottom:9px;background:#111;border:1px solid #555;border-radius:3px;color:#fff;padding:0 10px}.form button{width:100%;height:42px;background:#ffe000;border:0;border-radius:3px;font-weight:800}.adminGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}.stat{background:#333;border:1px solid #555;padding:10px}.stat small{display:block;color:#aaa;font-size:10px}.stat b{font-size:19px}.adminTable{width:100%;border-collapse:collapse;font-size:11px}.adminTable th,.adminTable td{text-align:left;padding:7px;border-bottom:1px solid #555}.adminTable th{color:#aaa}.mini{background:#333;border:1px solid #555;color:#fff;padding:5px 7px;font-size:10px}.mini.green{color:#111;background:#ffe000}.adminSection{margin-bottom:15px}.adminSection h3{font-size:13px;margin:10px 0}.adminMsg{min-height:18px;font-size:11px;margin:7px 0}.statusbar{position:fixed;right:12px;bottom:12px;background:#222e;border:1px solid #555;padding:7px 9px;color:#aaa;font-size:10px;z-index:250}
+.mobile-slip-bar,.mobile-slip-backdrop{display:none}
+
+@media(max-width:1100px){
+.live-page .sportsbar{height:61px;justify-content:center}
+.live-page .sport{height:61px;min-width:84px}
+.live-page .workspace{padding:0 0 48px}
+.live-league-head{grid-template-columns:minmax(0,1fr) repeat(3,25%)}
+.live-row{grid-template-columns:minmax(0,1fr) repeat(3,25%);min-height:60px}
+.live-info{padding:6px 7px;grid-template-columns:18px 1fr 25px}
+.live-teams{font-size:11px;line-height:18px}
+.live-score{font-size:11px;line-height:18px}
+.live-odd{font-size:11px}
+.live-search{padding-left:8px}
+.live-result{padding-right:8px}
+}
+@media(max-width:1100px){.top{grid-template-columns:150px 1fr;height:60px}.brand{height:60px;padding-left:28px}.brand:after{font-size:39px}.mainnav{height:60px;gap:22px;justify-content:flex-end;padding-right:15px}.mainnav button{height:60px;font-size:12px}.actions{display:none}.shell{display:block;min-height:calc(100vh - 60px)}.sidebar{display:none}.center{width:100%}.desktopSlip{position:fixed;right:0;bottom:0;top:auto;width:min(390px,100vw);height:min(86vh,720px);z-index:220;display:none}.desktopSlip.mobile-open{display:flex}.slipclose{display:block}.mobile-slip-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:210}.mobile-slip-backdrop.show{display:block}.mobile-slip-bar{position:fixed;left:0;right:0;bottom:0;height:40px;background:#ededed;border-top:1px solid #bdbdbd;z-index:215;display:none;align-items:center;color:#222;box-shadow:0 -2px 8px rgba(0,0,0,.16)}.mobile-slip-bar.show{display:flex}.mobile-slip-bar .mcount{width:22px;height:22px;border-radius:50%;background:#087a5b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-left:8px}.mobile-slip-bar .mlabel{padding-left:10px;font-size:13px}.mobile-slip-bar .modds{margin-left:auto;font-weight:700;font-size:13px}.mobile-slip-bar .mclose{width:42px;border:0;background:none;color:#666;font-size:21px;height:100%}.sportsbar{height:82px;overflow:auto}.sport{height:82px;min-width:67px}.sport .ico{font-size:23px}.sport span:last-child{font-size:10px}.workspace{padding:0 0 48px}.dayhead{height:39px;font-size:12px}.leaguehead{height:34px;font-size:12px}.match{height:106px}.matchgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.matchinfo{height:63px;padding:6px 8px}.teams{font-size:11px;line-height:18px}.team:before{font-size:14px;margin-right:6px}.meta{font-size:8px}.odd{height:43px;font-size:10px}.mainlayout{display:block}.leftcontent{width:100%}}
+@media(max-width:650px){html,body{background:#666}.top{grid-template-columns:120px 1fr}.brand{padding-left:17px}.brand:after{font-size:36px}.mainnav{gap:13px;padding-right:8px}.mainnav button{font-size:11px}.sportsbar{height:82px}.sport{min-width:65px}.workspace{padding-bottom:48px}.match{grid-template-columns:minmax(0,1fr) 1fr 1fr;height:105px}.matchinfo{grid-column:1/-1}.league{margin-bottom:6px}.dayhead{padding-left:8px}.leaguehead{padding:0 2px}.desktopSlip{width:100%;height:min(88vh,680px)}}
+
+/* Mobile reference layout */
+.live-mobile-dayhead{display:none}
+@media(max-width:650px){
+  html,body{width:100%;min-width:0;background:#666;overflow-x:hidden}
+  .app{width:100%;min-height:100vh;background:#666}
+  .top{height:35px;min-height:35px;display:block;position:sticky;top:0;background:#148765;border-bottom:1px solid #0d6f52;z-index:200}
+  .top:before{content:'☰  A-Z';position:absolute;left:7px;top:0;height:35px;display:flex;align-items:center;color:#fff;font-size:9px;z-index:3}
+  .brand{position:absolute;left:120px;top:0;width:58px;height:35px;padding:0;display:flex;align-items:center;justify-content:center;background:#148765;z-index:4}
+  .brand:after{font-size:34px;line-height:35px;letter-spacing:-4px;color:#ffe9a8}
+  .mainnav{position:absolute;inset:0;height:35px;display:block;padding:0;z-index:2}
+  .mainnav button{position:absolute;height:35px;top:0;padding:0;border:0;background:none;color:#fff;font-size:9px;font-weight:700}
+  .mainnav button.active:after{height:2px}
+  #homeBtn{display:none}
+  #liveBtn{left:78px;width:40px}
+  #myTopBtn{left:195px;width:50px}
+  .actions{display:flex!important;position:absolute;right:0;top:0;width:72px;height:35px;padding:0 4px;gap:0;justify-content:flex-end;z-index:5}
+  .actions>button{display:none}
+  .actions .account{height:35px;width:68px;display:flex;justify-content:flex-end;gap:2px}
+  .actions .balance{font-size:7px;line-height:10px;text-align:right;padding:0;display:block}
+  .actions .balance:after{content:'EUR';display:block;font-size:6px}
+  .actions .balance b{display:block;font-size:7px}
+  .actions .account:after{width:19px;height:19px;font-size:13px}
+  .account .userAvatar{width:19px;height:19px;font-size:0}
+  .account .userAvatar:before{top:3px;width:5px;height:5px}
+  .account .userAvatar:after{bottom:3px;width:9px;height:5px}
+  .userMenu{top:35px;right:9px;width:350px}
+  .shell{display:block;min-height:calc(100vh - 35px)}
+  .sidebar{display:none}
+  .center{width:100%;min-width:0}
+  .sportsbar,.live-page .sportsbar{height:67px;min-height:67px;overflow-x:auto;overflow-y:hidden;justify-content:flex-start;scrollbar-width:none}
+  .sportsbar::-webkit-scrollbar{display:none}
+  .sport,.live-page .sport{height:67px;min-width:60px;max-width:66px;flex:0 0 60px;gap:3px;padding:0 2px}
+  .sport .ico,.live-page .sport .ico{font-size:22px;line-height:24px;filter:none}
+  .sport span:last-child,.live-page .sport span:last-child{font-size:8px;white-space:normal;text-align:center;line-height:10px;max-width:58px}
+  .live-page .sport.active{color:#fff}
+  .live-page .sport.active:after{height:2px}
+  .workspace,.live-page .workspace{padding:0 0 40px}
+  .dayhead{height:31px;font-size:11px;padding:0 8px}
+  .league{margin:0 0 6px}
+  .leaguehead{height:26px;font-size:10px}
+  .leaguehead .name{padding-left:7px}
+  .leaguehead:after{font-size:14px;padding:0 7px}
+  .match{height:104px}
+  .matchinfo{height:62px;padding:5px 7px 1px;grid-template-columns:minmax(0,1fr) 25px}
+  .teams{font-size:9px;line-height:16px}
+  .team:before{font-size:12px;margin-right:5px}
+  .meta{font-size:7px;line-height:9px;min-height:10px}
+  .odd{height:42px;font-size:9px}
+  .odd.selected{box-shadow:inset 0 -2px 0 #ffe000}
+  .live-mobile-dayhead{height:31px;background:#138360;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 8px;font-size:11px;font-weight:700}
+  .live-toolbar{display:none}
+  .live-table{width:100%}
+  .live-league{margin:0}
+  .live-league-head{height:26px;background:#138360;color:#fff;grid-template-columns:minmax(0,1fr) repeat(3,17%);font-size:9px}
+  .live-league-head .lname{padding-left:7px;font-weight:700}
+  .live-row{min-height:88px;height:88px;grid-template-columns:minmax(0,1fr) repeat(3,17%);background:#626262}
+  .live-info{padding:5px 6px;grid-template-columns:15px 1fr 22px;align-items:start}
+  .live-monitor{font-size:9px;padding-top:1px}
+  .live-teams{font-size:9px;line-height:16px}
+  .live-team .live-shirt{width:12px;margin-right:4px;font-size:11px}
+  .live-score{font-size:10px;line-height:16px}
+  .live-time{font-size:7px;color:#ddd;white-space:nowrap;margin-top:1px}
+  .live-time span{color:#bbb;margin-left:2px}
+  .live-odd{font-size:9px;min-width:0;border-left:1px solid #777}
+  .live-empty{padding:35px 10px;font-size:11px}
+  .statusbar{display:none}
+  .mobile-slip-bar{height:40px}
+  .mobile-slip-bar .mlabel{font-size:12px}
+  .mobile-slip-bar .modds{font-size:11px}
+  .desktopSlip{width:100%;height:calc(100vh - 35px);max-height:none}
+}
+
+.staffView{display:none;background:#e9e9e9;color:#333;min-height:100%;height:100%;overflow:auto}.staffView.show{display:block}.staffSummary{padding:12px 11px 8px;border-bottom:1px solid #c7c7c7;background:#e9e9e9}.staffSummary .label{font-size:12px;color:#666}.staffSummary .agentNo{font-size:20px;color:#666;margin-top:3px}.staffMoney{border-top:1px solid #c7c7c7}.staffMoneyRow{padding:9px 11px;border-bottom:1px solid #c7c7c7}.staffMoneyRow .currency{font-size:12px;color:#666}.staffMoneyRow strong{display:block;font-size:16px;font-weight:400;color:#555;margin-top:2px}.staffMenuItem{height:40px;border:0;border-bottom:1px solid #c7c7c7;background:#e9e9e9;color:#555;width:100%;text-align:left;padding:0 11px;font-size:13px}.staffMenuItem:hover{background:#dedede}.staffMenuItem.logout{color:#555}.staffPill{font-size:11px;color:#138360;font-weight:700}.controlbox{width:min(1100px,calc(100% - 18px));max-height:92vh;overflow:auto}.controlTabs{display:flex;gap:4px;overflow:auto;border-bottom:1px solid #ccc;margin:0 -2px 12px}.controlTabs button{border:0;background:#eee;color:#333;padding:10px 12px;white-space:nowrap}.controlTabs button.active{background:#138360;color:#fff}.controlGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.controlCard{background:#f2f2f2;border:1px solid #d2d2d2;padding:12px}.controlCard small{display:block;color:#777}.controlCard b{display:block;font-size:20px;color:#222;margin-top:4px}.controlSection{background:#f6f6f6;border:1px solid #ddd;padding:12px;margin-top:10px;color:#222}.controlSection h3{margin:0 0 10px}.controlForm{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.controlForm input,.controlForm select{height:38px;border:1px solid #bbb;padding:0 9px;background:#fff;color:#222}.controlForm button,.controlBtn{height:38px;border:0;background:#138360;color:#fff;padding:0 12px}.controlBtn.red{background:#c9003e}.controlBtn.gray{background:#666}.controlTable{width:100%;border-collapse:collapse;color:#222;font-size:12px}.controlTable th,.controlTable td{padding:8px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top}.controlTable th{background:#e9e9e9}.roleBadge{display:inline-block;padding:3px 6px;border-radius:10px;background:#ddd;font-size:10px}.ticketPending{border-left:4px solid #e4b900}.ticketAccepted{border-left:4px solid #138360}.ticketActions{display:flex;gap:5px;flex-wrap:wrap}.ticketActions button{border:0;padding:6px 9px;color:#fff;background:#138360}.ticketActions .cancel{background:#c9003e}.ticketActions .lost{background:#666}.ticketDetails{font-size:11px;line-height:16px}.controlMsg{margin-top:8px;font-size:12px}.controlMsg.error{color:#c9003e}.controlMsg.ok{color:#138360}.invalidPick{border-left:4px solid #e50046!important;background:#6b4b52!important}.invalidPick .pickodd{color:#ff2d61!important}.invalidMark{float:right;color:#ff174f;font-weight:900;font-size:18px}.reservedNote{font-size:11px;color:#777;margin-top:3px}
+/* Stilet e faqeve ekzistuese të biletave mbeten të veçuara nga Qendra. */
+.mybetsPage{min-height:calc(100vh - 155px);background:#f3f5f7;color:#20262d}.mybetsHead{height:58px;background:linear-gradient(135deg,#0c7657,#12a879);color:#fff;display:flex;align-items:center;padding:0 14px}.mybetsHead .back{border:0;background:rgba(255,255,255,.12);color:#fff;font-size:25px;width:36px;height:36px;border-radius:10px;margin-right:10px;cursor:pointer}.mybetsTitle{font-weight:800;margin:auto;font-size:16px}.mybetsTopFilters,.mybetsYears{display:flex;align-items:center;justify-content:center;gap:7px;background:#fff;border-bottom:1px solid #e3e7eb;padding:10px}.mybetsTopFilters input{height:34px;border:1px solid #d7dde3;border-radius:8px;padding:0 9px}.mybetsTopFilters button{height:34px;border:0;border-radius:8px;background:#0e956d;color:#fff;padding:0 15px;font-weight:700}.mybetsYears button{border:0;background:#f4f6f8;color:#66717d;padding:8px 12px;border-radius:8px}.mybetsYears button.active{background:#0e956d;color:#fff}.mybetsCurrency{background:#fff;padding:12px 14px;border-bottom:1px solid #e3e7eb;color:#69737e;font-size:12px}.mybetAccountRow{height:43px;background:#e8f6f1;border-bottom:1px solid #d3eee6;display:flex;align-items:center;justify-content:space-between;padding:0 12px;color:#244238}.mybetsList{padding:10px 12px 28px}.mybetsPage .betcard{background:#fff;border:1px solid #e1e6eb;border-radius:12px;margin-bottom:8px;color:#26323a;box-shadow:0 2px 8px rgba(20,35,45,.06)}.mybetsPage .bethead{min-height:58px;padding:9px 12px;display:grid;grid-template-columns:62px minmax(120px,1fr) auto 22px;align-items:center;gap:10px;border:0;cursor:pointer}.mybetsPage .betbody{display:none;padding:0 12px 12px;border-top:1px solid #edf0f2;background:#fbfcfd}.mybetsPage .betcard.open .betbody{display:block}.betNo{font-size:13px;font-weight:900}.betDate,.pickMarket{font-size:10px;color:#87919b;margin-top:3px}.betMeta{display:flex;gap:12px}.betMetric small,.betSummary small{font-size:9px;text-transform:uppercase;color:#8a949d}.betMetric strong,.betSummary strong{display:block;font-size:12px;margin-top:2px}.mybetsPage .statusP{justify-self:end;border-radius:999px;padding:6px 9px;background:#fff5d9;color:#9a6b00}.mybetsPage .selline{display:grid;grid-template-columns:1fr auto;padding:10px 0;border-bottom:1px solid #edf0f2}.pickTeams{font-weight:700}.pickOdd{font-weight:900;color:#0b8b64}.betSummary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding-top:10px}.sumBox{background:#f3f6f7;border-radius:9px;padding:8px 9px}.mybetsEmpty{margin:14px;padding:26px 18px;text-align:center;color:#7b858f;background:#fff;border:1px solid #e3e7eb;border-radius:12px}.mybetsPage .wallet{margin:8px 12px 20px!important;padding:14px!important;background:#fff!important;border:1px solid #e1e6eb;border-radius:12px;color:#26323a}.mybetsPage .tx{border-bottom:1px solid #edf0f2;padding:9px 0}
+/* Qendra ka një hapësirë të pavarur nga faqet e agjentëve dhe userave. */
+#centerDashboard{display:none;position:fixed;inset:0;z-index:1000;background:#f3f6fb;color:#172033;font-family:Arial,sans-serif;overflow:auto}#centerDashboard.show{display:block}.cc-shell{display:grid;grid-template-columns:252px minmax(0,1fr);min-height:100vh}.cc-sidebar{background:#101b31;color:#c5cede;padding:24px 14px;display:flex;flex-direction:column}.cc-brand{display:flex;align-items:center;gap:10px;padding:0 10px 28px;color:#fff;font-weight:800;font-size:18px}.cc-brand i{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#29c69a,#1786d1);display:grid;place-items:center;font-style:normal}.cc-brand small{display:block;color:#8391a9;font-size:10px;letter-spacing:1px;margin-top:3px}.cc-nav{display:grid;gap:5px}.cc-nav button{border:0;border-radius:9px;background:transparent;color:#b6c1d4;padding:12px 13px;text-align:left;font-size:13px;cursor:pointer}.cc-nav button:hover,.cc-nav button.active{background:#1c2c49;color:#fff}.cc-nav button span{display:inline-block;width:24px;color:#4edbb6}.cc-side-foot{margin-top:auto;border-top:1px solid #273957;padding:16px 10px 0;font-size:12px;color:#8f9cb1}.cc-online{color:#49d6a8;margin-top:6px}.cc-main{padding:28px 34px;min-width:0}.cc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:27px}.cc-top h1{font-size:24px;margin:0;color:#17233a}.cc-top p{margin:6px 0 0;color:#778399;font-size:13px}.cc-user{display:flex;align-items:center;gap:10px;font-size:12px;color:#526079}.cc-avatar{width:38px;height:38px;border-radius:50%;background:#dceeea;color:#0b916b;display:grid;place-items:center;font-weight:900}.cc-live{display:inline-flex;align-items:center;gap:7px;background:#e5f8f1;color:#13896a;padding:7px 10px;border-radius:20px;font-size:11px;font-weight:700}.cc-live:before{content:'';width:7px;height:7px;background:#20bd8d;border-radius:50%;box-shadow:0 0 0 4px #c9f1e4}.cc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}.cc-card{background:#fff;border:1px solid #e5eaf2;border-radius:13px;padding:18px;box-shadow:0 4px 14px rgba(30,51,85,.04)}.cc-card small{color:#738096;font-size:12px}.cc-card strong{display:block;font-size:25px;margin-top:9px;color:#17233a}.cc-card .cc-trend{display:block;font-size:11px;color:#20a77b;margin-top:9px}.cc-card.warning{background:linear-gradient(135deg,#fff,#fff7e5);border-color:#f4d993}.cc-card.warning strong{color:#b57300}.cc-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,.85fr);gap:16px;margin-top:18px}.cc-panel{background:#fff;border:1px solid #e5eaf2;border-radius:13px;overflow:hidden}.cc-panel-head{padding:17px 18px;border-bottom:1px solid #edf0f5;display:flex;align-items:center;justify-content:space-between}.cc-panel-head h2{font-size:14px;margin:0;color:#1e2c43}.cc-panel-head button,.cc-create{border:0;background:#167dcb;color:#fff;border-radius:8px;padding:8px 11px;font-size:11px;font-weight:700;cursor:pointer}.cc-ticket{display:grid;grid-template-columns:65px 1fr auto;gap:12px;align-items:center;padding:13px 18px;border-bottom:1px solid #edf0f5}.cc-ticket:last-child{border-bottom:0}.cc-ticket b{font-size:12px}.cc-ticket small{display:block;color:#8490a1;margin-top:4px;font-size:10px}.cc-ticket .cc-stake{text-align:right;font-weight:800;font-size:13px}.cc-pill{font-size:10px;font-weight:800;background:#fff3d4;color:#a26c00;padding:5px 7px;border-radius:20px}.cc-empty{padding:34px 18px;text-align:center;color:#8390a3;font-size:13px}.cc-health{padding:8px 18px}.cc-health-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #edf0f5;font-size:12px}.cc-health-row:last-child{border:0}.cc-ok{color:#15956e;font-weight:700}.cc-view{display:none}.cc-view.active{display:block}.cc-table-wrap{overflow:auto}.cc-table{width:100%;border-collapse:collapse;font-size:12px}.cc-table th{color:#7c899d;font-size:10px;text-transform:uppercase;letter-spacing:.4px;background:#f8fafc}.cc-table th,.cc-table td{text-align:left;padding:12px 14px;border-bottom:1px solid #edf0f5;white-space:nowrap}.cc-role{background:#edf3ff;color:#3566a2;border-radius:12px;padding:4px 7px;font-size:10px;font-weight:700}.cc-tree{padding:14px 20px}.cc-tree-row{display:flex;align-items:center;gap:10px;border-bottom:1px solid #edf0f5;padding:11px 0;font-size:13px}.cc-tree-level{width:20px;height:20px;border-radius:6px;background:#e7f7f1;color:#128765;display:grid;place-items:center;font-size:10px}.cc-form{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;padding:18px}.cc-form input{height:39px;border:1px solid #dce3ed;border-radius:8px;padding:0 10px}.cc-message{padding:0 18px 16px;font-size:12px}.cc-message.error{color:#c83c4b}.cc-message.ok{color:#108260}@media(max-width:850px){.cc-shell{grid-template-columns:1fr}.cc-sidebar{padding:12px;position:sticky;top:0;z-index:2}.cc-brand{padding:0 5px 10px}.cc-nav{display:flex;overflow:auto}.cc-nav button{white-space:nowrap}.cc-side-foot{display:none}.cc-main{padding:20px 14px}.cc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cc-layout{grid-template-columns:1fr}.cc-top{align-items:flex-start}.cc-user{display:none}}@media(max-width:460px){.cc-grid{grid-template-columns:1fr}.cc-main{padding:16px 10px}.cc-top h1{font-size:20px}}
+@media(max-width:700px){.controlbox{width:calc(100% - 8px);max-height:96vh}.controlGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.controlForm{grid-template-columns:1fr 1fr}.controlTable{font-size:10px}.controlTable th,.controlTable td{padding:6px}.controlForm button{grid-column:1/-1}.controlSection{padding:8px}}
+/* Administrative UI: full-size user-inspired workspace (also used when opened via XAMPP). */
+#centerDashboard{background:#202529!important;color:#f5f6f7!important;font-family:Arial,Helvetica,sans-serif!important}.cc-shell{grid-template-columns:224px minmax(0,1fr)!important;min-height:100vh}.cc-sidebar{background:#292929!important;border-right:1px solid #454545;padding:18px 12px!important}.cc-brand{padding:5px 10px 24px!important}.cc-brand i{background:#148765!important;border-radius:10px!important;color:#ffe500}.cc-brand small,.cc-side-foot{color:#aeb4b9!important}.cc-side-foot{border-color:#444!important}.cc-online,.cc-side-foot b{color:#00d99a!important}.cc-nav{gap:4px!important}.cc-nav button{border-radius:8px!important;color:#cfd4d8!important;padding:12px!important}.cc-nav button:hover,.cc-nav button.active{background:#148765!important;color:#fff!important}.cc-main{padding:28px 34px!important;background:linear-gradient(135deg,#5f6366,#494e52)!important}.cc-top{margin-bottom:22px!important;padding:18px 20px!important;background:#292929;border:1px solid #444;border-radius:12px}.cc-top h1{color:#fff!important;font-size:23px!important}.cc-top p{color:#bfc5c9!important}.cc-live{background:#148765!important;color:#fff!important;border-radius:999px!important}.cc-cards{gap:14px!important}.cc-cards article,.cc-panel{background:#292929!important;color:#eee!important;border:1px solid #484848!important;border-radius:12px!important;box-shadow:0 10px 22px #0002!important}.cc-cards article{border-top:3px solid #00d99a!important}.cc-cards small,.cc-cards em,.cc-ticket small,.cc-empty,.cc-loading{color:#b9c0c5!important}.cc-cards b,.cc-panel h2{color:#fff!important}.cc-cards em{color:#00d99a!important}.cc-panel h2,.cc-panel-head{background:#303438!important;border-color:#484848!important}.cc-panel h2 span{color:#b9c0c5!important}.cc-panel h2 button,.cc-panel-head button,.cc-create,.cc-ticket button,.cc-form button,.cc-ticket-actions button{background:#148765!important;border-radius:7px!important}.cc-ticket,.cc-panel>p,.cc-tree>div,.cc-operator{border-color:#454545!important}.cc-ticket{color:#f2f2f2!important}.cc-ticket span{color:#ffe500!important}.cc-selections>div{background:#353a3f!important;border-radius:7px!important}.cc-selections label{color:#d7dcdf!important}.cc-selections input,.cc-form input,.cc-form select{background:#1f2326!important;border-color:#596168!important;color:#fff!important;border-radius:7px!important}.cc-tree i{background:#148765!important;color:#fff!important}.cc-tree span{background:#454b50!important;color:#eee!important}.cc-ok{color:#00d99a!important}.cc-bad{color:#ff7777!important}@media(max-width:850px){.cc-shell{grid-template-columns:1fr!important}.cc-sidebar{padding:10px!important}.cc-nav{display:flex!important;overflow:auto}.cc-nav button{white-space:nowrap}.cc-side-foot{display:none}.cc-main{padding:14px!important}.cc-top{padding:14px!important}}
+
+/* Mobile readability: reserve space for navigation and the full account balance. */
+@media(max-width:650px){
+  .top{height:56px;min-height:56px;display:grid;grid-template-columns:minmax(0,1fr) 64px 56px 64px minmax(0,1fr);align-items:center;padding:0 6px}
+  .top:before{position:static;grid-column:1;grid-row:1;height:56px;font-size:12px;white-space:nowrap}
+  .top .brand{position:static;grid-column:3;grid-row:1;width:56px;height:56px;padding:0;justify-content:center}
+  .top .brand:after{font-size:36px;line-height:56px}
+  .top .brand-monogram{display:block;width:56px;height:56px;object-fit:contain}
+  .top .mainnav{display:contents}
+  .top .mainnav button{position:relative;inset:auto;height:56px;font-size:13px;font-weight:700;padding:0;white-space:nowrap}
+  .top #liveBtn{left:auto;width:64px;grid-column:2;grid-row:1;text-align:right;padding-right:14px}
+  .top #myTopBtn{left:auto;width:64px;grid-column:4;grid-row:1;text-align:left;padding-left:14px}
+  .top .actions{position:static;grid-column:5;grid-row:1;width:100%;height:56px;padding:0;min-width:0}
+  .top .actions .account{width:max-content;height:56px;min-width:0;margin-left:auto;display:flex;flex-direction:column-reverse;align-items:center;justify-content:center;gap:2px}
+  .top .actions .balance,.top .actions .balance b{font-size:12px;line-height:16px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .top .actions .balance:after{content:none}
+  .top .account .userAvatar{width:26px;height:26px;min-height:26px;flex:none}
+  .top .account .userAvatar:before{top:4px;width:6px;height:6px}
+  .top .account .userAvatar:after{bottom:4px;width:12px;height:7px}
+  .userMenu{top:56px}
+  .shell{min-height:calc(100vh - 56px)}
+  .desktopSlip{height:calc(100dvh - 56px)}
+  .sport,.live-page .sport{min-width:78px;max-width:none;flex:0 0 78px;gap:5px}
+  .sport .ico,.live-page .sport .ico{font-size:26px;line-height:28px}
+  .sport span:last-child,.live-page .sport span:last-child{font-size:11px;line-height:13px;max-width:74px}
+  .dayhead,.live-mobile-dayhead{height:36px;font-size:13px}
+  .leaguehead,.live-league-head{font-size:12px;height:28px}
+  .live-league-head,.live-row{grid-template-columns:minmax(0,1fr) repeat(3,17%)}
+  .live-info{grid-template-columns:12px 36px minmax(0,1fr) 16px;column-gap:4px;padding:8px 5px}
+  .live-info .live-teams,.live-info .live-score{font-size:13px;line-height:20px}
+  .live-info .live-time{font-size:10px;line-height:20px}
+  .live-odd,.odd{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+  .live-teams{font-weight:500}
+  .teams{font-size:13px;line-height:20px}
+  .match{height:116px}
+  .matchinfo{height:74px}
+  .meta{font-size:10px;line-height:14px}
+  .sports-fixture-odds .odd,.sports-live-row>.odd,.live-detail-option{font-size:14px}
+}
+
+</style></head><body><div class="app">
+<header class="top"><div class="brand">sports<b>365</b></div><nav class="mainnav"><button id="homeBtn" class="active">Sport</button><button id="liveBtn">Live</button><button id="myTopBtn">My Bets</button></nav><div class="actions" id="actions"></div></header>
+<div id="userMenu" class="userMenu" aria-hidden="true"></div>
+<div class="shell">
+<aside class="sidebar"><div class="sideSearch"><span>⌕</span><input id="sideSearch" placeholder="Kerko"></div><div class="sideTools"><button class="sideTool active"><i>◌</i><span>Sports</span></button><button class="sideTool"><i>▤</i><span>Live</span></button><button class="sideTool"><i>♧</i><span>LOJRA</span></button><button class="sideTool"><i>⚙</i><span>Offers</span></button></div><div class="sideList" id="sideList"></div></aside>
+<section class="center"><div class="sportsbar" id="sportsbar"></div><div class="workspace"><div class="contenttop"><div class="subnav"><button class="active">Fulltime Result</button></div></div><div class="controls"><div class="searchwrap"><span>⌕</span><input id="search" class="search" placeholder="Search events, teams or competitions"></div><select id="market" class="market"><option>Fulltime Result</option></select><select id="leagueFilter" class="leaguefilter"><option value="">All competitions</option></select></div><main class="leftcontent" id="content"><div class="emptySlip">Loading events...</div></main></div></section>
+<aside class="desktopSlip" id="betslip"><div id="slipHead" class="sliphead"><div class="sliptabs"><span id="slipcount" class="slipcount">0</span><button id="slipTab" class="active">Skedina</button></div><button id="slipClose" class="slipclose" aria-label="Close bet slip">×</button></div><div id="slipView"><div id="slipbody" class="slipbody"></div><div class="betfooter"><div class="betrow"><span>Selections</span><strong id="selCount">0</strong></div><div class="betrow"><span>Total odds</span><strong id="totalOdds">0.00</strong></div><div class="stakeBox"><label>Stake / Shuma</label><input id="stake" class="stakeInput" type="number" min="0.01" step="0.01" placeholder="0.00"><div class="quick"><button data-stake="5">€5</button><button data-stake="10">€10</button><button data-stake="20">€20</button><button data-stake="50">€50</button></div></div><div class="betrow"><span>Potential win</span><strong id="potential">0.00</strong></div><button id="place" class="place">Place Bet</button><div id="betMsg" class="notice">Log in to place a bet.</div></div></div><div id="staffView" class="staffView"></div></aside>
+</div>
+
+<div id="mobileSlipBackdrop" class="mobile-slip-backdrop"></div><button id="mobileSlipBar" class="mobile-slip-bar" type="button"><span id="mobileSlipCount" class="mcount">0</span><span class="mlabel">Skedina</span><strong id="mobileSlipOdds" class="modds">0.00</strong><span class="mclose">×</span></button>
+<div id="authModal" class="modal"><div class="modalbox"><button class="modalClose" data-close="authModal">×</button><h2 id="authTitle">Log In</h2><p style="margin:-4px 0 12px;color:#777;font-size:12px">Një login për Qendrën, Operatorët, Adminët, Supermanagerët, Agentët dhe Userat.</p><form id="authForm" class="form"><input id="username" autocomplete="username" placeholder="Username" required><input id="password" type="password" autocomplete="current-password" placeholder="Password" required><div id="authMsg" class="adminMsg"></div><button id="authSubmit">Log In</button></form></div></div>
+<div id="controlModal" class="modal"><div class="modalbox controlbox"><button class="modalClose" data-close="controlModal">×</button><h2 id="controlTitle">Control Center</h2><div id="controlApp"></div></div></div>
+<div id="status" class="statusbar">Connecting...</div>
+<script>
+const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+localStorage.removeItem('sportsbook_token');
+let mode='home',timer=null,cache=[],selectedSport='soccer',query='',activeLeague='',lastOdds={},slip=[],pendingTicket=null,token=sessionStorage.getItem('sportsbook_token')||'',user=null,liveStream=null;
+const liveClockState=new Map();
+function clockToSeconds(v){const m=String(v??'').match(/^(\d{1,3}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null}
+function secondsToClock(sec){sec=Math.max(0,Math.floor(sec));return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
+function syncLiveClock(g){const raw=g.current_minute??g.game_time;const sec=clockToSeconds(raw);if(sec===null)return raw||'LIVE';const key=String(g.id);liveClockState.set(key,{base:sec,syncedAt:Date.now()});return secondsToClock(sec)}
+function getLiveClock(g){const key=String(g.id);const raw=g.current_minute??g.game_time;const sec=clockToSeconds(raw);let st=liveClockState.get(key);if(!st&&sec!==null){st={base:sec,syncedAt:Date.now()};liveClockState.set(key,st)}if(!st)return raw||'LIVE';return secondsToClock(st.base+(Date.now()-st.syncedAt)/1000)}
+function tickLiveClocks(){if(mode!=='live')return;document.querySelectorAll('[data-live-clock]').forEach(el=>{const g=cache.find(x=>String(x.id)===String(el.dataset.liveClock));const clock=el.querySelector('.live-clock-value');if(g&&clock)clock.textContent=getLiveClock(g)});}
+function setHashForMode(m){const target=m==='live'?'#/InPlay':'#/';if(location.hash!==target)history.pushState({mode:m},'',target)}
+function modeFromHash(){return /^#\/InPlay\/?$/i.test(location.hash)?'live':'home'}
+const sports=[['★','Favourites','all'],['🔥','Popular','popular'],['⚽','Football','soccer'],['🎾','Tennis','tennis'],['🏈','American Football','american'],['⚾','Baseball','baseball'],['🏀','Basketball','basketball'],['🥊','Boxing','boxing'],['🏏','Cricket','cricket'],['🎯','Darts','darts'],['🎮','eSports','esports'],['🐕','Greyhounds','greyhounds']];
+$('sportsbar').innerHTML=sports.map((s,i)=>`<button class="sport ${s[2]==='soccer'?'active':''}" data-sport="${s[2]}"><span class="ico">${s[0]}</span><span>${s[1]}</span></button>`).join('');
+const sideSports=['Home','Futboll','Basketboll','Tenis','Futboll Amerikan','Badminton','Futsal','Volleyball','Darts','Cricket','Ping Pong','Aussie rules','Rugby','Box','Floorball','Handball'];
+$('sideList').innerHTML=sideSports.map((x,i)=>`<div class="sideRow ${i===0?'home':''}"><span>${x}</span>${i===0?'':'<span class="star">☆</span>'}</div>`).join('');
+$('sideSearch').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('.sideRow').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'flex':'none')};
+function parseOdds(s){const o={1:null,X:null,2:null};if(typeof s!=='string')return o;for(const x of s.split(',')){const p=x.split('|');if(p.length>=4&&['1','X','2'].includes(p[2]))o[p[2]]=p[1]}return o}
+function lock(v){return v==null||v===''||v==='-'||Number(v)===1}
+function sportOf(g){const s=((g.sport_name||g.sport||g.category||'')+'').toLowerCase();if(/basket/.test(s))return'basketball';if(/tennis/.test(s))return'tennis';if(/baseball/.test(s))return'baseball';if(/american/.test(s))return'american';if(/ping|table tennis/.test(s))return'pingpong';return'soccer'}
+function visible(g){const t=((g.name||'')+' '+(g.home_team||'')+' '+(g.away_team||'')+' '+(g.league||'')).toLowerCase();return(!query||t.includes(query))&&(!activeLeague||String(g.league||'')===activeLeague)&&(selectedSport==='all'||selectedSport==='popular'||sportOf(g)===selectedSport)}
+function updateLeagues(data){const ls=[...new Set((data||[]).map(g=>g.league||'Competition'))].sort();$('leagueFilter').innerHTML='<option value="">All competitions</option>'+ls.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');$('leagueFilter').value=activeLeague}
+function addPick(g,key,val){if(lock(val))return;const id=String(g.id)+'|'+key;const i=slip.findIndex(x=>x.id===id);if(i>=0)slip.splice(i,1);else{slip=slip.filter(x=>String(x.gameId)!==String(g.id));slip.push({id,gameId:g.id,key,odd:Number(val),league:g.league||'',home:g.home_team||g.name||'',away:g.away_team||'',eventTime:g.game_time||g.game_date||''})}renderSlip();render(cache,false)}
+function refreshSlipState(){
+  for(const p of slip){
+    const g=cache.find(x=>String(x.id)===String(p.gameId));
+    if(!g){p.invalid=true;p.invalidReason='Ndeshja nuk është më aktive.';continue}
+    const o=parseOdds(g),v=o[p.key];
+    if(lock(v)){p.invalid=true;p.invalidReason='Koeficienti është i kyçur / jo aktiv.';}
+    else {p.invalid=false;p.invalidReason='';p.odd=Number(v);}
+  }
+}
+function renderSlip(){
+  // Keep the selected coefficient exactly as it was clicked (same behavior as the source Bet Slip).
+  // Live/backend validation happens when the ticket is placed; a transient feed refresh must not
+  // incorrectly turn a valid selected odd into LOCK in the slip.
+  const validSlip=slip.filter(x=>!x.invalid && Number.isFinite(Number(x.odd)) && Number(x.odd)>1),total=validSlip.reduce((a,x)=>a*Number(x.odd),1),has=slip.length>0,hasInvalid=slip.some(x=>x.invalid);
+  $('slipcount').textContent=slip.length;$('selCount').textContent=slip.length;$('totalOdds').textContent=validSlip.length?total.toFixed(2):'0.00';$('mobileSlipCount').textContent=slip.length;$('mobileSlipOdds').textContent=validSlip.length?total.toFixed(2):'0.00';$('mobileSlipBar').classList.toggle('show',has||!!pendingTicket);
+  updatePotential();$('place').classList.toggle('enabled',has&&!!user&&!hasInvalid&&!pendingTicket);$('betMsg').textContent=pendingTicket?`Biletë #${pendingTicket.id} është në pritje të pranimit nga Qendra.`:(hasInvalid?'Një ose më shumë koeficientë janë kyçur. Hiqini nga skedina.':(user?'Enter stake and place your bet.':'Log in to place a bet.'));$('betMsg').className='notice'+(hasInvalid?' error':'');
+  let body='';
+  if(pendingTicket){body+=`<div class="pick ticketPending"><div class="leagueName">Biletë #${pendingTicket.id} • NË PRITJE</div>${pendingTicket.selections.map(p=>`<div class="game">${esc(p.home)}<br>${esc(p.away)} <span class="pickodd">${Number(p.odd).toFixed(2)}</span></div><div class="marketName">Fulltime Result • ${esc(p.key)}</div>`).join('')}<div class="reservedNote">Shuma €${Number(pendingTicket.stake).toFixed(2)} është rezervuar deri në pranimin ose anulimin e biletës.</div></div>`}
+  if(has)body+=slip.map((p,i)=>`<div class="pick ${p.invalid?'invalidPick':''}"><button class="remove" data-remove="${i}">×</button><div class="leagueName">${esc(p.league)}</div><div class="game">${esc(p.home)}<br>${esc(p.away)} <span class="pickodd">${p.invalid?'LOCK':Number(p.odd).toFixed(2)}</span>${p.invalid?'<span class="invalidMark">✕</span>':''}</div><div class="marketName">Fulltime Result • ${esc(p.key)}${p.invalid?` · ${esc(p.invalidReason)}`:''}</div></div>`).join('');
+  if(!body)body='<div class="emptySlip">Skedina është bosh.<br>Zgjidh një koeficient për ta shtuar.</div>';
+  $('slipbody').innerHTML=body;document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{slip.splice(Number(b.dataset.remove),1);renderSlip();render(cache,false)})
+}
+
+function updatePotential(){const stake=Number($('stake').value||0),valid=slip.filter(x=>!x.invalid),odds=valid.reduce((a,x)=>a*x.odd,1);$('potential').textContent=stake>0&&valid.length?(stake*odds).toFixed(2):'0.00'}
+function oddHtml(g,key,val,old){const l=lock(val),sel=slip.some(x=>String(x.gameId)===String(g.id)&&x.key===key);return `<button class="odd ${l?'locked':''} ${sel?'selected':''}" ${l?'disabled':''} data-game="${esc(g.id)}" data-key="${key}" data-odd="${esc(val??'')}">${l?'LOCK':Number(val).toFixed(2)}</button>`}
+function render(data,reset=true){
+  if(reset){cache=data||[];if(mode!=='live')updateLeagues(cache)}
+  if(mode==='live') return renderLive(data);
+  const arr=(data||[]).filter(visible).slice().sort((a,b)=>Number(a.order??0)-Number(b.order??0));
+  if(!arr.length){$('content').innerHTML='<div class="emptySlip">No events found for this filter.</div>';return}
+  const groups={};arr.forEach(g=>(groups[g.league||'Competition']??=[]).push(g));
+  let html='<div class="dayhead">Ndeshjet Sot</div>';
+  for(const [league,items] of Object.entries(groups)){
+    html+=`<section class="league"><div class="leaguehead"><div class="name">${esc(league)}</div></div><div class="matchgrid">`;
+    for(const g of items){
+      const o=parseOdds(g.odd),time=g.game_time||g.game_date||'';
+      html+=`<div class="match"><div class="matchinfo"><div class="teams"><div class="team">${esc(g.home_team||g.name||'')}</div><div class="team">${esc(g.away_team||'')}</div></div><div class="meta"><span>${esc(time)}</span><span>${esc(g.count_options?g.count_options+' >':'')}</span></div></div>${oddHtml(g,'1',o['1'])}${oddHtml(g,'X',o.X)}${oddHtml(g,'2',o['2'])}</div>`
+    }
+    html+='</div></section>'
+  }
+  $('content').innerHTML=html;
+  bindOdds();
+  document.querySelectorAll('.leaguehead').forEach(h=>h.onclick=()=>{activeLeague=activeLeague===h.querySelector('.name').textContent?'':h.querySelector('.name').textContent;$('leagueFilter').value=activeLeague;render(cache,false)})
+}
+function bindOdds(){
+  document.querySelectorAll('.odd:not(.locked),.live-odd:not(.locked)').forEach(b=>b.onclick=()=>{
+    const g=cache.find(x=>String(x.id)===String(b.dataset.game));
+    if(g)addPick(g,b.dataset.key,b.dataset.odd)
+  });
+}
+function renderLive(data){
+  const arr=(data||[]).filter(g=>{
+    const t=((g.name||'')+' '+(g.home_team||'')+' '+(g.away_team||'')+' '+(g.league||'')).toLowerCase();
+    return (!query||t.includes(query)) && (selectedSport==='all'||selectedSport==='popular'||sportOf(g)===selectedSport);
+  });
+  let html=`<div class="live-mobile-dayhead"><span>Ndeshjet Sot</span><span>⌄</span></div><div class="live-toolbar"><label class="live-search"><span class="glass">⌕</span><input id="liveSearchInput" value="${esc(query)}" placeholder="Kerko Ndeshjen"></label><div class="live-result">Rezultat Final</div></div><div class="live-table">`;
+  if(!arr.length){html+='<div class="live-empty">Nuk ka ndeshje live për momentin.</div></div>';$('content').innerHTML=html;const q=$('liveSearchInput');if(q)q.oninput=e=>{query=e.target.value.toLowerCase().trim();renderLive(cache)};return}
+  const groups={};arr.forEach(g=>(groups[g.league||'Competition']??=[]).push(g));
+  for(const [league,items] of Object.entries(groups)){
+    html+=`<section class="live-league"><div class="live-league-head"><span class="lname">${esc(league)}</span><span>1</span><span>X</span><span>2</span></div>`;
+    for(const g of items){
+      const o=parseOdds(g.odd), result=String(g.result||'').split('-'), homeScore=result[0]||'', awayScore=result[1]||'';
+      const time=getLiveClock(g);
+      html+=`<div class="live-row"><div class="live-info"><span class="live-monitor">▱</span><div class="live-teams"><div class="live-team"><span class="live-shirt">♟</span>${esc(g.home_team||g.name||'')}</div><div class="live-team"><span class="live-shirt">♟</span>${esc(g.away_team||'')}</div><div class="live-time" data-live-clock="${esc(g.id)}"><span class="live-clock-value">${esc(time)}</span>${g.count_options?' <span>'+esc(g.count_options)+' ></span>':''}</div></div><div class="live-score"><div>${esc(homeScore)}</div><div>${esc(awayScore)}</div></div></div>${liveOddHtml(g,'1',o['1'])}${liveOddHtml(g,'X',o.X)}${liveOddHtml(g,'2',o['2'])}</div>`
+    }
+    html+='</section>';
+  }
+  html+='</div>';
+  $('content').innerHTML=html;
+  const q=$('liveSearchInput');if(q)q.oninput=e=>{query=e.target.value.toLowerCase().trim();renderLive(cache)};
+  bindOdds();
+}
+function liveOddHtml(g,key,val){const l=lock(val),sel=slip.some(x=>String(x.gameId)===String(g.id)&&x.key===key);return `<button class="live-odd ${l?'locked':''} ${sel?'selected':''}" ${l?'disabled':''} data-game="${esc(g.id)}" data-key="${key}" data-odd="${esc(val??'')}">${l?'':Number(val).toFixed(2)}</button>`}
+
+async function load(){try{const r=await fetch(mode==='live'?'/api/livegames?ts='+Date.now():'/api/prematch?ts='+Date.now());if(!r.ok)throw Error('HTTP '+r.status);const d=await SportsbookApi.readJson(r);render(Array.isArray(d)?d:[]);renderSlip();if(mode!=='live')$('status').textContent='PREMATCH • '+new Date().toLocaleTimeString('sq-AL')}catch(e){$('status').textContent=mode==='live'?'LIVE • Feed offline':'Feed error'}}
+function applyLiveCoefs(payload){if(!payload||payload.game_id==null)return;const g=cache.find(x=>String(x.id)===String(payload.game_id));if(!g)return;const map={};(payload.coefs||[]).forEach(c=>{map[String(c.coef_id)]=String(c.odd)});if(typeof g.odd==='string'){g.odd=g.odd.split(',').map(part=>{const p=part.split('|');if(p.length>=4&&map[String(p[0])]!==undefined)p[1]=map[String(p[0])];return p.join('|')}).join(',')}if(payload.current_result!=null)g.result=payload.current_result;renderLive(cache);renderSlip()}
+function applyLiveGame(payload){if(!payload)return;const item=payload.game||payload;if(Array.isArray(item)){item.forEach(applyLiveGame);return}if(item.id==null)return;const i=cache.findIndex(x=>String(x.id)===String(item.id));if(i<0)cache.push(item);else cache[i]={...cache[i],...item};syncLiveClock(item);renderLive(cache);renderSlip()}
+function startLiveStream(){if(liveStream){try{liveStream.close()}catch(_){}}liveStream=new EventSource('/api/live-stream');liveStream.onopen=()=>{$('status').textContent='LIVE • Real-time'};liveStream.addEventListener('status',e=>{try{const d=JSON.parse(e.data);$('status').textContent=d.status==='connected'?'LIVE • Real-time':(d.status==='reconnecting'?'LIVE • Feed offline':'LIVE • Connecting…')}catch(_){}});liveStream.addEventListener('coefs',e=>{try{applyLiveCoefs(JSON.parse(e.data))}catch(_){}});liveStream.addEventListener('game',e=>{try{applyLiveGame(JSON.parse(e.data))}catch(_){}});liveStream.onerror=()=>{$('status').textContent='LIVE • Feed offline'}}
+function stopLiveStream(){if(liveStream){try{liveStream.close()}catch(_){}}liveStream=null}
+function setMode(m,{fromHash=false}={}){mode=m;activeLeague='';lastOdds={};selectedSport='soccer';query='';if(!fromHash)setHashForMode(m);$('homeBtn').classList.toggle('active',m==='home');$('liveBtn').classList.toggle('active',m==='live');document.body.classList.toggle('live-page',m==='live');document.querySelectorAll('.sideTool').forEach((b,i)=>b.classList.toggle('active',m==='live'?i===1:i===0));clearInterval(timer);stopLiveStream();clearInterval(window.liveClockTicker);window.liveClockTicker=null;if(m==='live'){$('sportsbar').innerHTML=[['⚽','Futboll','soccer'],['🏀','Basketboll','basketball'],['🎾','Tenis','tennis'],['🏈','Futboll Amerikan','american'],['🏸','Badminton','badminton']].map(s=>`<button class="sport ${s[2]==='soccer'?'active':''}" data-sport="${s[2]}"><span class="ico">${s[0]}</span><span>${s[1]}</span></button>`).join('');document.querySelectorAll('.sport').forEach(b=>b.onclick=()=>{document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));b.classList.add('active');selectedSport=b.dataset.sport;renderLive(cache)});load().then(startLiveStream);window.liveClockTicker=setInterval(tickLiveClocks,1000)}else{$('sportsbar').innerHTML=sports.map(s=>`<button class="sport ${s[2]==='soccer'?'active':''}" data-sport="${s[2]}"><span class="ico">${s[0]}</span><span>${s[1]}</span></button>`).join('');document.querySelectorAll('.sport').forEach(b=>b.onclick=()=>{document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));b.classList.add('active');selectedSport=b.dataset.sport;activeLeague='';$('leagueFilter').value='';render(cache,false)});load();timer=setInterval(load,15000)}}
+
+
+function staffRoleLabel(role){return ({center:'Qendra',operator:'Operator',admin:'Admin',supermanager:'Supermanager',agent:'Agent'})[role]||role}
+function staffCreateRoles(role){return ({center:[['operator','Operator']],operator:[['admin','Admin']],admin:[['supermanager','Supermanager']],supermanager:[['agent','Agent']],agent:[['user','User']]}[role]||[])}
+function staffAccountLabel(role){return ({center:'Numri i qendrës',operator:'Numri i operatorit',admin:'Numri i adminit',supermanager:'Numri i supermanagerit',agent:'Numri i agjentit'})[role]||'Numri'}
+function setAuthState(u){
+  user=u;
+  if(token)sessionStorage.setItem('sportsbook_token',token);else sessionStorage.removeItem('sportsbook_token');
+  if(user){
+    if(['partner','admin'].includes(user.role)){location.replace('/backoffice.html#/dashboard');return;}
+    if(user.role==='center'){
+      hideUserMenu();
+      $('actions').innerHTML='<div class="account"><button id="panelB" class="staffAccountButton">Control Center</button></div>';
+      $('panelB').onclick=()=>showCenterDashboard();
+      $('slipHead').style.display='none';$('slipView').style.display='none';$('staffView').style.display='none';
+      showCenterDashboard();renderSlip();return;
+    }
+    const staff=user.role!=='user';
+    if(staff){
+      hideUserMenu();
+      $('actions').innerHTML='<div class="account"><button id="panelB" class="staffAccountButton">Partner</button></div>';
+      $('panelB').onclick=()=>toggleStaffMenu(true);
+      $('slipHead').style.display='none';$('slipView').style.display='none';$('staffView').style.display='block';toggleStaffMenu(true);
+    }else{
+      $('actions').innerHTML=`<div class="account userAccount"><div class="balance">Credit: <b>€${Number(user.balance).toFixed(2)}</b></div><button id="userAvatar" class="userAvatar" aria-label="Hap menunë e llogarisë">◯</button></div>`;
+      $('slipHead').style.display='flex';$('slipView').style.display='block';$('staffView').style.display='none';
+      $('userAvatar').onclick=e=>{e.stopPropagation();toggleUserMenu()};
+    }
+  }else{
+    hideCenterDashboard();
+    hideUserMenu();
+    $('actions').innerHTML='<button id="loginB">Log In</button>';$('loginB').onclick=openAuth;
+    $('slipHead').style.display='flex';$('slipView').style.display='block';$('staffView').style.display='none';
+  }
+  renderSlip();
+}
+function hideUserMenu(){const menu=$('userMenu');if(menu){menu.classList.remove('show');menu.setAttribute('aria-hidden','true')}}
+function toggleUserMenu(){
+  if(!user||user.role!=='user')return;
+  const menu=$('userMenu'),open=!menu.classList.contains('show');
+  if(!open){hideUserMenu();return}
+  menu.innerHTML=`<div class="userMenuHead"><b>${esc(user.username)}</b><strong>${Number(user.balance||0).toFixed(2)}</strong><em>EUR</em></div><button data-user-menu="chat">Chat</button><button data-user-menu="rules">Rregullore</button><button data-user-menu="bets">My Bets</button><button data-user-menu="finance">Financa</button><button data-user-menu="password">Ndrysho Fjalëkalimin</button><button data-user-menu="logout">Largohu</button>`;
+  menu.classList.add('show');menu.setAttribute('aria-hidden','false');
+  menu.querySelectorAll('[data-user-menu]').forEach(b=>b.onclick=()=>{const action=b.dataset.userMenu;hideUserMenu();if(action==='bets'){showMyBets(true);return}if(action==='logout'){logout();return}if(action==='chat')alert('Chat do të lidhet me modulin e komunikimit.');else if(action==='rules')alert('Rregullorja e platformës.');else if(action==='finance')showMyBets(true);else if(action==='password')alert('Ndryshimi i fjalëkalimit do të jetë i disponueshëm së shpejti.');});
+}
+async function renderStaffMenu(){
+  if(!user||user.role==='user')return;
+  try{
+    const d=await controlFetch('/api/staff/overview');
+    const cRoles=staffCreateRoles(user.role);
+    const items=[['directory','Lista e Përdoruesve',String(d.accounts.length)]];
+    cRoles.forEach(r=>items.push(['create:'+r[0],'Krijo '+r[1],'']));
+    if(user.role==='center'||user.role==='operator')items.push(['tickets','Biletat',d.pendingTickets?`${d.pendingTickets} në pritje`:'']);
+    items.push(['password','Ndrysho Fjalëkalimin',''],['chat','Chat',''],['rules','Rregullore',''],['logout','Largohu','']);
+    const moneyBlock=user.role==='center' ? `<div class="staffMoney"><div class="staffMoneyRow"><div class="currency">STATUS</div><strong>UNLIMITED</strong></div></div>` : `<div class="staffMoney"><div class="staffMoneyRow"><div class="currency">EUR</div><strong>${Number(user.balance||0).toFixed(2)} EUR</strong></div><div class="staffMoneyRow"><div class="currency">LEK</div><strong>0.00 LEK</strong></div><div class="staffMoneyRow"><div class="currency">USD</div><strong>0.00 USD</strong></div></div>`;
+    $('staffView').innerHTML=`<div class="staffSummary"><div class="label">${staffAccountLabel(user.role)}</div><div class="agentNo">${String(user.id).padStart(6,'0')}</div></div>${moneyBlock}${items.map(x=>`<button class="staffMenuItem ${x[0]==='logout'?'logout':''}" data-staff-action="${x[0]}">${esc(x[1])}${x[2]?`<span class="staffPill">${esc(x[2])}</span>`:''}</button>`).join('')}`;
+    document.querySelectorAll('[data-staff-action]').forEach(b=>b.onclick=()=>handleStaffAction(b.dataset.staffAction));
+  }catch(e){
+    $('staffView').innerHTML=`<div class="staffSummary"><div class="label">${staffRoleLabel(user.role)}</div><div class="agentNo">${String(user.id).padStart(6,'0')}</div></div>${user.role==='center'?'<div class="staffMoney"><div class="staffMoneyRow"><div class="currency">STATUS</div><strong>UNLIMITED</strong></div></div>':''}<button class="staffMenuItem" data-staff-action="directory">Lista e Përdoruesve</button><button class="staffMenuItem" data-staff-action="logout">Largohu</button>`;
+    document.querySelectorAll('[data-staff-action]').forEach(b=>b.onclick=()=>handleStaffAction(b.dataset.staffAction));
+  }
+}
+function toggleStaffMenu(on){
+  if(!user||user.role==='user')return;
+  $('staffView').style.display=on?'block':'none';
+  $('slipView').style.display=on?'none':'block';
+  $('slipHead').style.display=on?'none':'flex';
+  if(on)renderStaffMenu();
+}
+async function restore(){if(!token)return;try{const r=await fetch('/api/me',{headers:{Authorization:'Bearer '+token}});if(!r.ok)throw Error();user=(await SportsbookApi.readJson(r)).user;setAuthState(user)}catch(e){token='';setAuthState(null)}}
+async function logout(){await fetch('/api/auth/logout',{method:'POST',headers:{Authorization:'Bearer '+token}}).catch(()=>{});token='';user=null;setAuthState(null);showMyBets(false);closeControlPoll()}
+function openAuth(){$('authModal').classList.add('show');$('authTitle').textContent='Log In';$('authMsg').textContent='';$('username').focus()}
+async function authSubmit(e){e.preventDefault();try{const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('username').value,password:$('password').value})});const d=await SportsbookApi.readJson(r);if(!r.ok)throw Error(d.error||'Login failed');token=d.token;user=d.user;setAuthState(user);$('authModal').classList.remove('show')}catch(e){$('authMsg').textContent=e.message;$('authMsg').className='adminMsg error'}}
+function myBetsShell(){return `<div class="mybetsPage"><div class="mybetsHead"><button class="back" id="myBetsBack">‹</button><div class="mybetsTitle">Bastet e mia</div><div style="width:40px"></div></div><div class="mybetsTopFilters"><input id="fromDate" type="date"><span style="color:#ddd">-</span><input id="toDate" type="date"><button id="myBetsFilter">Filtro</button></div><div class="mybetsYears"><button data-year="2022">2022</button><button data-year="2023">2023</button><button data-year="today" class="active">Sot</button><button data-year="yesterday">Dje</button><button data-year="month">Shtator</button><button data-year="custom">Gusht</button></div><div class="mybetsCurrency">Monedha: <b>EUR</b>⌄</div><div id="myBetsSummary"></div><div id="betsList"></div><div class="wallet" id="walletArea" style="margin:0;padding:10px 12px;background:#666"><strong>Historiku i kreditit</strong><div id="walletList"></div></div></div>`}
+function showMyBets(on){
+  if(on){
+    $('homeBtn').classList.remove('active');$('liveBtn').classList.remove('active');$('myTopBtn').classList.add('active');document.body.classList.add('mybets-page');
+    $('sportsbar').style.display='none';slip=[];$('staffView').style.display='none';$('slipHead').style.display='flex';$('slipView').style.display='block';renderSlip();$('content').innerHTML=myBetsShell();
+    $('myBetsBack').onclick=()=>showMyBets(false);$('myBetsFilter').onclick=loadMyBets;
+    document.querySelectorAll('[data-year]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-year]').forEach(x=>x.classList.remove('active'));b.classList.add('active');loadMyBets()});
+    loadMyBets();
+  }else{
+    document.body.classList.remove('mybets-page');$('myTopBtn').classList.remove('active');$('sportsbar').style.display='flex';
+    if(user&&user.role!=='user')toggleStaffMenu(true);else{$('slipView').style.display='block';$('staffView').style.display='none';$('slipHead').style.display='flex'}
+    if(mode==='live')setMode('live',{fromHash:true});else setMode('home',{fromHash:true});
+  }
+}
+async function loadMyBets(){
+  if(!user)return;
+  const p=new URLSearchParams();if($('fromDate')&&$('fromDate').value)p.set('from',$('fromDate').value);if($('toDate')&&$('toDate').value)p.set('to',$('toDate').value);
+  try{
+    const r=await fetch('/api/my-bets?'+p,{headers:{Authorization:'Bearer '+token}}),d=await SportsbookApi.readJson(r);if(!r.ok)throw Error(d.error||'Could not load bets');
+    if(user.role!=='user'&&Array.isArray(d.accounts))$('myBetsSummary').innerHTML=d.accounts.length?d.accounts.map(a=>`<div class="mybetAccountRow"><span>${esc(a.username)} <small>(${a.bet_count})</small></span><strong>${Number(a.turnover).toFixed(2)}</strong></div>`).join(''):'<div class="mybetsEmpty">Nuk ka të dhëna.</div>';
+    $('betsList').innerHTML=d.bets.length?`<div class="mybetsList">${d.bets.slice(0,40).map((b,i)=>{const status=b.status||'pending';const date=b.created_at?new Date(String(b.created_at).replace(' ','T')+'Z').toLocaleString('sq-AL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';const payout=Number(b.payout||0);const potential=Number(b.potential_win||0);return `<article class="betcard" data-bet-card="${b.id}"><div class="bethead" data-bet-toggle="${b.id}"><div><div class="betNo">#${b.id}</div><div class="betDate">${esc(date)}</div></div><div class="betMeta"><div class="betMetric"><small>Stake</small><strong>€${Number(b.stake).toFixed(2)}</strong></div><div class="betMetric"><small>Odds</small><strong>${Number(b.total_odds).toFixed(2)}</strong></div><div class="betMetric"><small>${status==='won'?'Fitimi':'Possible'}</small><strong>€${(status==='won'?payout:potential).toFixed(2)}</strong></div></div><span class="statusP ${esc(status)}">${esc(status)}</span><span class="betChevron">⌄</span></div><div class="betbody"><div class="betSelections">${(b.selections||[]).map(sel=>{const rs=sel.resultStatus||'pending';return `<div class="selline"><div class="pickMain"><div class="pickTeams">${esc(sel.home)} - ${esc(sel.away)}</div><div class="pickMarket">${esc(sel.market||'Fulltime Result')} · Zgjedhja ${esc(sel.selection)}</div><div class="pickResult ${esc(rs)}">${rs==='won'?'FITUESE':rs==='lost'?'HUMBESE':'NË PRITJE'}</div></div><div class="pickOdd">${Number(sel.odd).toFixed(2)}</div></div>`}).join('')}</div><div class="betSummary"><div class="sumBox"><small>Shuma</small><strong>€${Number(b.stake).toFixed(2)}</strong></div><div class="sumBox"><small>Total odds</small><strong>${Number(b.total_odds).toFixed(2)}</strong></div><div class="sumBox payout"><small>${status==='won'?'Payout':'Potential win'}</small><strong>€${(status==='won'?payout:potential).toFixed(2)}</strong></div></div></div></article>`}).join('')}</div>`:'<div class="mybetsEmpty">Nuk ka bileta.</div>';
+    document.querySelectorAll('[data-bet-toggle]').forEach(head=>head.onclick=()=>head.closest('[data-bet-card]')?.classList.toggle('open'));
+    if(user.role==='user')loadWallet();
+  }catch(e){if($('betsList'))$('betsList').innerHTML='<div class="mybetsEmpty error">Nuk u ngarkuan bastet.</div>'}
+}
+async function loadWallet(){try{const r=await fetch('/api/wallet',{headers:{Authorization:'Bearer '+token}}),d=await SportsbookApi.readJson(r);if(!$('walletList'))return;$('walletList').innerHTML=d.transactions.length?d.transactions.map(t=>`<div class="tx"><span>${esc(t.type)} · ${new Date(t.createdAt+'Z').toLocaleString('sq-AL')}</span><span class="${t.amount>=0?'credit':'debit'}">${t.amount>=0?'+':''}€${Number(t.amount).toFixed(2)}</span></div>`).join(''):'<div class="noBets">No transactions.</div>'}catch(e){}}
+
+async function placeBet(){
+  if(!slip.length)return;if(!user){openAuth('login');return}
+  // Do not re-read the browser cache immediately before submission. The source
+  // Bet Slip submits the coefficient captured at click time. Live/feed validation
+  // is authoritative on the server and any invalid selection is returned there.
+  if(slip.some(x=>!Number.isFinite(Number(x.odd))||Number(x.odd)<=1)){renderSlip();return}
+  const stake=Number($('stake').value);if(!Number.isFinite(stake)||stake<.01){$('betMsg').textContent='Enter a valid stake.';$('betMsg').className='notice error';return}
+  try{const r=await fetch('/api/bets',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({stake,selections:slip.map(p=>({gameId:p.gameId,league:p.league,home:p.home,away:p.away,market:'Fulltime Result',selection:p.key,odd:p.odd,eventTime:p.eventTime}))})});const d=await SportsbookApi.readJson(r);if(!r.ok){if(Array.isArray(d.invalidSelections)){for(const inv of d.invalidSelections){const p=slip.find(x=>String(x.gameId)===String(inv.gameId)&&String(x.key)===String(inv.selection));if(p){p.invalid=true;p.invalidReason=inv.reason||'Koeficienti nuk është aktiv.'}}renderSlip()}throw Error(d.error||'Bet could not be placed.')}user.balance=d.balance;user.reservedBalance=d.reservedBalance||0;pendingTicket={id:d.betId,stake,odds:d.totalOdds,selections:slip.map(p=>({...p}))};slip=[];$('stake').value='';setAuthState(user);$('betMsg').textContent=`Biletë #${d.betId} u dërgua në Qendër dhe është në pritje të pranimit.`;$('betMsg').className='notice ok';renderSlip();pollPendingTicket(d.betId)}catch(e){$('betMsg').textContent=e.message;$('betMsg').className='notice error'}
+}
+
+let pendingPoll=null;async function pollPendingTicket(id){if(pendingPoll)clearInterval(pendingPoll);const check=async()=>{if(!user||!pendingTicket||pendingTicket.id!==id)return;try{const r=await fetch('/api/my-bets/'+id,{headers:{Authorization:'Bearer '+token}});if(!r.ok)return;const d=await SportsbookApi.readJson(r);const st=d.bet.status;if(st!=='pending'){pendingTicket=null;if(st==='accepted'||st==='cancelled'){const mr=await fetch('/api/me',{headers:{Authorization:'Bearer '+token}});if(mr.ok)user=(await SportsbookApi.readJson(mr)).user;setAuthState(user)}if(st==='accepted')$('betMsg').textContent=`Biletë #${id} u pranua nga Qendra.`;else if(st==='cancelled')$('betMsg').textContent=`Biletë #${id} u anulua nga Qendra.`;$('betMsg').className='notice '+(st==='accepted'?'ok':'error');renderSlip();clearInterval(pendingPoll);pendingPoll=null}}catch(_){}};await check();pendingPoll=setInterval(check,2500)}
+
+async function controlFetch(url,opt={}){opt.headers={...(opt.headers||{}),Authorization:'Bearer '+token,'Content-Type':'application/json'};const r=await fetch(url,opt);const d=await SportsbookApi.readJson(r);if(!r.ok)throw Error(d.error||'Request failed');return d}
+let controlPoll=null;function closeControlPoll(){if(controlPoll){clearInterval(controlPoll);controlPoll=null}}
+
+async function handleStaffAction(action){
+  if(action==='logout'){await logout();return}
+  if(action==='chat'){alert('Chat do të lidhet me modulin e komunikimit.');return}
+  if(action==='rules'){alert('Rregullorja e platformës.');return}
+  if(action==='directory'){openControl(user.role,'directory');return}
+  if(action==='finance'){if(user.role==='center')return;openControl(user.role,'finance');return}
+  if(action==='tickets'){openControl(user.role,'tickets');return}
+  if(action==='password'){openControl(user.role,'password');return}
+  if(action.startsWith('create:')){openControl(user.role,'create',action.split(':')[1]);return}
+}
+async function openControl(role,view='directory',createRole=''){
+  if(['partner','admin'].includes(user?.role)){location.replace('/backoffice.html#/accounts');return;}
+  if(!user||user.role==='user')return;
+  $('controlModal').classList.add('show');
+  $('controlTitle').textContent=staffRoleLabel(role);
+  closeControlPoll();
+  if(view==='tickets'){await renderOperatorControl();controlPoll=setInterval(()=>renderOperatorControl(true),2500);return}
+  await renderManagementView(view,createRole);
+}
+function roleVisibleLabel(role){return ({center:'Qendra',operator:'Operator',admin:'Admin',supermanager:'Supermanager',agent:'Agent',user:'User'})[role]||role}
+async function renderManagementView(view,createRole=''){
+  try{
+    const d=await controlFetch('/api/staff/overview');
+    if(view==='directory'){
+      const title=({center:'Operatorët',operator:'Adminët',admin:'Supermanagerët',supermanager:'Agentët',agent:'User-at'}[user.role]||'Llogaritë e mia');
+      const creditCard=user.role==='center'?['Status','UNLIMITED']:['Credit','€'+Number(user.balance||0).toFixed(2)];
+      const canFundRow = x => x.status==='active' && ((user.role==='center' && x.role==='operator') || (user.role==='operator' && x.role==='admin') || (user.role==='admin' && x.role==='supermanager') || (user.role==='supermanager' && x.role==='agent') || (user.role==='agent' && x.role==='user'));
+      $('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Lista e Përdoruesve</button></div><div class="controlGrid">${[['Roli',roleVisibleLabel(user.role)],creditCard,['Llogari',d.accounts.length],['Bileta në pritje',d.pendingTickets]].map(x=>`<div class="controlCard"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div><div class="controlSection"><h3>${title}</h3>${d.accounts.length?`<table class="controlTable"><thead><tr><th>ID</th><th>Username</th><th>Role</th><th>Credit</th><th>Status</th><th>Veprimi</th></tr></thead><tbody>${d.accounts.map(x=>`<tr><td>${x.id}</td><td>${esc(x.username)}</td><td><span class="roleBadge">${esc(x.role)}</span></td><td class="listBalance">€${Number(x.balance).toFixed(2)}</td><td>${esc(x.status)}</td><td>${canFundRow(x)?`<div class="rowCredit"><input data-list-credit-amount="${x.id}" type="number" min="0.01" step="0.01" placeholder="Shuma"><button class="controlBtn" data-list-credit="${x.id}">Shto kredit</button></div>`:'<span style="color:#888;font-size:11px">—</span>'}</td></tr>`).join('')}</tbody></table>`:'<div class="noBets">Nuk ka llogari.</div>'}<div id="directoryMsg" class="controlMsg"></div></div>`;
+      document.querySelectorAll('[data-list-credit]').forEach(b=>b.onclick=async()=>{const id=b.dataset.listCredit,field=document.querySelector(`[data-list-credit-amount="${id}"]`),amount=field?field.value:'';try{await controlFetch('/api/staff/'+id+'/credit',{method:'POST',body:JSON.stringify({amount,direction:'credit'})});$('directoryMsg').textContent='Krediti u shtua me sukses.';$('directoryMsg').className='controlMsg ok';if(field)field.value='';const nd=await controlFetch('/api/staff/overview');const target=nd.accounts.find(a=>Number(a.id)===Number(id));const me=(await fetch('/api/me',{headers:{Authorization:'Bearer '+token}}).then(r=>SportsbookApi.readJson(r))).user;setAuthState(me);await renderManagementView('directory');}catch(e){$('directoryMsg').textContent=e.message;$('directoryMsg').className='controlMsg error';}});
+      return;
+    }
+    if(view==='create'){
+      const valid=staffCreateRoles(user.role).find(x=>x[0]===createRole);
+      if(!valid){$('controlApp').innerHTML='<div class="controlSection">Kjo llogari nuk mund të krijohet nga ky rol.</div>';return}
+      $('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Krijo ${esc(valid[1])}</button></div><div class="controlSection"><h3>Krijo ${esc(valid[1])}</h3><form id="createChild" class="controlForm"><input id="childUser" placeholder="Username" required><input id="childPass" type="password" placeholder="Password" required><input value="${esc(valid[1])}" disabled><button>Krijo</button></form><div id="controlMsg" class="controlMsg"></div></div>`;
+      $('createChild').onsubmit=async e=>{e.preventDefault();try{let endpoint;if(user.role==='center')endpoint='/api/center/operators';else if(user.role==='operator')endpoint='/api/operator/admins';else if(user.role==='admin')endpoint='/api/admin/supermanagers';else if(user.role==='supermanager')endpoint='/api/manager/agents';else endpoint='/api/manager/users';await controlFetch(endpoint,{method:'POST',body:JSON.stringify({username:$('childUser').value,password:$('childPass').value})});$('controlMsg').textContent='Account u krijua me sukses.';$('controlMsg').className='controlMsg ok';await renderManagementView('directory')}catch(e){$('controlMsg').textContent=e.message;$('controlMsg').className='controlMsg error'}};
+      return;
+    }
+    if(view==='finance'){
+      $('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Financa</button></div><div class="controlSection"><h3>Transferim krediti</h3><p style="color:#666;font-size:12px;margin-top:0">Ky ekran lejon vetëm transferim sipas hierarkisë së platformës.</p>${d.fundTargets.length?`<table class="controlTable"><thead><tr><th>Username</th><th>Role</th><th>Credit</th><th>Veprimi</th></tr></thead><tbody>${d.fundTargets.map(x=>`<tr><td>${esc(x.username)}</td><td>${esc(x.role)}</td><td>€${Number(x.balance).toFixed(2)}</td><td><div style="display:flex;gap:5px;align-items:center"><input data-fin-amount="${x.id}" type="number" min="0.01" step="0.01" placeholder="Shuma" style="width:90px;height:32px"><button class="controlBtn" data-fin="${x.id}" data-dir="credit">Shto</button><button class="controlBtn gray" data-fin="${x.id}" data-dir="debit">Merr</button></div></td></tr>`).join('')}</tbody></table>`:'<div class="noBets">Nuk ka llogari që mund të financohen.</div>'}<div id="financeMsg" class="controlMsg"></div></div>`;
+      document.querySelectorAll('[data-fin]').forEach(b=>b.onclick=async()=>{const id=b.dataset.fin,amount=document.querySelector(`[data-fin-amount="${id}"]`).value;try{await controlFetch('/api/staff/'+id+'/credit',{method:'POST',body:JSON.stringify({amount,direction:b.dataset.dir})});$('financeMsg').textContent='Transferimi u krye.';$('financeMsg').className='controlMsg ok';setAuthState({...user,balance:(await fetch('/api/me',{headers:{Authorization:'Bearer '+token}}).then(r=>SportsbookApi.readJson(r))).user.balance});await renderManagementView('finance');}catch(e){$('financeMsg').textContent=e.message;$('financeMsg').className='controlMsg error'}});
+      return;
+    }
+    if(view==='password'){
+      $('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Ndrysho Fjalëkalimin</button></div><div class="controlSection"><h3>Ndrysho Fjalëkalimin</h3><form id="passwordForm" class="controlForm"><input id="oldPass" type="password" placeholder="Password aktual" required><input id="newPass" type="password" placeholder="Password i ri" required><input id="newPass2" type="password" placeholder="Përsërite passwordin" required><button>Ruaj</button></form><div id="controlMsg" class="controlMsg"></div></div>`;
+      $('passwordForm').onsubmit=async e=>{e.preventDefault();if($('newPass').value!==$('newPass2').value){$('controlMsg').textContent='Password-et nuk përputhen.';$('controlMsg').className='controlMsg error';return}try{await controlFetch('/api/staff/password',{method:'POST',body:JSON.stringify({oldPassword:$('oldPass').value,newPassword:$('newPass').value})});$('controlMsg').textContent='Password u ndryshua.';$('controlMsg').className='controlMsg ok';$('passwordForm').reset()}catch(err){$('controlMsg').textContent=err.message;$('controlMsg').className='controlMsg error'}};
+    }
+  }catch(e){$('controlApp').innerHTML=`<div class="controlSection controlMsg error">${esc(e.message)}</div>`}
+}
+function ticketTable(tickets,showAccept){return `<div class="controlSection"><h3>Biletat në Qendër</h3>${tickets.length?`<table class="controlTable"><thead><tr><th>#</th><th>User</th><th>Hierarkia</th><th>Selections</th><th>Stake</th><th>Odds</th><th>Potential</th><th>Action</th></tr></thead><tbody>${tickets.map(b=>`<tr class="${b.status==='pending'?'ticketPending':'ticketAccepted'}"><td>#${b.id}<div class="ticketDetails">${new Date(b.created_at+'Z').toLocaleString('sq-AL')}</div></td><td>${esc(b.username||'')}</td><td>${esc(b.agent_username||'')}<br>${esc(b.supermanager_username||'')}</td><td>${b.selections.map(s=>`${esc(s.home)} - ${esc(s.away)} · ${esc(s.selection)} @ ${Number(s.odd).toFixed(2)}`).join('<br>')}</td><td>€${b.stake.toFixed(2)}</td><td>${b.total_odds.toFixed(2)}</td><td>€${b.potential_win.toFixed(2)}</td><td><div class="ticketActions">${b.status==='pending'?`<button data-ticket-action="accept" data-ticket="${b.id}">Prano</button>`:''}${b.status==='accepted'?`<button data-ticket-action="won" data-ticket="${b.id}">Fituese</button><button class="lost" data-ticket-action="lost" data-ticket="${b.id}">Humbese</button>`:''}${['pending','accepted'].includes(b.status)?`<button class="cancel" data-ticket-action="cancel" data-ticket="${b.id}">Refuzo / Anullo</button>`:''}</div></td></tr>`).join('')}</tbody></table>`:'<div class="noBets">Nuk ka bileta në pritje.</div>'}</div>`}
+async function renderOperatorControl(silent=false){const d=await controlFetch('/api/operator/tickets');$('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Biletat</button><span style="margin-left:auto;padding:10px;color:#666">${d.tickets.filter(x=>x.status==='pending').length} në pritje</span></div>${ticketTable(d.tickets,true)}`;document.querySelectorAll('[data-ticket-action]').forEach(b=>b.onclick=async()=>{const id=b.dataset.ticket,action=b.dataset.ticketAction;try{if(action==='accept')await controlFetch('/api/operator/tickets/'+id+'/accept',{method:'POST'});else if(action==='cancel')await controlFetch('/api/operator/tickets/'+id+'/cancel',{method:'POST'});else await controlFetch('/api/operator/tickets/'+id+'/settle',{method:'POST',body:JSON.stringify({status:action})});await renderOperatorControl()}catch(e){alert(e.message)}})}
+function closeControlPoll(){if(controlPoll){clearInterval(controlPoll);controlPoll=null}}
+
+function hideCenterDashboard(){document.getElementById('centerDashboard')?.remove();}
+function showCenterDashboard(){if(user?.role==='center')location.replace('/backoffice.html#/dashboard');}
+
+$('authForm').onsubmit=authSubmit;$('slipTab').onclick=()=>{if(user&&user.role!=='user')toggleStaffMenu(true);else showMyBets(false)};$('myTopBtn').onclick=()=>{if(user)showMyBets(true);else openAuth()};$('place').onclick=placeBet;$('stake').oninput=updatePotential;$('mobileSlipBar').onclick=()=>{if(slip.length){$('betslip').classList.add('mobile-open');$('mobileSlipBackdrop').classList.add('show')}};$('slipClose').onclick=()=>{$('betslip').classList.remove('mobile-open');$('mobileSlipBackdrop').classList.remove('show')};$('mobileSlipBackdrop').onclick=()=>{$('betslip').classList.remove('mobile-open');$('mobileSlipBackdrop').classList.remove('show')};document.querySelectorAll('[data-stake]').forEach(b=>b.onclick=()=>{$('stake').value=b.dataset.stake;updatePotential()});$('search').oninput=e=>{query=e.target.value.toLowerCase().trim();render(cache,false)};$('leagueFilter').onchange=e=>{activeLeague=e.target.value;render(cache,false)};$('homeBtn').onclick=()=>showMyBets(false);$('liveBtn').onclick=()=>{showMyBets(false);setMode('live')};document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{const id=b.dataset.close;$(id).classList.remove('show');if(id==='controlModal')closeControlPoll()});document.addEventListener('click',e=>{const menu=$('userMenu'),avatar=$('userAvatar');if(menu&&menu.classList.contains('show')&&!menu.contains(e.target)&&e.target!==avatar)hideUserMenu()});document.addEventListener('keydown',e=>{if(e.key==='Escape')hideUserMenu()});
+setAuthState(user);window.addEventListener('hashchange',()=>setMode(modeFromHash(),{fromHash:true}));setMode(modeFromHash(),{fromHash:true});restore();renderSlip();
+</script></body></html>

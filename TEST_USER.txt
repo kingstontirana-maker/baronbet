@@ -1,0 +1,10 @@
+TEST LOGIN ACCOUNT
+
+Username: user123
+Password: user123
+Credit: 500
+Role: user
+Parent: agent
+
+The packaged database already contains this account.
+On server startup, if user123 is missing, the server creates it automatically under the demo agent.

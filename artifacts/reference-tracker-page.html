@@ -1,0 +1,453 @@
+﻿<!DOCTYPE html>
+<html maintheme="red" version="xbet">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title></title>
+    <script
+      src="https://code.jquery.com/jquery-3.5.1.min.js"
+      integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+      crossorigin="anonymous"
+    ></script>
+    <script src="./js/calendar/moment.min.js"></script>
+    <script src="./js/calendar/daterangepicker.js"></script>
+    <link rel="stylesheet" href="./css/slick.css?v=103" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.4/socket.io.min.js"></script>
+    <script src="https://unpkg.com/axios@1.0.0/dist/axios.min.js"></script>
+
+    <script>
+      if (location.hostname == "gateplay365.com") {
+        window.location.href = "https://gateplay365.com/gateplay365/user/src";
+      } else if (location.hostname == "londonpro365.com") {
+        window.location.href = "https://londonpro365.com/londonpro365/user/src";
+      } else if (location.hostname == "arenaplay365.com") {
+        window.location.href = "https://arenaplay365.com/arenaplay365/user/src";
+      } else if (location.hostname == "arenaplay365.com") {
+        window.location.href = "https://arenaplay365.com/arenaplay365/user/src";
+      } else if (location.hostname == "gatepro365.com") {
+        window.location.href = "https://gatepro365.com/mp-red/vbet/user/src";
+      } else if (location.hostname == "romapro365.com") {
+        window.location.href = "https://romapro365.com/mp-red/vbet/user/src";
+      }
+    </script>
+
+    <script>
+      function addChatScript(id) {
+        var s = document.createElement("script");
+        s.id = "ze-snippet";
+        s.type = "text/javascript";
+        s.src = `https://static.zdassets.com/ekr/snippet.js?key=${id}`;
+        $("head").append(s);
+      }
+
+      // if (window.location.host === 'm.xbet365.me' || window.location.host === 'xbet365.me') {
+      // XBET Chat
+      addChatScript("f40fc581-5e8b-4700-8b06-5510c9416509");
+      // } else {
+      //   // VBET Chat
+      //   addChatScript('bd94d075-2fee-4fcd-9059-d41a8616be47');
+      // }
+
+      // Set theme
+      switch (window.location.host) {
+        case "betmania365.co":
+        case "m.xbet365.me":
+        case "m.goalx.me":
+        case "1xxet.net":
+        case "m.maxbet.run":
+        case "lucky333.co":
+        case "dubaipro365.com":
+        case "ora777.com":
+        case "ora88.com":
+        case "extrabet.net":
+        case "lemon777.co":
+        case "lemon777.pro":
+        case "slucky24.co":
+        case "850bet.co":
+        case "850bet.club":
+        case "1x2corner.com":
+        case "1x2over.com":
+        case "candapro365.com":
+        case "max666.bet":
+        case "m.italiasport.co":
+        case "bett3.net":
+        case "bet777.club":
+        case "mdcr7.co":
+        case "goldenbet.gs":
+        case "betton777.com":
+        case "m.mocabet.net":
+        case "betsimba365.com":
+        case "euro07.bet":
+        case "m.euro07.bet":
+        case "m.1x2maxb.com":
+        case "extrabet07.com":
+        case "coralgol.com":
+        case "troja.bet":
+        case "bastmania355.com":
+        case "elite07.bet":
+          $("html").attr("maintheme", "jeshile");
+          break;
+        case "totalbet365.co":
+          $("html").attr("maintheme", "deep-emerald");
+          break;
+        case "lion07.bet":
+        case "million07.bet":
+        case "italiasport.co":
+          $("html").attr("maintheme", "purple");
+          break;
+        case "jokerbet777.com":
+        case "vendeta777.com":
+        case "bilion07.bet":
+          $("html").attr("maintheme", "black");
+          break;
+        case "albbet.co":
+        case "albbtur.com":
+        case "bastalbania.com":
+          $("html").attr("maintheme", "red-light");
+          break;
+        case "mocabet.net":
+        case "1x2maxb.com":
+        case "m.coralgol.com":
+          $("html").attr("maintheme", "red");
+          break;
+        case "tifowin.com":
+          $("html").attr("maintheme", "orange-dark");
+          break;
+        case "850bet.bet":
+        case "m.bilion07.bet":
+          $("html").attr("maintheme", "blue-light");
+          break;
+        case "b3tcr7.com":
+          $("html").attr("maintheme", "tiffanyblue");
+          break;
+        case "winbet355.com":
+        case "xgoal.bet":
+        case "topten10.bet":
+        case "grotto.bet":
+          $("html").attr("maintheme", "navyblue");
+          break;
+        case "doha07.com":
+          $("html").attr("maintheme", "elbasan-blue");
+          break;
+        case "italiablu.com":
+        case "localhost:8080":
+          $("html").attr("maintheme", "blue");
+          break;
+      }
+
+      var i18n;
+
+      if (typeof itemArray !== "undefined") {
+        var itemArray;
+      }
+      itemArray = JSON.parse(localStorage.getItem("addObject")) || [];
+
+      function updateItemArray(newItemArray) {
+        itemArray = newItemArray;
+      }
+
+      function updateMatch() {
+        $(".bettingBtn").each(function (items, s) {
+          var getBetCoefId = $(s).attr("bet-id");
+          const check = itemArray.find(function (a) {
+            return a.coefId == getBetCoefId;
+          });
+          if (check) {
+            $(s).addClass("betSlipAdded");
+          }
+        });
+      }
+
+      function launchvirtualgames() {
+        if (!localStorage.getItem("access_token")) {
+          $(".loginBtn").click();
+          return;
+        }
+        if (
+          localStorage.getItem("username") == "Ardi91" ||
+          localStorage.getItem("username") == "Gjakova04"
+        ) {
+          return;
+        }
+        axios
+          .get(`${location.origin}/games`, {
+            headers: {
+              Authorization: "Bearer " + localStorage.getItem("access_token"),
+              "Content-Type": "application/json",
+            },
+          })
+          .then(function (response) {
+            response = response.data;
+            if (response.success) {
+              window.location = response.url;
+              return;
+            }
+            alert("Something went wrong:" + JSON.stringify(response));
+
+            // handle success
+            console.log(response);
+          })
+          .catch(function (error) {
+            // handle error
+            console.log(error);
+          });
+      }
+
+      function updateCoefLocalStorage(coef_id, coef_val) {
+        var item = itemArray.find(function (a) {
+          return a.coefId == coef_id;
+        });
+        if (item) {
+          item.coefVal = coef_val;
+          localStorage.setItem("addObject", JSON.stringify(itemArray));
+        }
+      }
+
+      function launchLiveCasinoFrame() {
+        const event = new CustomEvent("loadLiveCasino", {});
+        window.dispatchEvent(event);
+      }
+
+      function printLog(message) {
+        console.log(message);
+      }
+    </script>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./css/user_layout.css?v=103" />
+    <link rel="stylesheet" href="./css/daterangepicker.css?v=103" />
+    <link rel="stylesheet" href="./css/style.css?v=103" />
+    <link rel="stylesheet" href="./css/responsive.css?v=103" />
+  </head>
+
+  <body class="">
+    <div id="header_container"></div>
+    <div id="login_container"></div>
+    <section class="content" id="contentLoader">
+      <div class="loaderWrapper">
+        <div class="loader"></div>
+      </div>
+      <section class="mainPanel">
+        <!-- <div class="information-tooltip" style="
+            background: #ffe600;
+            margin: 5px;
+            width: calc(100% - 10px);
+            float: left;
+            height: auto;
+            padding: 5px;
+            font-size: 13px;
+          ">
+          <p>Me rastin e festes se ndrrimit te viteve ju njoftojme <strong>nga 31/12 ora 22:00 deri 01/01 ne oren 10:00</strong> nuk do kete sherbim te basteve sportive. Ju falenderojme per mirkuptimin! Gezuar 2059!</p>
+        </div> -->
+        <section class="" id="leftpanel_container"></section>
+        <!-- <div class="tooltipInformation">
+            <svg xmlns="http://www.w3.org/2000/svg" id="icon" width="32" height="32" viewBox="0 0 32 32">
+                <defs>
+                    <style>
+                        .cls-1 {
+                            fill: none;
+                        }
+                    </style>
+                </defs>
+                <polygon points="17 22 17 14 13 14 13 16 15 16 15 22 12 22 12 24 20 24 20 22 17 22" />
+                <path d="M16,8a1.5,1.5,0,1,0,1.5,1.5A1.5,1.5,0,0,0,16,8Z" />
+                <path d="M16,30A14,14,0,1,1,30,16,14,14,0,0,1,16,30ZM16,4A12,12,0,1,0,28,16,12,12,0,0,0,16,4Z" />
+                <rect id="_Transparent_Rectangle_" data-name="&lt;Transparent Rectangle&gt;" class="cls-1" width="32"
+                    height="32" />
+            </svg>
+            <p><strong>Info:</strong> Ju informojmë se, për shkak të një problemi teknik, të gjitha transaksionet e kryera më datën <strong>14.09.2024</strong>, në intervalin kohor nga ora <strong>21:38</strong> deri në <strong>22:15</strong>, do të anulohen.</p>
+        </div> -->
+        <section class="contentHolder" id="content_container"></section>
+        <div class="slotsWrapper" id="casino">
+          <div class="betModule liveInModule accordionDisable">
+            <div class="betModuleHeaderContainer">
+              <a class="betModuleHeaderBtn" href="#">
+                <span>Aviator</span>
+                <span class="yellowColored"></span>
+              </a>
+            </div>
+          </div>
+
+          <div class="slotsHolderScroll">
+            <div class="scrollHelper" style="min-width: 300px">
+              <a class="slotsItem leftPanel-game" game="2059">
+                <img
+                  src="https://content.stargame.solutions/api/game/icon2/2059"
+                  loading="lazy"
+                  width="150"
+                  height="100"
+                  alt="Aviator"
+                />
+                <span>Aviator</span>
+              </a>
+              <a class="slotsItem leftPanel-game" game="2059">
+                <img
+                  src="https://content.stargame.solutions/api/game/icon2/2059"
+                  loading="lazy"
+                  width="150"
+                  height="100"
+                  alt="Plinko"
+                />
+                <span>Plinko</span>
+              </a>
+              <a class="slotsItem leftPanel-game" game="2059">
+                <img
+                  src="https://content.stargame.solutions/api/game/icon2/949"
+                  loading="lazy"
+                  width="150"
+                  height="100"
+                  alt="Plinko"
+                />
+                <span>Lucky Bonus</span>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="slotsWrapper" id="slots">
+          <div class="betModule liveInModule accordionDisable">
+            <div class="betModuleHeaderContainer">
+              <a class="betModuleHeaderBtn" href="#">
+                <span>Lojra të shpejta</span>
+                <span class="yellowColored"></span>
+              </a>
+            </div>
+          </div>
+
+          <div class="slotsHolderScroll">
+            <div class="scrollHelper1">
+              <a class="slotsItem virtual" onclick="launchvirtualgames()">
+                <img src="img/KenoAustria.png" loading="lazy" alt="" />
+                <span>keno austria</span>
+              </a>
+              <a class="slotsItem virtual" onclick="launchvirtualgames()">
+                <img src="img/dograce.jpeg" loading="lazy" alt="" />
+                <span>Racing Dogs</span>
+              </a>
+              <a class="slotsItem virtual" onclick="launchvirtualgames()">
+                <img src="img/lucky.jpg" alt="" loading="lazy" />
+                <span>Lucky Balls</span>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="slotsWrapper" id="starCasino">
+          <div class="betModule liveInModule accordionDisable">
+            <div class="betModuleHeaderContainer">
+              <a class="betModuleHeaderBtn" href="#">
+                <span>Deluxe Kazino</span>
+                <span class="yellowColored"></span>
+              </a>
+            </div>
+          </div>
+
+          <div class="slotsHolderScroll">
+            <div class="scrollHelper2">
+              <a class="slotsItem" href="../src/#/deluxe">
+                <img
+                  src="/vbet/user/src/img/games_icons/LegendOfTheSphinx.jpg"
+                  loading="lazy"
+                  alt=""
+                />
+              </a>
+              <a class="slotsItem" href="../src/#/deluxe">
+                <img
+                  src="/vbet/user/src/img/games_icons/RedHotFruits2.jpg"
+                  alt=""
+                  loading="lazy"
+                />
+              </a>
+              <a class="slotsItem" href="../src/#/deluxe">
+                <img
+                  src="/vbet/user/src/img/games_icons/CashFruits.jpg"
+                  loading="lazy"
+                  alt=""
+                />
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="slotsWrapper" id="vegasCasino">
+          <div class="betModule liveInModule accordionDisable">
+            <div class="betModuleHeaderContainer">
+              <a class="betModuleHeaderBtn" href="#">
+                <span>Vegas Kazino</span>
+                <span class="yellowColored"></span>
+              </a>
+            </div>
+          </div>
+
+          <div class="slotsHolderScroll">
+            <div class="scrollHelper3">
+              <a class="slotsItem" href="../src/#/vegas">
+                <img src="img/leprauch.jpg" loading="lazy" alt="" />
+              </a>
+              <a class="slotsItem" href="../src/#/vegas">
+                <img src="img/ring.jpg" alt="" loading="lazy" />
+              </a>
+              <a class="slotsItem" href="../src/#/vegas">
+                <img src="img/dragon.jpg" loading="lazy" alt="" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="rightPanel" id="betslip"></section>
+
+      <div id="footer_container"></div>
+      <div class="messageModal" id="messageModal">
+        <div class="messageHolder">
+          <span>xbet</span>
+          <p></p>
+        </div>
+      </div>
+      <div class="messageModal" id="confirmationModal">
+        <div class="messageHolder">
+          <span>xbet</span>
+          <p translate>Bileta u pranua!</p>
+        </div>
+      </div>
+      <div class="messageModal" id="negotiationModal">
+        <div class="messageHolder">
+          <span>xbet</span>
+          <p translate>Bileta u ofertua, prano ndryshimet!</p>
+        </div>
+      </div>
+      <div class="messageModal" id="refusedModal">
+        <div class="messageHolder">
+          <span>xbet</span>
+          <p translate>Bileta u refuzua!</p>
+        </div>
+      </div>
+    </section>
+
+    <script src="./../build/polyfill.js?v=103"></script>
+    <script src="./../build/betSlipHandler.js?v=103"></script>
+    <script src="./../build/extra.js?v=103"></script>
+    <script src="./../build/hammer.js?v=103"></script>
+    <script src="./../build/homePageBannerHandler.js?v=103"></script>
+    <script src="./../build/leftPanelHandler.js?v=103"></script>
+
+    <script src="./../build/loginHandler.js?v=103"></script>
+    <script src="./../build/searchHandler.js?v=103"></script>
+    <script src="./../build/singleGame.js?v=103"></script>
+    <script src="./../build/singleMatchEvent.js?v=103"></script>
+    <script src="./../build/tableHandler.js?v=103"></script>
+    <script src="./../build/userHandler.js?v=103"></script>
+    <script src="./../build/virtualHandler.js?v=103"></script>
+    <script src="./../build/main.js?v=103"></script>
+    <script src="./js/slider/slick.js?v=103"></script>
+    <script src="./services/Chat.js?v=103"></script>
+
+    <div id="iframe_container"></div>
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"d34d032de742476bb48a53ee38af98c8","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
+

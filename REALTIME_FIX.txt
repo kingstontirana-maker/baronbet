@@ -1,0 +1,11 @@
+EURO07 LIVE REAL-TIME FIX v4
+
+- Uses the dedicated Socket.IO server observed in the Euro07 browser request:
+  https://xbet.socketi355.com:1440/socket.io
+- socket.io-client 2.5.x / Engine.IO EIO=3 compatibility.
+- Uses WebSocket transport to match the browser's actual request:
+  wss://xbet.socketi355.com:1440/socket.io/?EIO=3&transport=websocket
+- Sends Origin/Referer/User-Agent headers matching the Euro07 browser session.
+- Joins the in-play room with: connectToRoom { room: "inplay" }.
+- Receives new-coefs and new-live-game events and forwards them to the platform via SSE.
+- Applies new-coefs by game_id + coef_id and updates current_result.

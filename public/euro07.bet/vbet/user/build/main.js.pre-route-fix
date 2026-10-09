@@ -1,0 +1,567 @@
+const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+let mode='home',timer=null,cache=[],selectedSport='soccer',query='',activeLeague='',lastOdds={},slip=[],pendingTicket=null,token=localStorage.getItem('sportsbook_token')||'',user=null,liveStream=null,openLiveGameId=null,liveMarketsCache=new Map(),myBetsReturnMode='home';
+const liveClockState=new Map();
+const liveMarketRequestSeq=new Map();
+function clockToSeconds(v){const m=String(v??'').match(/^(\d{1,3}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null}
+function secondsToClock(sec){sec=Math.max(0,Math.floor(sec));return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
+function liveClockRunning(g){
+  const status=g?.api_status??g?.game_status;
+  if(status==null||status==='')return true;
+  return String(status)==='1';
+}
+function syncLiveClock(g){
+  const raw=g.current_minute??g.game_time;
+  const sec=clockToSeconds(raw);
+  if(sec===null)return raw||'LIVE';
+  const key=String(g.id);
+  const running=liveClockRunning(g);
+  const prev=liveClockState.get(key);
+  if(!prev){
+    liveClockState.set(key,{base:sec,syncedAt:Date.now(),running,lastApiSec:sec});
+    return secondsToClock(sec);
+  }
+  // Status transitions are authoritative. This handles halftime/fulltime pauses and restart cleanly.
+  if(prev.running!==running){
+    liveClockState.set(key,{base:sec,syncedAt:Date.now(),running,lastApiSec:sec});
+    return secondsToClock(sec);
+  }
+  if(!running){
+    // When API says the game is stopped, never locally increment the clock.
+    if(prev.base!==sec || prev.lastApiSec!==sec) liveClockState.set(key,{base:sec,syncedAt:Date.now(),running:false,lastApiSec:sec});
+    return secondsToClock(sec);
+  }
+  // While live, ignore stale/backward API snapshots. Do not reset the ticker when API repeats the same minute.
+  if(sec>prev.base){
+    liveClockState.set(key,{base:sec,syncedAt:Date.now(),running:true,lastApiSec:sec});
+  } else if(sec===prev.base){
+    liveClockState.set(key,{...prev,lastApiSec:sec});
+  }
+  return secondsToClock(liveClockState.get(key)?.base ?? sec);
+}
+function getLiveClock(g){
+  const key=String(g.id);
+  const raw=g.current_minute??g.game_time;
+  const sec=clockToSeconds(raw);
+  const running=liveClockRunning(g);
+  let st=liveClockState.get(key);
+  if(!st){syncLiveClock(g);st=liveClockState.get(key)}
+  else if(st.running!==running || (sec!==null && !running && st.base!==sec)){syncLiveClock(g);st=liveClockState.get(key)}
+  if(!st)return raw||'LIVE';
+  const elapsed=st.running?(Date.now()-st.syncedAt)/1000:0;
+  return secondsToClock(st.base+elapsed);
+}
+function tickLiveClocks(){if(mode!=='live')return;document.querySelectorAll('[data-live-clock]').forEach(el=>{const g=cache.find(x=>String(x.id)===String(el.dataset.liveClock));const clock=el.querySelector('.live-clock-value');if(g&&clock)clock.textContent=getLiveClock(g)});const modalClock=$('liveMarketsOverlay')?.querySelector('[data-live-modal-clock]');if(modalClock){const g=cache.find(x=>String(x.id)===String(modalClock.dataset.liveModalClock));if(g)modalClock.textContent=getLiveClock(g)}}
+function setHashForMode(m){const target=m==='live'?'#/InPlay':m==='mybets'?'#/MyBets':'#/';if(location.hash!==target)history.pushState({mode:m},'',target)}
+function modeFromHash(){if(/^#\/MyBets\/?$/i.test(location.hash))return'mybets';return /^#\/InPlay\/?$/i.test(location.hash)?'live':'home'}
+const sports=[['★','Favourites','all'],['🔥','Popular','popular'],['⚽','Football','soccer'],['🎾','Tennis','tennis'],['🏈','American Football','american'],['⚾','Baseball','baseball'],['🏀','Basketball','basketball'],['🥊','Boxing','boxing'],['🏏','Cricket','cricket'],['🎯','Darts','darts'],['🎮','eSports','esports'],['🐕','Greyhounds','greyhounds']];
+$('sportsbar').innerHTML=sports.map((s,i)=>`<button class="sport ${s[2]==='soccer'?'active':''}" data-sport="${s[2]}"><span class="ico">${s[0]}</span><span>${s[1]}</span></button>`).join('');
+const sideSports=['Home','Futboll','Basketboll','Tenis','Futboll Amerikan','Badminton','Futsal','Volleyball','Darts','Cricket','Ping Pong','Aussie rules','Rugby','Box','Floorball','Handball'];
+$('sideList').innerHTML=sideSports.map((x,i)=>`<div class="sideRow ${i===0?'home':''}"><span>${x}</span>${i===0?'':'<span class="star">☆</span>'}</div>`).join('');
+$('sideSearch').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('.sideRow').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'flex':'none')};
+function parseOdds(s){const o={1:null,X:null,2:null};if(typeof s!=='string')return o;for(const x of s.split(',')){const p=x.split('|');if(p.length>=4&&['1','X','2'].includes(String(p[2])))o[String(p[2])]={odd:Number(p[1]),coefId:String(p[0]),marketId:String(p[3])}}return o}
+function lock(v){const n=Number(v);return v==null||v===''||v==='-'||!Number.isFinite(n)||n<=1}
+function sportOf(g){const s=((g.sport_name||g.sport||g.category||'')+'').toLowerCase();if(/basket/.test(s))return'basketball';if(/tennis/.test(s))return'tennis';if(/baseball/.test(s))return'baseball';if(/american/.test(s))return'american';if(/ping|table tennis/.test(s))return'pingpong';return'soccer'}
+function visible(g){const t=((g.name||'')+' '+(g.home_team||'')+' '+(g.away_team||'')+' '+(g.league||'')).toLowerCase();return(!query||t.includes(query))&&(!activeLeague||String(g.league||'')===activeLeague)&&(selectedSport==='all'||selectedSport==='popular'||sportOf(g)===selectedSport)}
+function updateLeagues(data){const ls=[...new Set((data||[]).map(g=>g.league||'Competition'))].sort();$('leagueFilter').innerHTML='<option value="">All competitions</option>'+ls.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');$('leagueFilter').value=activeLeague}
+function addPick(g,key,val){
+  const info=parseOdds(g.odd)[key];
+  const odd=info?Number(info.odd):Number(val);
+  if(lock(odd))return;
+  const id=String(g.id)+'|'+key;
+  const i=slip.findIndex(x=>x.id===id);
+  if(i>=0){
+    slip.splice(i,1);
+  }else{
+    slip=slip.filter(x=>String(x.gameId)!==String(g.id));
+    slip.push({id,gameId:g.id,key,odd,currentOdd:odd,coefId:info?.coefId||'',marketId:info?.marketId||'',oddsChanged:false,invalid:false,league:g.league||'',home:g.home_team||g.name||'',away:g.away_team||'',eventTime:g.game_time||g.game_date||''});
+  }
+  renderSlip();
+  if(mode==='live'){
+    if(openLiveGameId) renderLiveMarketPanel(g,liveMarketsCache.get(String(g.id))||[],false);
+    else renderLive(cache,false);
+  }else{
+    render(cache,false);
+  }
+}
+
+function addMarketPick(g, option){
+  const odd=Number(option.odd);
+  if(lock(odd))return;
+  const coefId=String(option.market_option_id??option.id??'');
+  const marketId=String(option.market_id??'');
+  const key=`${marketId}|${coefId}`;
+  const id=String(g.id)+'|'+key;
+  const i=slip.findIndex(x=>x.id===id);
+  if(i>=0){slip.splice(i,1)}else{
+    slip=slip.filter(x=>String(x.gameId)!==String(g.id));
+    slip.push({id,gameId:g.id,key:option.market_option||'',odd, currentOdd:odd,coefId,marketId,market:option.market||'Market',marketType:'detail',oddsChanged:false,invalid:false,league:g.league||'',home:g.home_team||g.name||'',away:g.away_team||'',eventTime:g.game_time||g.game_date||''});
+  }
+  renderSlip();
+  renderLive(cache);
+}
+
+function normalizeLiveMarkets(data){
+  const groups=[];
+  if(Array.isArray(data)){
+    for(const item of data){
+      if(Array.isArray(item)&&item.length)groups.push(item.filter(Boolean));
+      else if(item&&typeof item==='object')groups.push([item]);
+    }
+  }
+  return groups.filter(g=>g.length&&g[0].market_id!=null);
+}
+function marketOrderValue(v){return v==null||v===''?9999999:Number(v)||9999999}
+function renderLiveMarketPanel(game, groups, loading=false, error=''){
+  const target=$('content');
+  if(!target)return;
+  document.body.classList.add('live-markets-open');
+  const sb=$('sportsbar');if(sb)sb.style.display='none';
+  const status=game?.api_status??game?.game_status;
+  const result=String(game?.result||'').split('-');
+  const homeScore=result[0]||'0', awayScore=result[1]||'0';
+  const running=liveClockRunning(game);
+  const activeClock=getLiveClock(game);
+  if(loading){
+    target.innerHTML=`<div class="live-detail"><div class="live-detail-scorebar"><button class="live-detail-back" data-live-detail-back="1">‹</button><div class="live-detail-team">${esc(game.home_team||game.name||'')}</div><div class="live-detail-score"><b>${esc(homeScore)}</b><span>:</span><b>${esc(awayScore)}</b><small>${esc(activeClock)}</small></div><div class="live-detail-team away">${esc(game.away_team||'')}</div></div><div class="live-pitch"><div class="pitch-lines"><span class="pitch-half"></span><span class="pitch-circle"></span><span class="pitch-midline"></span><span class="pitch-box left"></span><span class="pitch-box right"></span></div><div class="live-pitch-status"><span class="pause-circle">15</span><strong>${status==='2'?'Pushim':(running?activeClock:'Pushim')}</strong></div></div><div class="live-markets-loading live-detail-loading">Duke ngarkuar marketet…</div></div>`;
+    bindLiveDetail();
+    return;
+  }
+  if(error){
+    target.innerHTML=`<div class="live-detail"><div class="live-detail-scorebar"><button class="live-detail-back" data-live-detail-back="1">‹</button><div class="live-detail-team">${esc(game.home_team||game.name||'')}</div><div class="live-detail-score"><b>${esc(homeScore)}</b><span>:</span><b>${esc(awayScore)}</b><small>${esc(activeClock)}</small></div><div class="live-detail-team away">${esc(game.away_team||'')}</div></div><div class="live-detail-error">Marketet nuk u ngarkuan.<button class="live-markets-retry" data-retry-live-markets="${esc(game.id)}">Provo përsëri</button></div></div>`;
+    bindLiveDetail();
+    return;
+  }
+
+  const cleanGroups=(groups||[]).filter(Boolean).map(g=>g.filter(Boolean)).filter(g=>g.length);
+  if(!cleanGroups.length){
+    target.innerHTML=`<div class="live-detail"><div class="live-detail-scorebar"><button class="live-detail-back" data-live-detail-back="1">‹</button><div class="live-detail-team">${esc(game.home_team||game.name||'')}</div><div class="live-detail-score"><b>${esc(homeScore)}</b><span>:</span><b>${esc(awayScore)}</b><small>${esc(activeClock)}</small></div><div class="live-detail-team away">${esc(game.away_team||'')}</div></div><div class="live-markets-empty live-detail-empty">Nuk ka markets aktive për këtë ndeshje.</div></div>`;
+    bindLiveDetail();
+    return;
+  }
+
+  const sections={};
+  cleanGroups.forEach(group=>{
+    const first=group[0]||{};
+    const category=String(first.mainCategory||'Të tjera').trim()||'Të tjera';
+    (sections[category]??=[]).push(group);
+  });
+  const cats=Object.keys(sections);
+  if(!cats.includes(liveMarketCategory))liveMarketCategory=cats[0]||'Kryesore';
+  const tabs=cats.map(c=>`<button class="live-detail-tab ${c===liveMarketCategory?'active':''}" data-live-category="${esc(c)}">${esc(c)}</button>`).join('');
+  let html='';
+  const marketGroups=sections[liveMarketCategory]||[];
+  marketGroups.sort((a,b)=>marketOrderValue(a[0]?.market_order)-marketOrderValue(b[0]?.market_order));
+  for(const group of marketGroups){
+    const m=group[0]||{};
+    const marketName=String(m.market||'Market').trim()||'Market';
+    const opts=group.filter(x=>x&&Number.isFinite(Number(x.odd))&&Number(x.odd)>1);
+    if(!opts.length)continue;
+    const columns=Math.min(Math.max(opts.length,1),3);
+    html+=`<section class="live-detail-market"><div class="live-detail-market-head"><span>${esc(marketName)}</span>${m.special_value!=null&&m.special_value!==''?`<em>${esc(m.special_value)}</em>`:''}</div><div class="live-detail-options" style="grid-template-columns:repeat(${columns},minmax(0,1fr))">`;
+    for(const option of opts){
+      const selected=slip.some(x=>String(x.gameId)===String(game.id)&&String(x.coefId)===String(option.market_option_id));
+      html+=`<button class="live-detail-option ${selected?'selected':''}" data-live-market-game="${esc(game.id)}" data-live-market-option="${esc(option.market_option_id??'')}" data-live-market-id="${esc(option.market_id??'')}"><span>${esc(String(option.market_option||'').trim()||'—')}</span><strong>${Number(option.odd).toFixed(2)}</strong></button>`;
+    }
+    html+='</div></section>';
+  }
+
+  const pause=status==='2';
+  target.innerHTML=`<div class="live-detail"><div class="live-detail-scorebar"><button class="live-detail-back" data-live-detail-back="1">‹</button><div class="live-detail-team">${esc(game.home_team||game.name||'')}</div><div class="live-detail-score"><b>${esc(homeScore)}</b><span>${pause?'':' '}</span><b>${esc(awayScore)}</b><small>${esc(activeClock)}</small></div><div class="live-detail-team away">${esc(game.away_team||'')}</div></div><div class="live-pitch"><div class="pitch-lines"><span class="pitch-half"></span><span class="pitch-circle"></span><span class="pitch-midline"></span><span class="pitch-box left"></span><span class="pitch-box right"></span><span class="pitch-dot center"></span></div><div class="live-pitch-status"><span class="pause-circle">15</span><strong>${pause?'Pushim':'Live · '+esc(activeClock)}</strong></div></div><div class="live-detail-tabs">${tabs}</div><div class="live-detail-body">${html||'<div class="live-markets-empty live-detail-empty">Nuk ka markets aktive për këtë kategori.</div>'}</div></div>`;
+  bindLiveDetail();
+}
+function bindLiveDetail(){
+  const content=$('content');if(!content)return;
+  content.onclick=e=>{
+    const back=e.target.closest('[data-live-detail-back]');
+    if(back){e.preventDefault();closeLiveMarkets();renderLive(cache,false);return;}
+    const retry=e.target.closest('[data-retry-live-markets]');
+    if(retry){e.preventDefault();const g=cache.find(x=>String(x.id)===String(retry.dataset.retryLiveMarkets));if(g)fetchLiveMarkets(g,true);return;}
+    const tab=e.target.closest('[data-live-category]');
+    if(tab){liveMarketCategory=tab.dataset.liveCategory||'Kryesore';const g=cache.find(x=>String(x.id)===String(openLiveGameId));const groups=liveMarketsCache.get(String(openLiveGameId))||[];if(g)renderLiveMarketPanel(g,groups,false);return;}
+    const optionBtn=e.target.closest('[data-live-market-option]');
+    if(optionBtn){
+      e.preventDefault();e.stopPropagation();
+      const g=cache.find(x=>String(x.id)===String(optionBtn.dataset.liveMarketGame));
+      const groups=liveMarketsCache.get(String(optionBtn.dataset.liveMarketGame))||[];
+      const option=groups.flat().find(x=>String(x.market_option_id)===String(optionBtn.dataset.liveMarketOption)&&String(x.market_id)===String(optionBtn.dataset.liveMarketId));
+      if(g&&option)addMarketPick(g,option);
+    }
+  };
+}
+
+function bindLiveMarketsOverlay(){return;}
+
+function closeLiveMarkets(){
+  openLiveGameId=null;
+  stopOpenMarketsRefresh();
+  const overlay=$('liveMarketsOverlay');
+  if(overlay){overlay.classList.remove('show');overlay.innerHTML='';overlay.setAttribute('aria-hidden','true')}
+  const sb=$('sportsbar');if(sb)sb.style.display='flex';
+  document.body.classList.remove('live-markets-open');
+}
+
+async function fetchLiveMarkets(game,force=false,silent=false){
+  const id=String(game.id);
+  const cached=liveMarketsCache.get(id);
+  if(!force && Array.isArray(cached) && cached.length){
+    renderLiveMarketPanel(game,cached,false);
+    // Refresh in the background without replacing a valid panel with an empty response.
+    refreshLiveMarkets(game,true);
+    return cached;
+  }
+  if(!silent)renderLiveMarketPanel(game,[],true);
+  return refreshLiveMarkets(game,true);
+}
+async function refreshLiveMarkets(game,force=false){
+  const id=String(game.id);
+  const seq=(liveMarketRequestSeq.get(id)||0)+1;
+  liveMarketRequestSeq.set(id,seq);
+  let lastError=null;
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const controller=new AbortController(); const timeout=setTimeout(()=>controller.abort(),7000);
+      const r=await fetch('/api/livegame/'+encodeURIComponent(id)+'?ts='+Date.now(),{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json',Pragma:'no-cache'}});
+      clearTimeout(timeout);
+      if(!r.ok)throw Error('HTTP '+r.status);
+      const data=await r.json(); const groups=normalizeLiveMarkets(data);
+      if(liveMarketRequestSeq.get(id)!==seq)return liveMarketsCache.get(id)||null;
+      // Empty/partial responses are transient; never replace known-good markets with them.
+      if(groups.length){
+        liveMarketsCache.set(id,groups);
+        if(openLiveGameId===id)renderLiveMarketPanel(game,groups,false);
+        return groups;
+      }
+      throw Error('Empty live market response');
+    }catch(e){lastError=e;if(attempt<2)await new Promise(res=>setTimeout(res,250*(attempt+1)));}
+  }
+  const knownGood=liveMarketsCache.get(id);
+  if(openLiveGameId===id){
+    if(knownGood?.length)renderLiveMarketPanel(game,knownGood,false);
+    else renderLiveMarketPanel(game,[],false,'retry');
+  }
+  return knownGood||null;
+}
+function startOpenMarketsRefresh(){
+  clearInterval(window.liveMarketsTicker);
+  window.liveMarketsTicker=setInterval(()=>{
+    if(mode!=='live'||!openLiveGameId)return;
+    const g=cache.find(x=>String(x.id)===String(openLiveGameId));
+    if(g)refreshLiveMarkets(g,true);
+  },2000);
+}
+function stopOpenMarketsRefresh(){clearInterval(window.liveMarketsTicker);window.liveMarketsTicker=null}
+async function toggleLiveMarkets(game){
+  const id=String(game.id);
+  if(openLiveGameId===id){closeLiveMarkets();renderLive(cache,false);return;}
+  openLiveGameId=id;
+  liveMarketCategory='Kryesore';
+  const sb=$('sportsbar');if(sb)sb.style.display='none';
+  document.body.classList.add('live-markets-open');
+  const cached=liveMarketsCache.get(id);
+  if(cached?.length){renderLiveMarketPanel(game,cached,false);refreshLiveMarkets(game,true);}
+  else await fetchLiveMarkets(game,false);
+  startOpenMarketsRefresh();
+}
+
+function refreshSlipState(){
+  for(const p of slip){
+    if(p.marketType==='detail')continue;
+    const g=cache.find(x=>String(x.id)===String(p.gameId));
+    if(!g) continue;
+    const info=parseOdds(g.odd)[p.key];
+    if(!info||lock(info.odd)) continue;
+    const current=Number(info.odd);
+    p.currentOdd=Number(current.toFixed(2));
+    p.invalid=false;p.invalidReason='';
+    if(!Number.isFinite(Number(p.odd))){p.odd=current;p.coefId=info.coefId||p.coefId;p.marketId=info.marketId||p.marketId;p.oddsChanged=false;continue}
+    p.oddsChanged=Math.abs(current-Number(p.odd))>0.0001;
+  }
+}
+
+function renderSlip(){
+  refreshSlipState();
+  const validSlip=slip.filter(x=>!x.invalid&&!x.oddsChanged&&Number.isFinite(Number(x.odd))&&Number(x.odd)>1),total=validSlip.reduce((a,x)=>a*Number(x.odd),1),has=slip.length>0,hasInvalid=slip.some(x=>x.invalid),hasChanged=slip.some(x=>x.oddsChanged);
+  $('slipcount').textContent=slip.length;$('selCount').textContent=slip.length;$('totalOdds').textContent=validSlip.length?total.toFixed(2):'0.00';$('mobileSlipCount').textContent=slip.length;$('mobileSlipOdds').textContent=validSlip.length?total.toFixed(2):'0.00';$('mobileSlipBar').classList.toggle('show',has||!!pendingTicket);
+  updatePotential();$('place').classList.toggle('enabled',has&&!!user&&!hasInvalid&&!hasChanged&&!pendingTicket);
+  $('betMsg').textContent=pendingTicket?`Biletë #${pendingTicket.id} është në pritje të pranimit nga Qendra.`:(hasChanged?'Një ose më shumë koeficientë kanë ndryshuar. Prano ose refuzo koeficientin e ri.':(hasInvalid?'Një ose më shumë koeficientë nuk janë më aktivë.':(user?'Enter stake and place your bet.':'Log in to place a bet.')));
+  $('betMsg').className='notice'+((hasInvalid||hasChanged)?' error':'');
+  let body='';
+  if(pendingTicket){body+=`<div class="pick ticketPending"><div class="leagueName">Biletë #${pendingTicket.id} • NË PRITJE</div>${pendingTicket.selections.map(p=>`<div class="game">${esc(p.home)}<br>${esc(p.away)} <span class="pickodd">${Number(p.odd).toFixed(2)}</span></div><div class="marketName">${esc(p.market||'Fulltime Result')} • ${esc(p.key)}</div>`).join('')}<div class="reservedNote">Shuma €${Number(pendingTicket.stake).toFixed(2)} është rezervuar deri në pranimin ose anulimin e biletës.</div></div>`}
+  if(has)body+=slip.map((p,i)=>{
+    let change='';
+    if(p.oddsChanged){change=`<div class="oddsChangeNotice"><div><strong>Koeficienti ndryshoi</strong><br><span>${Number(p.odd).toFixed(2)} → ${Number(p.currentOdd).toFixed(2)}</span><br><small>A dëshironi të pranoni koeficientin e ri?</small></div><div class="oddsChangeActions"><button data-accept-odd="${i}">Prano</button><button class="reject" data-reject-odd="${i}">Refuzo</button></div></div>`}
+    return `<div class="pick ${p.invalid?'invalidPick':''}"><button class="remove" data-remove="${i}">×</button><div class="leagueName">${esc(p.league)}</div><div class="game">${esc(p.home)}<br>${esc(p.away)} <span class="pickodd">${p.invalid?'LOCK':Number(p.odd).toFixed(2)}</span>${p.invalid?'<span class="invalidMark">✕</span>':''}</div><div class="marketName">${esc(p.market||'Fulltime Result')} • ${esc(p.key)}${p.invalid?` · ${esc(p.invalidReason)}`:''}</div>${change}</div>`
+  }).join('');
+  if(!body)body='<div class="emptySlip">Skedina është bosh.<br>Zgjidh një koeficient për ta shtuar.</div>';
+  $('slipbody').innerHTML=body;
+  document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{slip.splice(Number(b.dataset.remove),1);renderSlip();render(cache,false)});
+  document.querySelectorAll('[data-accept-odd]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.acceptOdd),p=slip[i];if(!p)return;p.odd=Number(Number(p.currentOdd).toFixed(2));p.oddsChanged=false;p.invalid=false;p.invalidReason='';renderSlip();render(cache,false)});
+  document.querySelectorAll('[data-reject-odd]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.rejectOdd);if(Number.isInteger(i)&&slip[i])slip.splice(i,1);renderSlip();render(cache,false)});
+}
+
+function updatePotential(){const stake=Number($('stake').value||0),valid=slip.filter(x=>!x.invalid&&!x.oddsChanged),odds=valid.reduce((a,x)=>a*Number(x.odd),1);$('potential').textContent=stake>0&&valid.length?(stake*odds).toFixed(2):'0.00'}
+function oddHtml(g,key,val,old){const raw=val&&typeof val==='object'?val.odd:val;const l=lock(raw),sel=slip.some(x=>String(x.gameId)===String(g.id)&&x.key===key);return `<button class="odd ${l?'locked':''} ${sel?'selected':''}" ${l?'disabled':''} data-game="${esc(g.id)}" data-key="${key}" data-odd="${esc(raw??'')}">${l?'LOCK':Number(raw).toFixed(2)}</button>`}
+function render(data,reset=true){
+  if(reset){cache=data||[];if(mode!=='live')updateLeagues(cache)}
+  if(mode==='live') return renderLive(data);
+  const arr=(data||[]).filter(visible).slice().sort((a,b)=>Number(a.order??0)-Number(b.order??0));
+  if(!arr.length){$('content').innerHTML='<div class="emptySlip">No events found for this filter.</div>';return}
+  const groups={};arr.forEach(g=>(groups[g.league||'Competition']??=[]).push(g));
+  let html='<div class="dayhead">Ndeshjet Sot</div>';
+  for(const [league,items] of Object.entries(groups)){
+    html+=`<section class="league"><div class="leaguehead"><div class="name">${esc(league)}</div></div><div class="matchgrid">`;
+    for(const g of items){
+      const o=parseOdds(g.odd),time=g.game_time||g.game_date||'';
+      html+=`<div class="match"><div class="matchinfo"><div class="teams"><div class="team">${esc(g.home_team||g.name||'')}</div><div class="team">${esc(g.away_team||'')}</div></div><div class="meta"><span>${esc(time)}</span><span>${esc(g.count_options?g.count_options+' >':'')}</span></div></div>${oddHtml(g,'1',o['1'])}${oddHtml(g,'X',o.X)}${oddHtml(g,'2',o['2'])}</div>`
+    }
+    html+='</div></section>'
+  }
+  $('content').innerHTML=html;
+  bindOdds();
+  document.querySelectorAll('.leaguehead').forEach(h=>h.onclick=()=>{activeLeague=activeLeague===h.querySelector('.name').textContent?'':h.querySelector('.name').textContent;$('leagueFilter').value=activeLeague;render(cache,false)})
+}
+function bindOdds(){
+  const content=$('content');
+  if(!content)return;
+  content.onclick=e=>{
+    const b=e.target.closest('.odd:not(.locked),.live-odd:not(.locked)');
+    if(!b)return;
+    e.preventDefault();e.stopPropagation();
+    const g=cache.find(x=>String(x.id)===String(b.dataset.game));
+    if(g)addPick(g,b.dataset.key,b.dataset.odd);
+  };
+}
+
+function renderLive(data,reset=false){
+  if(openLiveGameId){
+    const g=cache.find(x=>String(x.id)===String(openLiveGameId));
+    const groups=liveMarketsCache.get(String(openLiveGameId))||[];
+    if(g&&groups.length){renderLiveMarketPanel(g,groups,false);return;}
+  }
+  const arr=(data||[]).filter(g=>{
+    const t=((g.name||'')+' '+(g.home_team||'')+' '+(g.away_team||'')+' '+(g.league||'')).toLowerCase();
+    return (!query||t.includes(query)) && (selectedSport==='all'||selectedSport==='popular'||sportOf(g)===selectedSport);
+  });
+  let html=`<div class="live-mobile-dayhead"><span>Ndeshjet Sot</span><span>⌄</span></div><div class="live-toolbar"><label class="live-search"><span class="glass">⌕</span><input id="liveSearchInput" value="${esc(query)}" placeholder="Kerko Ndeshjen"></label><div class="live-result">Rezultat Final</div></div><div class="live-table">`;
+  if(!arr.length){html+='<div class="live-empty">Nuk ka ndeshje live për momentin.</div></div>';$('content').innerHTML=html;const q=$('liveSearchInput');if(q)q.oninput=e=>{query=e.target.value.toLowerCase().trim();renderLive(cache,false)};bindOdds();return}
+  const groups={};arr.forEach(g=>(groups[g.league||'Competition']??=[]).push(g));
+  for(const [league,items] of Object.entries(groups)){
+    html+=`<section class="live-league"><div class="live-league-head"><span class="lname">${esc(league)}</span><span>1</span><span>X</span><span>2</span></div>`;
+    for(const g of items){
+      const o=parseOdds(g.odd), result=String(g.result||'').split('-'), homeScore=result[0]||'', awayScore=result[1]||'';
+      const time=getLiveClock(g);
+      html+=`<div class="live-row" data-live-game="${esc(g.id)}"><div class="live-info"><span class="live-monitor">▱</span><div class="live-teams"><div class="live-team"><span class="live-shirt">♟</span>${esc(g.home_team||g.name||'')}</div><div class="live-team"><span class="live-shirt">♟</span>${esc(g.away_team||'')}</div><div class="live-time" data-live-clock="${esc(g.id)}"><span class="live-clock-value">${esc(time)}</span>${g.count_options?' <span>'+esc(g.count_options)+' ></span>':''}</div></div><div class="live-score"><div>${esc(homeScore)}</div><div>${esc(awayScore)}</div></div></div>${liveOddHtml(g,'1',o['1'])}${liveOddHtml(g,'X',o.X)}${liveOddHtml(g,'2',o['2'])}</div>`;
+    }
+    html+='</section>';
+  }
+  html+='</div>';
+  $('content').innerHTML=html;
+  const q=$('liveSearchInput');if(q)q.oninput=e=>{query=e.target.value.toLowerCase().trim();renderLive(cache,false)};
+  // One delegated handler handles both odds and match-row clicks.
+  const content=$('content');
+  content.onclick=e=>{
+    const odd=e.target.closest('.live-odd:not(.locked)');
+    if(odd){e.preventDefault();e.stopPropagation();const g=cache.find(x=>String(x.id)===String(odd.dataset.game));if(g)addPick(g,odd.dataset.key,odd.dataset.odd);return;}
+    const row=e.target.closest('[data-live-game]');
+    if(row){e.preventDefault();const g=cache.find(x=>String(x.id)===String(row.dataset.liveGame));if(g)toggleLiveMarkets(g);}
+  };
+}
+
+function liveOddHtml(g,key,val){const raw=val&&typeof val==='object'?val.odd:val;const l=lock(raw),sel=slip.some(x=>String(x.gameId)===String(g.id)&&x.key===key);return `<button class="live-odd ${l?'locked':''} ${sel?'selected':''}" ${l?'disabled':''} data-game="${esc(g.id)}" data-key="${key}" data-odd="${esc(raw??'')}">${l?'':Number(raw).toFixed(2)}</button>`}
+
+async function load(){try{const r=await fetch(mode==='live'?'/api/livegames?ts='+Date.now():'/api/prematch?ts='+Date.now());if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();const rows=Array.isArray(d)?d:[];if(mode==='live')rows.forEach(syncLiveClock);render(rows);renderSlip();if(mode!=='live')$('status').textContent='PREMATCH • '+new Date().toLocaleTimeString('sq-AL')}catch(e){$('status').textContent=mode==='live'?'LIVE • Feed offline':'Feed error'}}
+function applyLiveCoefs(payload){if(!payload||payload.game_id==null)return;const g=cache.find(x=>String(x.id)===String(payload.game_id));if(!g)return;const map={};(payload.coefs||[]).forEach(c=>{map[String(c.coef_id)]=String(c.odd)});if(typeof g.odd==='string'){g.odd=g.odd.split(',').map(part=>{const p=part.split('|');if(p.length>=4&&map[String(p[0])]!==undefined)p[1]=map[String(p[0])];return p.join('|')}).join(',')}if(payload.current_result!=null)g.result=payload.current_result;renderLive(cache);renderSlip()}
+function applyLiveGame(payload){
+  if(!payload)return;
+  const item=payload.game||payload;
+  if(Array.isArray(item)){item.forEach(applyLiveGame);return}
+  if(item.id==null)return;
+  const i=cache.findIndex(x=>String(x.id)===String(item.id));
+  if(i<0){cache.push({...item});syncLiveClock(item)}
+  else{
+    const prev=cache[i];
+    const merged={...prev,...item};
+    // Keep a newer local/API clock when an older websocket snapshot arrives.
+    const prevClock=liveClockState.get(String(item.id));
+    const incomingSec=clockToSeconds(item.current_minute??item.game_time);
+    const prevStatus=prev?.api_status??prev?.game_status;
+    const nextStatus=item?.api_status??item?.game_status;
+    if(prevClock && String(prevStatus)===String(nextStatus) && String(nextStatus)==='1' && incomingSec!==null && incomingSec<prevClock.base){
+      merged.current_minute=prev.current_minute??merged.current_minute;
+    }
+    cache[i]=merged;
+    syncLiveClock(merged);
+  }
+  renderLive(cache);
+  renderSlip();
+  if(String(openLiveGameId)===String(item.id)){const g=cache[i<0?cache.length-1:i];if(g)refreshLiveMarkets(g,true)}
+}
+function startLiveStream(){if(liveStream){try{liveStream.close()}catch(_){}}liveStream=new EventSource('/api/live-stream');liveStream.onopen=()=>{$('status').textContent='LIVE • Real-time'};liveStream.addEventListener('status',e=>{try{const d=JSON.parse(e.data);$('status').textContent=d.status==='connected'?'LIVE • Real-time':(d.status==='reconnecting'?'LIVE • Feed offline':'LIVE • Connecting…')}catch(_){}});liveStream.addEventListener('coefs',e=>{try{applyLiveCoefs(JSON.parse(e.data))}catch(_){}});liveStream.addEventListener('game',e=>{try{applyLiveGame(JSON.parse(e.data))}catch(_){}});liveStream.onerror=()=>{$('status').textContent='LIVE • Feed offline'}}
+function stopLiveStream(){if(liveStream){try{liveStream.close()}catch(_){}}liveStream=null}
+function setMode(m,{fromHash=false}={}){
+  if(m==='mybets'){
+    showMyBets(true,{fromHash});
+    return;
+  }
+  mode=m;activeLeague='';lastOdds={};selectedSport='soccer';query='';if(m!=='live')closeLiveMarkets();if(!fromHash)setHashForMode(m);$('homeBtn').classList.toggle('active',m==='home');$('liveBtn').classList.toggle('active',m==='live');document.body.classList.toggle('live-page',m==='live');document.body.classList.remove('mybets-page');document.querySelectorAll('.sideTool').forEach((b,i)=>b.classList.toggle('active',m==='live'?i===1:i===0));clearInterval(timer);timer=null;stopLiveStream();clearInterval(window.liveClockTicker);window.liveClockTicker=null;stopOpenMarketsRefresh();if(m==='live'){$('sportsbar').style.display='flex';$('sportsbar').innerHTML=[['⚽','Futboll','soccer'],['🏀','Basketboll','basketball'],['🎾','Tenis','tennis'],['🏈','Futboll Amerikan','american'],['🏸','Badminton','badminton']].map(s=>`<button class="sport ${s[2]==='soccer'?'active':''}" data-sport="${s[2]}"><span class="ico">${s[0]}</span><span>${s[1]}</span></button>`).join('');document.querySelectorAll('.sport').forEach(b=>b.onclick=()=>{document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));b.classList.add('active');selectedSport=b.dataset.sport;renderLive(cache)});load().then(()=>{startLiveStream();startOpenMarketsRefresh()});timer=setInterval(load,3000);window.liveClockTicker=setInterval(tickLiveClocks,1000)}else{$('sportsbar').style.display='flex';$('sportsbar').innerHTML=sports.map(s=>`<button class="sport ${s[2]==='soccer'?'active':''}" data-sport="${s[2]}"><span class="ico">${s[0]}</span><span>${s[1]}</span></button>`).join('');document.querySelectorAll('.sport').forEach(b=>b.onclick=()=>{document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));b.classList.add('active');selectedSport=b.dataset.sport;activeLeague='';$('leagueFilter').value='';render(cache,false)});load();timer=setInterval(load,15000)}}
+
+
+function staffRoleLabel(role){return ({center:'Qendra',operator:'Operator',admin:'Admin',supermanager:'Supermanager',agent:'Agent'})[role]||role}
+function staffCreateRoles(role){return ({center:[['operator','Operator']],operator:[['admin','Admin']],admin:[['supermanager','Supermanager']],supermanager:[['agent','Agent']],agent:[['user','User']]}[role]||[])}
+function staffAccountLabel(role){return ({center:'Numri i qendrës',operator:'Numri i operatorit',admin:'Numri i adminit',supermanager:'Numri i supermanagerit',agent:'Numri i agjentit'})[role]||'Numri'}
+function setAuthState(u){
+  user=u;
+  const myTop=$('myTopBtn');
+  if(myTop)myTop.hidden=!u;
+  if(token)localStorage.setItem('sportsbook_token',token);else localStorage.removeItem('sportsbook_token');
+  if(user){
+    const staff=user.role!=='user';
+    if(staff){
+      $('actions').innerHTML='<div class="account"><button id="panelB" class="staffAccountButton">Partner</button></div>';
+      $('panelB').onclick=()=>toggleStaffMenu(true);
+      $('slipHead').style.display='none';$('slipView').style.display='none';$('staffView').style.display='block';toggleStaffMenu(true);
+    }else{
+      $('actions').innerHTML=`<div class="account"><div class="balance">Credit: <b>€${Number(user.balance).toFixed(2)}</b></div><button id="accountB">My Account</button><button id="logoutB">Log Out</button></div>`;
+      $('slipHead').style.display='flex';$('slipView').style.display='block';$('staffView').style.display='none';
+      $('accountB').onclick=()=>showMyBets(true);$('logoutB').onclick=logout;
+    }
+  }else{
+    $('actions').innerHTML='<button id="loginB">Log In</button>';$('loginB').onclick=openAuth;
+    $('slipHead').style.display='flex';$('slipView').style.display='block';$('staffView').style.display='none';
+  }
+  renderSlip();
+}
+async function renderStaffMenu(){
+  if(!user||user.role==='user')return;
+  try{
+    const d=await controlFetch('/api/staff/overview');
+    const cRoles=staffCreateRoles(user.role);
+    const items=[['directory','Lista e Përdoruesve',String(d.accounts.length)]];
+    cRoles.forEach(r=>items.push(['create:'+r[0],'Krijo '+r[1],'']));
+    if(user.role==='center'||user.role==='operator')items.push(['tickets','Biletat',d.pendingTickets?`${d.pendingTickets} në pritje`:'']);
+    items.push(['password','Ndrysho Fjalëkalimin',''],['chat','Chat',''],['rules','Rregullore',''],['logout','Largohu','']);
+    const moneyBlock=user.role==='center' ? `<div class="staffMoney"><div class="staffMoneyRow"><div class="currency">STATUS</div><strong>UNLIMITED</strong></div></div>` : `<div class="staffMoney"><div class="staffMoneyRow"><div class="currency">EUR</div><strong>${Number(user.balance||0).toFixed(2)} EUR</strong></div><div class="staffMoneyRow"><div class="currency">LEK</div><strong>0.00 LEK</strong></div><div class="staffMoneyRow"><div class="currency">USD</div><strong>0.00 USD</strong></div></div>`;
+    $('staffView').innerHTML=`<div class="staffSummary"><div class="label">${staffAccountLabel(user.role)}</div><div class="agentNo">${String(user.id).padStart(6,'0')}</div></div>${moneyBlock}${items.map(x=>`<button class="staffMenuItem ${x[0]==='logout'?'logout':''}" data-staff-action="${x[0]}">${esc(x[1])}${x[2]?`<span class="staffPill">${esc(x[2])}</span>`:''}</button>`).join('')}`;
+    document.querySelectorAll('[data-staff-action]').forEach(b=>b.onclick=()=>handleStaffAction(b.dataset.staffAction));
+  }catch(e){
+    $('staffView').innerHTML=`<div class="staffSummary"><div class="label">${staffRoleLabel(user.role)}</div><div class="agentNo">${String(user.id).padStart(6,'0')}</div></div>${user.role==='center'?'<div class="staffMoney"><div class="staffMoneyRow"><div class="currency">STATUS</div><strong>UNLIMITED</strong></div></div>':''}<button class="staffMenuItem" data-staff-action="directory">Lista e Përdoruesve</button><button class="staffMenuItem" data-staff-action="logout">Largohu</button>`;
+    document.querySelectorAll('[data-staff-action]').forEach(b=>b.onclick=()=>handleStaffAction(b.dataset.staffAction));
+  }
+}
+function toggleStaffMenu(on){
+  if(!user||user.role==='user')return;
+  $('staffView').style.display=on?'block':'none';
+  $('slipView').style.display=on?'none':'block';
+  $('slipHead').style.display=on?'none':'flex';
+  if(on)renderStaffMenu();
+}
+async function restore(){if(!token)return;try{const r=await fetch('/api/me',{headers:{Authorization:'Bearer '+token}});if(!r.ok)throw Error();user=(await r.json()).user;setAuthState(user)}catch(e){token='';setAuthState(null)}}
+async function logout(){await fetch('/api/auth/logout',{method:'POST',headers:{Authorization:'Bearer '+token}}).catch(()=>{});token='';user=null;setAuthState(null);showMyBets(false);closeControlPoll()}
+function openAuth(){$('authModal').classList.add('show');$('authTitle').textContent='Log In';$('authMsg').textContent='';$('username').focus()}
+async function authSubmit(e){e.preventDefault();try{const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('username').value,password:$('password').value})});const d=await r.json();if(!r.ok)throw Error(d.error||'Login failed');token=d.token;user=d.user;setAuthState(user);$('authModal').classList.remove('show')}catch(e){$('authMsg').textContent=e.message;$('authMsg').className='adminMsg error'}}
+function myBetsShell(){return `<div class="mybetsPage"><div class="mybetsHead"><button class="back" id="myBetsBack">‹</button><div class="mybetsTitle">Bastet e mia</div><div style="width:40px"></div></div><div class="mybetsTopFilters"><input id="fromDate" type="date"><span style="color:#ddd">-</span><input id="toDate" type="date"><button id="myBetsFilter">Filtro</button></div><div class="mybetsYears"><button data-year="2022">2022</button><button data-year="2023">2023</button><button data-year="today" class="active">Sot</button><button data-year="yesterday">Dje</button><button data-year="month">Shtator</button><button data-year="custom">Gusht</button></div><div class="mybetsCurrency">Monedha: <b>EUR</b>⌄</div><div id="myBetsSummary"></div><div id="betsList"></div><div class="wallet" id="walletArea" style="margin:0;padding:10px 12px;background:#666"><strong>Historiku i kreditit</strong><div id="walletList"></div></div></div>`}
+function showMyBets(on,{fromHash=false}={}){
+  if(on){
+    if(!user){
+      if(/^#\/MyBets\/?$/i.test(location.hash) && !fromHash)setHashForMode(mode==='live'?'live':'home');
+      openAuth();
+      return;
+    }
+    if(mode!=='mybets')myBetsReturnMode=mode==='live'?'live':'home';
+    mode='mybets';
+    clearInterval(timer);timer=null;stopLiveStream();clearInterval(window.liveClockTicker);window.liveClockTicker=null;stopOpenMarketsRefresh();closeLiveMarkets();
+    if(!fromHash)setHashForMode('mybets');
+    $('homeBtn').classList.remove('active');$('liveBtn').classList.remove('active');$('myTopBtn').classList.add('active');document.body.classList.remove('live-page');document.body.classList.add('mybets-page');
+    $('sportsbar').style.display='none';slip=[];$('staffView').style.display='none';$('slipHead').style.display='flex';$('slipView').style.display='block';renderSlip();$('content').innerHTML=myBetsShell();
+    $('myBetsBack').onclick=()=>showMyBets(false);$('myBetsFilter').onclick=loadMyBets;
+    document.querySelectorAll('[data-year]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-year]').forEach(x=>x.classList.remove('active'));b.classList.add('active');loadMyBets()});
+    loadMyBets();
+  }else{
+    const next=myBetsReturnMode||'home';
+    document.body.classList.remove('mybets-page');$('myTopBtn').classList.remove('active');$('sportsbar').style.display='flex';
+    if(user&&user.role!=='user')toggleStaffMenu(true);else{$('slipView').style.display='block';$('staffView').style.display='none';$('slipHead').style.display='flex'}
+    setMode(next,{fromHash:false});
+  }
+}
+async function loadMyBets(){
+  if(!user)return;
+  const p=new URLSearchParams();if($('fromDate')&&$('fromDate').value)p.set('from',$('fromDate').value);if($('toDate')&&$('toDate').value)p.set('to',$('toDate').value);
+  try{
+    const r=await fetch('/api/my-bets?'+p,{headers:{Authorization:'Bearer '+token}}),d=await r.json();if(!r.ok)throw Error(d.error||'Could not load bets');
+    if(user.role!=='user'&&Array.isArray(d.accounts))$('myBetsSummary').innerHTML=d.accounts.length?d.accounts.map(a=>`<div class="mybetAccountRow"><span>${esc(a.username)} <small>(${a.bet_count})</small></span><strong>${Number(a.turnover).toFixed(2)}</strong></div>`).join(''):'<div class="mybetsEmpty">Nuk ka të dhëna.</div>';
+    $('betsList').innerHTML=d.bets.length?d.bets.slice(0,40).map(b=>`<div class="betcard"><div class="bethead"><span><b>#${b.id}</b>${b.username?' · '+esc(b.username):''}</span><span class="statusP ${b.status}">${esc(b.status)}</span></div><div class="betbody">${b.selections.map(s=>`<div class="selline"><span>${esc(s.home)} - ${esc(s.away)} · ${esc(s.selection)}</span><span>${Number(s.odd).toFixed(2)}</span></div>`).join('')}<div class="betrow"><span>Stake</span><strong>€${Number(b.stake).toFixed(2)}</strong></div><div class="betrow"><span>Total odds</span><strong>${Number(b.total_odds).toFixed(2)}</strong></div><div class="betrow"><span>Potential / Payout</span><strong>€${Number(b.payout||b.potential_win).toFixed(2)}</strong></div></div></div>`).join(''):'<div class="mybetsEmpty">Nuk ka bileta.</div>';
+    if(user.role==='user')loadWallet();
+  }catch(e){if($('betsList'))$('betsList').innerHTML='<div class="mybetsEmpty error">Nuk u ngarkuan bastet.</div>'}
+}
+async function loadWallet(){try{const r=await fetch('/api/wallet',{headers:{Authorization:'Bearer '+token}}),d=await r.json();if(!$('walletList'))return;$('walletList').innerHTML=d.transactions.length?d.transactions.map(t=>`<div class="tx"><span>${esc(t.type)} · ${new Date(t.createdAt+'Z').toLocaleString('sq-AL')}</span><span class="${t.amount>=0?'credit':'debit'}">${t.amount>=0?'+':''}€${Number(t.amount).toFixed(2)}</span></div>`).join(''):'<div class="noBets">No transactions.</div>'}catch(e){}}
+
+async function placeBet(){
+  if(!slip.length)return;if(!user){openAuth('login');return}
+  // Do not re-read the browser cache immediately before submission. The source
+  // Bet Slip submits the coefficient captured at click time. Live/feed validation
+  // is authoritative on the server and any invalid selection is returned there.
+  if(slip.some(x=>!Number.isFinite(Number(x.odd))||Number(x.odd)<=1)){renderSlip();return}
+  const stake=Number($('stake').value);if(!Number.isFinite(stake)||stake<.01){$('betMsg').textContent='Enter a valid stake.';$('betMsg').className='notice error';return}
+  try{const r=await fetch('/api/bets',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({stake,selections:slip.map(p=>({gameId:p.gameId,league:p.league,home:p.home,away:p.away,market:p.market||'Fulltime Result',selection:p.key,coefId:p.coefId,odd:p.odd,eventTime:p.eventTime}))})});const d=await r.json();if(!r.ok){if(Array.isArray(d.invalidSelections)){for(const inv of d.invalidSelections){const p=slip.find(x=>String(x.gameId)===String(inv.gameId)&&String(x.key)===String(inv.selection));if(p){p.invalid=true;p.invalidReason=inv.reason||'Koeficienti nuk është më aktiv.'}}}if(Array.isArray(d.oddsChanged)){for(const ch of d.oddsChanged){const p=slip.find(x=>String(x.gameId)===String(ch.gameId)&&String(x.key)===String(ch.selection));if(p){p.currentOdd=Number(ch.newOdd);p.oddsChanged=true;p.invalid=false;p.invalidReason=''}}}renderSlip();throw Error(d.error||'Bet could not be placed.')}user.balance=d.balance;user.reservedBalance=d.reservedBalance||0;pendingTicket={id:d.betId,stake,odds:d.totalOdds,selections:slip.map(p=>({...p}))};slip=[];$('stake').value='';setAuthState(user);$('betMsg').textContent=`Biletë #${d.betId} u dërgua në Qendër dhe është në pritje të pranimit.`;$('betMsg').className='notice ok';renderSlip();pollPendingTicket(d.betId)}catch(e){$('betMsg').textContent=e.message;$('betMsg').className='notice error'}
+}
+
+let pendingPoll=null;async function pollPendingTicket(id){if(pendingPoll)clearInterval(pendingPoll);const check=async()=>{if(!user||!pendingTicket||pendingTicket.id!==id)return;try{const r=await fetch('/api/my-bets/'+id,{headers:{Authorization:'Bearer '+token}});if(!r.ok)return;const d=await r.json();const st=d.bet.status;if(st!=='pending'){pendingTicket=null;if(st==='accepted'||st==='cancelled'){const mr=await fetch('/api/me',{headers:{Authorization:'Bearer '+token}});if(mr.ok)user=(await mr.json()).user;setAuthState(user)}if(st==='accepted')$('betMsg').textContent=`Biletë #${id} u pranua nga Qendra.`;else if(st==='cancelled')$('betMsg').textContent=`Biletë #${id} u anulua nga Qendra.`;$('betMsg').className='notice '+(st==='accepted'?'ok':'error');renderSlip();clearInterval(pendingPoll);pendingPoll=null}}catch(_){}};await check();pendingPoll=setInterval(check,2500)}
+
+async function controlFetch(url,opt={}){opt.headers={...(opt.headers||{}),Authorization:'Bearer '+token,'Content-Type':'application/json'};const r=await fetch(url,opt);const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d}
+let controlPoll=null;function closeControlPoll(){if(controlPoll){clearInterval(controlPoll);controlPoll=null}}
+
+async function handleStaffAction(action){
+  if(action==='logout'){await logout();return}
+  if(action==='chat'){alert('Chat do të lidhet me modulin e komunikimit.');return}
+  if(action==='rules'){alert('Rregullorja e platformës.');return}
+  if(action==='directory'){openControl(user.role,'directory');return}
+  if(action==='finance'){if(user.role==='center')return;openControl(user.role,'finance');return}
+  if(action==='tickets'){openControl(user.role,'tickets');return}
+  if(action==='password'){openControl(user.role,'password');return}
+  if(action.startsWith('create:')){openControl(user.role,'create',action.split(':')[1]);return}
+}
+async function openControl(role,view='directory',createRole=''){
+  if(!user||user.role==='user')return;
+  $('controlModal').classList.add('show');
+  $('controlTitle').textContent=staffRoleLabel(role);
+  closeControlPoll();
+  if(view==='tickets'){await renderOperatorControl();controlPoll=setInterval(()=>renderOperatorControl(true),2500);return}
+  await renderManagementView(view,createRole);
+}
+function roleVisibleLabel(role){return ({center:'Qendra',operator:'Operator',admin:'Admin',supermanager:'Supermanager',agent:'Agent',user:'User'})[role]||role}
+async function renderManagementView(view,createRole=''){
+  try{
+    const d=await controlFetch('/api/staff/overview');
+    if(view==='directory'){
+      const title=({center:'Operatorët',operator:'Adminët',admin:'Supermanagerët',supermanager:'Agentët',agent:'User-at'}[user.role]||'Llogaritë e mia');
+      const creditCard=user.role==='center'?['Status','UNLIMITED']:['Credit','€'+Number(user.balance||0).toFixed(2)];
+      const canFundRow = x => x.status==='active' && ((user.role==='center' && x.role==='operator') || (user.role==='operator' && x.role==='admin') || (user.role==='admin' && x.role==='supermanager') || (user.role==='supermanager' && x.role==='agent') || (user.role==='agent' && x.role==='user'));
+      $('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Lista e Përdoruesve</button></div><div class="controlGrid">${[['Roli',roleVisibleLabel(user.role)],creditCard,['Llogari',d.accounts.length],['Bileta në pritje',d.pendingTickets]].map(x=>`<div class="controlCard"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div><div class="controlSection"><h3>${title}</h3>${d.accounts.length?`<table class="controlTable"><thead><tr><th>ID</th><th>Username</th><th>Role</th><th>Credit</th><th>Status</th><th>Veprimi</th></tr></thead><tbody>${d.accounts.map(x=>`<tr><td>${x.id}</td><td>${esc(x.username)}</td><td><span class="roleBadge">${esc(x.role)}</span></td><td class="listBalance">€${Number(x.balance).toFixed(2)}</td><td>${esc(x.status)}</td><td>${canFundRow(x)?`<div class="rowCredit"><input data-list-credit-amount="${x.id}" type="number" min="0.01" step="0.01" placeholder="Shuma"><button class="controlBtn" data-list-credit="${x.id}">Shto kredit</button></div>`:'<span style="color:#888;font-size:11px">—</span>'}</td></tr>`).join('')}</tbody></table>`:'<div class="noBets">Nuk ka llogari.</div>'}<div id="directoryMsg" class="controlMsg"></div></div>`;
+      document.querySelectorAll('[data-list-credit]').forEach(b=>b.onclick=async()=>{const id=b.dataset.listCredit,field=document.querySelector(`[data-list-credit-amount="${id}"]`),amount=field?field.value:'';try{await controlFetch('/api/staff/'+id+'/credit',{method:'POST',body:JSON.stringify({amount,direction:'credit'})});$('directoryMsg').textContent='Krediti u shtua me sukses.';$('directoryMsg').className='controlMsg ok';if(field)field.value='';const nd=await controlFetch('/api/staff/overview');const target=nd.accounts.find(a=>Number(a.id)===Number(id));const me=(await fetch('/api/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json())).user;setAuthState(me);await renderManagementView('directory');}catch(e){$('directoryMsg').textContent=e.message;$('directoryMsg').className='controlMsg error';}});
+      return;
+    }
+    if(view==='create'){
+      const valid=staffCreateRoles(user.role).find(x=>x[0]===createRole);
+      if(!valid){$('controlApp').innerHTML='<div class="controlSection">Kjo llogari nuk mund të krijohet nga ky rol.</div>';return}
+      $('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Krijo ${esc(valid[1])}</button></div><div class="controlSection"><h3>Krijo ${esc(valid[1])}</h3><form id="createChild" class="controlForm"><input id="childUser" placeholder="Username" required><input id="childPass" type="password" placeholder="Password" required><input value="${esc(valid[1])}" disabled><button>Krijo</button></form><div id="controlMsg" class="controlMsg"></div></div>`;
+      $('createChild').onsubmit=async e=>{e.preventDefault();try{let endpoint;if(user.role==='center')endpoint='/api/center/operators';else if(user.role==='operator')endpoint='/api/operator/admins';else if(user.role==='admin')endpoint='/api/admin/supermanagers';else if(user.role==='supermanager')endpoint='/api/manager/agents';else endpoint='/api/manager/users';await controlFetch(endpoint,{method:'POST',body:JSON.stringify({username:$('childUser').value,password:$('childPass').value})});$('controlMsg').textContent='Account u krijua me sukses.';$('controlMsg').className='controlMsg ok';await renderManagementView('directory')}catch(e){$('controlMsg').textContent=e.message;$('controlMsg').className='controlMsg error'}};
+      return;
+    }
+    if(view==='finance'){
+      $('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Financa</button></div><div class="controlSection"><h3>Transferim krediti</h3><p style="color:#666;font-size:12px;margin-top:0">Ky ekran lejon vetëm transferim sipas hierarkisë së platformës.</p>${d.fundTargets.length?`<table class="controlTable"><thead><tr><th>Username</th><th>Role</th><th>Credit</th><th>Veprimi</th></tr></thead><tbody>${d.fundTargets.map(x=>`<tr><td>${esc(x.username)}</td><td>${esc(x.role)}</td><td>€${Number(x.balance).toFixed(2)}</td><td><div style="display:flex;gap:5px;align-items:center"><input data-fin-amount="${x.id}" type="number" min="0.01" step="0.01" placeholder="Shuma" style="width:90px;height:32px"><button class="controlBtn" data-fin="${x.id}" data-dir="credit">Shto</button><button class="controlBtn gray" data-fin="${x.id}" data-dir="debit">Merr</button></div></td></tr>`).join('')}</tbody></table>`:'<div class="noBets">Nuk ka llogari që mund të financohen.</div>'}<div id="financeMsg" class="controlMsg"></div></div>`;
+      document.querySelectorAll('[data-fin]').forEach(b=>b.onclick=async()=>{const id=b.dataset.fin,amount=document.querySelector(`[data-fin-amount="${id}"]`).value;try{await controlFetch('/api/staff/'+id+'/credit',{method:'POST',body:JSON.stringify({amount,direction:b.dataset.dir})});$('financeMsg').textContent='Transferimi u krye.';$('financeMsg').className='controlMsg ok';setAuthState({...user,balance:(await fetch('/api/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json())).user.balance});await renderManagementView('finance');}catch(e){$('financeMsg').textContent=e.message;$('financeMsg').className='controlMsg error'}});
+      return;
+    }
+    if(view==='password'){
+      $('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Ndrysho Fjalëkalimin</button></div><div class="controlSection"><h3>Ndrysho Fjalëkalimin</h3><form id="passwordForm" class="controlForm"><input id="oldPass" type="password" placeholder="Password aktual" required><input id="newPass" type="password" placeholder="Password i ri" required><input id="newPass2" type="password" placeholder="Përsërite passwordin" required><button>Ruaj</button></form><div id="controlMsg" class="controlMsg"></div></div>`;
+      $('passwordForm').onsubmit=async e=>{e.preventDefault();if($('newPass').value!==$('newPass2').value){$('controlMsg').textContent='Password-et nuk përputhen.';$('controlMsg').className='controlMsg error';return}try{await controlFetch('/api/staff/password',{method:'POST',body:JSON.stringify({oldPassword:$('oldPass').value,newPassword:$('newPass').value})});$('controlMsg').textContent='Password u ndryshua.';$('controlMsg').className='controlMsg ok';$('passwordForm').reset()}catch(err){$('controlMsg').textContent=err.message;$('controlMsg').className='controlMsg error'}};
+    }
+  }catch(e){$('controlApp').innerHTML=`<div class="controlSection controlMsg error">${esc(e.message)}</div>`}
+}
+function ticketTable(tickets,showAccept){return `<div class="controlSection"><h3>Biletat në Qendër</h3>${tickets.length?`<table class="controlTable"><thead><tr><th>#</th><th>User</th><th>Hierarkia</th><th>Selections</th><th>Stake</th><th>Odds</th><th>Potential</th><th>Action</th></tr></thead><tbody>${tickets.map(b=>`<tr class="${b.status==='pending'?'ticketPending':'ticketAccepted'}"><td>#${b.id}<div class="ticketDetails">${new Date(b.created_at+'Z').toLocaleString('sq-AL')}</div></td><td>${esc(b.username||'')}</td><td>${esc(b.agent_username||'')}<br>${esc(b.supermanager_username||'')}</td><td>${b.selections.map(s=>`${esc(s.home)} - ${esc(s.away)} · ${esc(s.selection)} @ ${Number(s.odd).toFixed(2)}`).join('<br>')}</td><td>€${b.stake.toFixed(2)}</td><td>${b.total_odds.toFixed(2)}</td><td>€${b.potential_win.toFixed(2)}</td><td><div class="ticketActions">${b.status==='pending'?`<button data-ticket-action="accept" data-ticket="${b.id}">Prano</button>`:''}${b.status==='accepted'?`<button data-ticket-action="won" data-ticket="${b.id}">Fituese</button><button class="lost" data-ticket-action="lost" data-ticket="${b.id}">Humbese</button>`:''}${['pending','accepted'].includes(b.status)?`<button class="cancel" data-ticket-action="cancel" data-ticket="${b.id}">Refuzo / Anullo</button>`:''}</div></td></tr>`).join('')}</tbody></table>`:'<div class="noBets">Nuk ka bileta në pritje.</div>'}</div>`}
+async function renderOperatorControl(silent=false){const d=await controlFetch('/api/operator/tickets');$('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Biletat</button><span style="margin-left:auto;padding:10px;color:#666">${d.tickets.filter(x=>x.status==='pending').length} në pritje</span></div>${ticketTable(d.tickets,true)}`;document.querySelectorAll('[data-ticket-action]').forEach(b=>b.onclick=async()=>{const id=b.dataset.ticket,action=b.dataset.ticketAction;try{if(action==='accept')await controlFetch('/api/operator/tickets/'+id+'/accept',{method:'POST'});else if(action==='cancel')await controlFetch('/api/operator/tickets/'+id+'/cancel',{method:'POST'});else await controlFetch('/api/operator/tickets/'+id+'/settle',{method:'POST',body:JSON.stringify({status:action})});await renderOperatorControl()}catch(e){alert(e.message)}})}
+function closeControlPoll(){if(controlPoll){clearInterval(controlPoll);controlPoll=null}}
+
+$('authForm').onsubmit=authSubmit;$('slipTab').onclick=()=>{if(user&&user.role!=='user')toggleStaffMenu(true);else showMyBets(false)};$('myTopBtn').onclick=()=>{if(user)showMyBets(true);else openAuth()};$('place').onclick=placeBet;$('stake').oninput=updatePotential;$('mobileSlipBar').onclick=()=>{if(slip.length){$('betslip').classList.add('mobile-open');$('mobileSlipBackdrop').classList.add('show')}};$('slipClose').onclick=()=>{$('betslip').classList.remove('mobile-open');$('mobileSlipBackdrop').classList.remove('show')};$('mobileSlipBackdrop').onclick=()=>{$('betslip').classList.remove('mobile-open');$('mobileSlipBackdrop').classList.remove('show')};document.querySelectorAll('[data-stake]').forEach(b=>b.onclick=()=>{$('stake').value=b.dataset.stake;updatePotential()});$('search').oninput=e=>{query=e.target.value.toLowerCase().trim();render(cache,false)};$('leagueFilter').onchange=e=>{activeLeague=e.target.value;render(cache,false)};$('homeBtn').onclick=()=>showMyBets(false);$('liveBtn').onclick=()=>{showMyBets(false);setMode('live')};document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{const id=b.dataset.close;$(id).classList.remove('show');if(id==='controlModal')closeControlPoll()});
+setAuthState(user);window.addEventListener('hashchange',()=>{const target=modeFromHash();if(target==='mybets'&&!user){if(token){restore().then(()=>{if(user)showMyBets(true,{fromHash:true});else{setHashForMode('home');setMode('home',{fromHash:true});openAuth()}})}else{setHashForMode('home');setMode('home',{fromHash:true});openAuth()}return}setMode(target,{fromHash:true})});const initialMode=modeFromHash();if(initialMode==='mybets'){if(token){restore().then(()=>{if(user)showMyBets(true,{fromHash:true});else{setHashForMode('home');setMode('home',{fromHash:true});openAuth()}})}else{setHashForMode('home');setMode('home',{fromHash:true});openAuth()}}else{setMode(initialMode,{fromHash:true});restore()}renderSlip();
+

@@ -1,0 +1,33 @@
+BET SLIP UPDATE – 2026-09-12
+
+Implemented from the supplied desktop/mobile reference screenshots:
+
+1. Desktop
+- Bet Slip is now a fixed-height right-side panel with the light/grey visual treatment from the reference.
+- Selection count is shown in a green circular badge.
+- Header uses "Skedina" and keeps My Bets available.
+- Selected bets use compact grey cards with yellow odds.
+- Footer/inputs/buttons use the reference grey/green treatment.
+
+2. Mobile / tablet
+- The full Bet Slip is hidden by default.
+- It appears only when at least one odd is selected.
+- A fixed bottom bar shows: selection count, "Skedina", and total odds.
+- Tapping the bar opens the Bet Slip as a bottom sheet.
+- A dark backdrop and close button are provided while the sheet is open.
+- Removing the last selection automatically closes the mobile sheet and hides the bottom bar.
+- My Bets can also open the mobile sheet.
+
+3. Existing betting logic preserved
+- Selection/toggle behavior
+- One selection per event
+- Total odds calculation
+- Stake and potential win calculation
+- Place Bet flow
+- Authentication and My Bets
+
+Start with:
+  npm start
+
+Then open:
+  http://localhost:3000/

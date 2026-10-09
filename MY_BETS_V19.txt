@@ -1,0 +1,12 @@
+MY BETS UPDATE - v19
+
+This version updates ONLY the My Bets frontend in public/euro07.bet/vbet/user/build/main.js
+and main.css. The server and settlement logic from v15 are preserved.
+
+IMPORTANT:
+- sportsbook.db is intentionally NOT included in this ZIP.
+- Extract this ZIP over your existing v15 project and KEEP your existing sportsbook.db.
+- This prevents your real tickets from being overwritten.
+- My Bets now loads without a default date restriction, so existing tickets appear.
+- Date presets and status filters are functional.
+- Clicking a ticket expands its details.

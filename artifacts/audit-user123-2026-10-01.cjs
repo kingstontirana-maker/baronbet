@@ -1,0 +1,31 @@
+const fs=require('fs'),vm=require('vm');
+const root=require('path').join(__dirname,'..');
+const money=n=>Math.round((n+Number.EPSILON)*100)/100;
+(async()=>{
+ const SQL=await require('sql.js')(),db=new SQL.Database(fs.readFileSync(root+'/sportsbook.db'));
+ const rows=q=>{const s=db.prepare(q),r=[];while(s.step())r.push(s.getAsObject());s.free();return r;};
+ const src=fs.readFileSync(root+'/server.js','utf8'),ctx={console,Date,Math,Number,String,Array,Object,Map,JSON};vm.createContext(ctx);
+ vm.runInContext(src.slice(src.indexOf('function norm('),src.indexOf('async function settleAcceptedBets()'))+';this.api={buildStats,evaluateSelection,normalizeFinalScore};',ctx);
+ const bets=rows("SELECT b.id ticket,b.status ticket_status,b.stake,b.payout,b.total_odds,b.potential_win,b.settled_at,s.* FROM bets b JOIN bet_selections s ON s.bet_id=b.id WHERE b.user_id=(SELECT id FROM users WHERE username='user123') AND b.created_at>='2026-09-30T22:00:00Z' AND julianday(b.created_at)>=julianday('2026-09-30T22:00:00Z') AND julianday(b.created_at)<julianday('2026-10-01T22:00:00Z') ORDER BY b.id");
+ const won=new Set([95,96,108,109,113,114,115,120,127,128,133,134]);
+ const special={105:'unknown',107:'unknown',110:'half_won',111:'void',112:'half_lost',137:'lost'};
+ const factors={half_won:1.425,void:1,half_lost:0.5};
+ const details=bets.map(b=>{
+  const timeline=JSON.parse(fs.readFileSync(__dirname+'/audit-timeline-'+b.game_api_id+'.json','utf8'));
+  const score=ctx.api.normalizeFinalScore(timeline.find(e=>e.type_id==='6').minute);
+  const evaluated=ctx.api.evaluateSelection(b,ctx.api.buildStats(timeline,score),{finished:true,score},timeline);
+  const expected=special[b.ticket]||(won.has(b.ticket)?'won':'lost');
+  const factor=expected==='unknown'?null:expected==='won'?b.odd:expected==='lost'?0:factors[expected];
+  const expectedPayout=factor===null?null:money(b.stake*factor);
+  const ledger=rows('SELECT id,type,amount,balance_before,balance_after FROM wallet_transactions WHERE bet_id='+b.ticket);
+  const credits=ledger.filter(t=>['payout','refund'].includes(t.type));
+  const audit=rows("SELECT action,details,created_at FROM audit_log WHERE (target_type='bet' AND target_id="+b.ticket+") OR (target_type='bet_selection' AND target_id="+b.id+") ORDER BY id");
+  return {...b,expected,expectedPayout,evaluated,ledger,audit,selectionMatches:expected==='unknown'?null:b.result_status===expected,payoutMatches:expectedPayout===null?null:b.payout===expectedPayout,ledgerMatches:credits.length===(b.payout>0?1:0)&&money(credits.reduce((a,t)=>a+t.amount,0))===b.payout};
+ });
+ const summary={tickets:details.length,stakes:money(details.reduce((a,b)=>a+b.stake,0)),payouts:money(details.reduce((a,b)=>a+b.payout,0)),bySelection:details.reduce((a,b)=>(a[b.result_status]=(a[b.result_status]||0)+1,a),{}),mismatches:details.filter(b=>b.selectionMatches===false||b.payoutMatches===false||!b.ledgerMatches).map(b=>b.ticket)};
+ fs.writeFileSync(__dirname+'/audit-user123-2026-10-01.json',JSON.stringify({checkedAt:new Date().toISOString(),summary,details},null,2));
+ let md='# Audit user123 — 1 tetor 2026\n\nBurimi: snapshot vetëm për lexim i sportsbook.db, historiku origjinal i vendosjes, kodi aktual dhe timeline të furnizuesit të shkarkuara më 7 tetor. Dita sipas Europe/Berlin. Nuk u ndryshuan bileta, bilance ose kodi i platformës.\n\nGuinea–Kenya: pushimi 1–0; fundi 1–0; pjesa e dytë 0–0. Stuttgart–Greuther Fürth: 5–0. Rezultati i furnizuesit, jo verifikim i pavarur nga federata.\n\n'+JSON.stringify(summary,null,2)+'\n\n| Bileta | Marketi / zgjedhja | Status zgjedhjeje | Status bilete | Kthimi € | Kontrolli |\n|---|---|---|---|---:|---|\n';
+ for(const b of details)md+=`| #${b.ticket} | ${b.market.replaceAll('|','/')} / ${b.selection.replaceAll('|','/')} | ${b.result_status} | ${b.ticket_status} | ${b.payout.toFixed(2)} | ${b.expected==='unknown'?'Rregulli i furnizuesit i pakonfirmuar':b.selectionMatches&&b.payoutMatches&&b.ledgerMatches?'Përputhet':'PROBLEM: pritet '+b.expected+' / '+b.expectedPayout+' €'} |\n`;
+ md+='\n## Probleme konkrete\n\n- #137 (6840, 1|G): duhet humbëse sepse Kenya nuk shënoi; kodi aktual e llogarit humbëse, por DB mbetet accepted/pending. Worker aktual do ta zbardhte; duhen verifikuar procesi aktiv/versioni dhe gabimet. Nuk është provuar shkaku i procesit.\n- #105 (6661) dhe #107 (6663): kodi i përjashton shprehimisht. Me 1–0/1–0, interpretimi fiton secilën pjesë ndryshon nga pushim/fund; nuk lejohet hamendësimi.\n- #112: zgjedhja half_lost, kthim 5 € i saktë; bileta ruhet won sepse çdo kthim pozitiv etiketohet won. Etiketimi është çorientues: humbje neto 5 €.\n- #110: half_won, kthim 14.25 € i saktë; #111 void, kthim 10 € i saktë. Frontend i shfaq këto tri zgjedhje NË PRITJE.\n- index.html kufizon paraqitjen në 40 bileta megjithëse API kthen më shumë; 50 biletat nuk shfaqen të gjitha njëherësh.\n- Rruga manuale e zbardhjes lejon won pa kontrolluar zgjedhje tashmë lost dhe nuk zgjidh zgjedhjet pending për biletën manualisht lost. Risk kodi, jo incident i provuar në këto bileta.\n\n## Kufijtë\n\n50 biletat e provës janë #95–#144, 500 €; #94 është biletë tjetër prej 19 €. Audit përfshin edhe atë: gjithsej 51 bileta, 519 €. Nuk provon mbulim të çdo opsioni/marketi/sporti. Ledger kontrollon debit/kredit për çdo biletë; nuk certifikon të gjithë historikun financiar të llogarisë. Detajet dhe audit log ruhen në JSON pranë këtij raporti.\n';
+ fs.writeFileSync(__dirname+'/audit-user123-2026-10-01.md',md);console.log(JSON.stringify(summary));
+})();

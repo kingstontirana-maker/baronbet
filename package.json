@@ -1,0 +1,11 @@
+{
+  "name": "sportsbook-pro",
+  "version": "3.0.0",
+  "private": true,
+  "scripts": {"start": "node server.js", "test": "node settlement.test.js && node odds-routing.test.cjs && node --test ticket-acceptance.test.js authorization.test.js api-client.test.js live-clock.test.js market-results.test.js provider-markets.test.js reliability.test.js", "test:navigation": "node navigation-search-browser.cjs", "test:ui": "node backoffice.test.cjs"},
+  "dependencies": {
+    "express": "^4.21.2",
+    "sql.js": "^1.13.0",
+    "socket.io-client": "^2.5.0"
+  }
+}

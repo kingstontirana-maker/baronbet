@@ -1,0 +1,40 @@
+
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>
+
+</title>
+    <script src="socket/jquery-1.6.4.js" ></script>
+    <script src="socket/jquery.signalR-2.0.0.js"></script>
+    <script src="Scripts/xmltojson.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+</head>
+<body>
+<script>
+    function h(n, t) { var i = new XMLHttpRequest; i.onreadystatechange = function () { i.readyState == 4 && i.status == 200 && t(i.responseText) }; i.open("GET", n, !0); i.send(null) } function gupi(n, t) { n = n.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]"); var i = new RegExp("[?&]" + n + "=?([^&#]*)").exec(t || window.location.href); return i == null ? "" : i[1] || "" } var __extends = this && this.__extends || function () { var n = function (t, i) { return n = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function (n, t) { n.__proto__ = t } || function (n, t) { for (var i in t) t.hasOwnProperty(i) && (n[i] = t[i]) }, n(t, i) }; return function (t, i) { function r() { this.constructor = t } n(t, i); t.prototype = i === null ? Object.create(i) : (r.prototype = i.prototype, new r) } }(), Init = function () { var i = "", r = Config.libs, u, t, f, n; for (u in r) { t = r[u]; for (f in t) n = t[f], i += n.deps + "|" + n.version + "|" + n.loadcss + "~" } h(Config.blob + "libs=" + i, function (n) { var e = document.head || document.getElementsByTagName("head")[0], o, h, r, u, s, f, i, t; try { o = JSON.parse(n); for (h in o) r = o[h], r.T == "css" && (t = document.createElement("link"), t.setAttribute("rel", "stylesheet"), t.setAttribute("href", r.name), e.appendChild(t)), r.T == "js" && (u = document.createElement("script"), u.setAttribute("type", "text/javascript"), u.setAttribute("src", r.name), e.appendChild(u)) } catch (c) { s = n.split("|||"); f = document.createDocumentFragment(); for (a in s) i = s[a], i[0] == "~" ? (i = i.substring(1), t = document.createElement("style"), t.type = "text/css", t.appendChild(document.createTextNode(i)), f.appendChild(t)) : (t = document.createElement("script"), t.type = "text/javascript", t.setAttribute("charset", "UTF-8"), t.appendChild(document.createTextNode(i)), f.appendChild(t)); e.appendChild(f) } }) };
+    var Config = {
+        "MainHub": { "ID": "t:5", "hubname": "MyHub" },
+        "blob": "./blob2.txt?",
+        "LanguageURL": "http://games.p2377odd.com/lngMobile/",
+        "libs": {
+            "Main": [{ "version": "214", "deps": "WebSocket", "loadcss": "false" }
+                , { "version": "214", "deps": "Svg", "loadcss": "true" }
+            ]
+
+        }
+    };
+</script>
+<script>
+
+    function queryparam(name) {
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+            results = regex.exec(location.search);
+        return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"d34d032de742476bb48a53ee38af98c8","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+<script>Init();</script>
+</html>

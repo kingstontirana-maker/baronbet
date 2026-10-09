@@ -1,0 +1,37 @@
+SPORTSBET PRO - V11
+
+LOGIN I NJËJTË PËR TË GJITHË
+Qendra: center / 123
+
+HIERARKIA E DETYRUESHME
+Qendra -> Operator -> Admin -> Supermanager -> Agent -> User
+
+KRIJIMI
+Qendra: Krijo Operator
+Operator: Krijo Admin
+Admin: Krijo Supermanager
+Supermanager: Krijo Agent
+Agent: Krijo User
+
+KREDITI
+Qendra është burimi UNLIMITED. Qendra mund t’i japë kredit Operatorit pa ulur asnjë balance të saj.
+Operatori -> Admin
+Admin -> Supermanager
+Supermanager -> Agent
+Agent -> User
+
+KONTROLLI I KREDITIT
+- Butoni “Shto kredit” është direkt te Lista e Përdoruesve.
+- Shfaqet vetëm për fëmijën direkt të rolit të loguar.
+- Qendra ka gjithashtu “Shto kredit” për Operatorin, por Qendra mbetet gjithmonë UNLIMITED.
+- Nivelet e tjera duhet të kenë kredit të mjaftueshëm për transferim.
+- Çdo transferim ruhet në wallet_transactions dhe audit_log.
+
+BILETAT
+User -> pending -> Qendra/Operator Prano ose Refuzo/Anullo.
+My Bets është faqe më vete dhe nuk futet në Bet Slip.
+
+START
+1. npm install
+2. npm start
+3. hap http://localhost:3000

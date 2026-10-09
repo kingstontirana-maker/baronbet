@@ -1,0 +1,2188 @@
+{
+  "checkedAt": "2026-09-27T14:10:30.820Z",
+  "games": [
+    {
+      "id": 2994534,
+      "apiId": 14632405,
+      "name": "Lithuania - Azerbaijan"
+    },
+    {
+      "id": 2994933,
+      "apiId": 14633073,
+      "name": "AD Camacha - Florgrade FC"
+    },
+    {
+      "id": 2994561,
+      "apiId": 14632562,
+      "name": "Gilla FC - LoPa"
+    },
+    {
+      "id": 2994876,
+      "apiId": 14633121,
+      "name": "EPS Reservi - LePa"
+    }
+  ],
+  "markets": [
+    {
+      "id": "6575",
+      "name": "Rezultat Final",
+      "family": "1x2",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "X ",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6577",
+      "name": "Numri i Golave ne Ndeshje",
+      "family": "goals_total",
+      "examples": [
+        {
+          "selection": "Lart 2.5",
+          "specialValue": "2.5"
+        },
+        {
+          "selection": "Poshte 2.5",
+          "specialValue": "2.5"
+        }
+      ]
+    },
+    {
+      "id": "6582",
+      "name": "Shenon golin e trete (skuadra)",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "S'ka Gol te 3",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6589",
+      "name": "Numri i Golave ne Ndeshje",
+      "family": "goals_total",
+      "examples": [
+        {
+          "selection": "Lart 3.5",
+          "specialValue": "3.5"
+        },
+        {
+          "selection": "Poshte 3.5",
+          "specialValue": "3.5"
+        }
+      ]
+    },
+    {
+      "id": "6590",
+      "name": "Numri i Golave ne Ndeshje",
+      "family": "goals_total",
+      "examples": [
+        {
+          "selection": "Lart 4.5",
+          "specialValue": "4.5"
+        },
+        {
+          "selection": "Poshte 4.5",
+          "specialValue": "4.5"
+        }
+      ]
+    },
+    {
+      "id": "6591",
+      "name": "Numri i Golave ne Ndeshje",
+      "family": "goals_total",
+      "examples": [
+        {
+          "selection": "Lart 5.5",
+          "specialValue": "5.5"
+        },
+        {
+          "selection": "Poshte 5.5",
+          "specialValue": "5.5"
+        }
+      ]
+    },
+    {
+      "id": "6613",
+      "name": "Lart/Poshtë Korne",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 4.5",
+          "specialValue": "4.5"
+        },
+        {
+          "selection": "Poshte 4.5",
+          "specialValue": "4.5"
+        }
+      ]
+    },
+    {
+      "id": "6638",
+      "name": "Godet kornen e trete                                                                                                                                                                                                                                           ",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6653",
+      "name": "DopioShans Live                                                                                                                                                                                                                                                ",
+      "family": "doublechance",
+      "examples": [
+        {
+          "selection": "1X ",
+          "specialValue": null
+        },
+        {
+          "selection": "X2 ",
+          "specialValue": null
+        },
+        {
+          "selection": "12 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6654",
+      "name": "Gara e Korneve",
+      "family": "race_corners",
+      "examples": [
+        {
+          "selection": "1 3",
+          "specialValue": "3"
+        },
+        {
+          "selection": "X 3",
+          "specialValue": "3"
+        },
+        {
+          "selection": "2 3",
+          "specialValue": "3"
+        }
+      ]
+    },
+    {
+      "id": "6655",
+      "name": "Gara e Korneve",
+      "family": "race_corners",
+      "examples": [
+        {
+          "selection": "1 5",
+          "specialValue": "5"
+        },
+        {
+          "selection": "X 5",
+          "specialValue": "5"
+        },
+        {
+          "selection": "2 5",
+          "specialValue": "5"
+        }
+      ]
+    },
+    {
+      "id": "6656",
+      "name": "Gara e Korneve",
+      "family": "race_corners",
+      "examples": [
+        {
+          "selection": "1 7",
+          "specialValue": "7"
+        },
+        {
+          "selection": "X 7",
+          "specialValue": "7"
+        },
+        {
+          "selection": "2 7",
+          "specialValue": "7"
+        }
+      ]
+    },
+    {
+      "id": "6657",
+      "name": "Gara e Korneve",
+      "family": "race_corners",
+      "examples": [
+        {
+          "selection": "1 9",
+          "specialValue": "9"
+        },
+        {
+          "selection": "2 9",
+          "specialValue": "9"
+        },
+        {
+          "selection": "X 9",
+          "specialValue": "9"
+        }
+      ]
+    },
+    {
+      "id": "6660",
+      "name": "Godet kornen e fundit                                                                                                                                                                                                                                          ",
+      "family": "last_corner",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6661",
+      "name": "Fitore / Fitore",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6664",
+      "name": "Handikap Aziatik",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 0",
+          "specialValue": "0"
+        },
+        {
+          "selection": "2 0",
+          "specialValue": "0"
+        }
+      ]
+    },
+    {
+      "id": "6665",
+      "name": "Handikap Aziatik",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -0.25",
+          "specialValue": "-0.25"
+        },
+        {
+          "selection": "2 -0.25",
+          "specialValue": "-0.25"
+        }
+      ]
+    },
+    {
+      "id": "6666",
+      "name": "Handikap Aziatik",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -0.5",
+          "specialValue": "-0.5"
+        },
+        {
+          "selection": "2 -0.5",
+          "specialValue": "-0.5"
+        }
+      ]
+    },
+    {
+      "id": "6667",
+      "name": "Handikap Aziatik",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -0.75",
+          "specialValue": "-0.75"
+        },
+        {
+          "selection": "2 -0.75",
+          "specialValue": "-0.75"
+        }
+      ]
+    },
+    {
+      "id": "6677",
+      "name": "Handikap Aziatik",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 +0.25",
+          "specialValue": "+0.25"
+        },
+        {
+          "selection": "2 +0.25",
+          "specialValue": "+0.25"
+        }
+      ]
+    },
+    {
+      "id": "6715",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 2.75",
+          "specialValue": "2.75"
+        },
+        {
+          "selection": "Poshte 2.75",
+          "specialValue": "2.75"
+        }
+      ]
+    },
+    {
+      "id": "6716",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 3.0",
+          "specialValue": "3.0"
+        },
+        {
+          "selection": "Poshte 3.0",
+          "specialValue": "3.0"
+        }
+      ]
+    },
+    {
+      "id": "6717",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 3.25",
+          "specialValue": "3.25"
+        },
+        {
+          "selection": "Poshte 3.25",
+          "specialValue": "3.25"
+        }
+      ]
+    },
+    {
+      "id": "6757",
+      "name": "Tek/Cift Live                                                                                                                                                                                                                                                  ",
+      "family": "odd_even",
+      "examples": [
+        {
+          "selection": "Tek",
+          "specialValue": null
+        },
+        {
+          "selection": "Çift",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6759",
+      "name": "Sa Gola do shenohen nga ekipi udhetues",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 1.5",
+          "specialValue": "1.5"
+        },
+        {
+          "selection": "Poshte 1.5",
+          "specialValue": "1.5"
+        }
+      ]
+    },
+    {
+      "id": "6760",
+      "name": "Sa Gola do shenohen nga ekipi udhetues",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 2.5",
+          "specialValue": "2.5"
+        },
+        {
+          "selection": "Poshte 2.5",
+          "specialValue": "2.5"
+        }
+      ]
+    },
+    {
+      "id": "6763",
+      "name": "Sa Gola do shenohen nga ekipi vendas",
+      "family": "home_goals_total",
+      "examples": [
+        {
+          "selection": "Lart 1.5",
+          "specialValue": "1.5"
+        },
+        {
+          "selection": "Poshte 1.5",
+          "specialValue": "1.5"
+        }
+      ]
+    },
+    {
+      "id": "6764",
+      "name": "Sa Gola do shenohen nga ekipi vendas",
+      "family": "home_goals_total",
+      "examples": [
+        {
+          "selection": "Lart 2.5",
+          "specialValue": "2.5"
+        },
+        {
+          "selection": "Poshte 2.5",
+          "specialValue": "2.5"
+        }
+      ]
+    },
+    {
+      "id": "6765",
+      "name": "Sa Gola do shenohen nga ekipi vendas",
+      "family": "home_goals_total",
+      "examples": [
+        {
+          "selection": "Lart 3.5",
+          "specialValue": "3.5"
+        },
+        {
+          "selection": "Poshte 3.5",
+          "specialValue": "3.5"
+        }
+      ]
+    },
+    {
+      "id": "6781",
+      "name": "Lart/Poshtë Korne Totali",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart  4.5",
+          "specialValue": null
+        },
+        {
+          "selection": "Sakte  4",
+          "specialValue": null
+        },
+        {
+          "selection": "Poshte  3.5",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6782",
+      "name": "Lart/Poshtë Korne Totali",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart  5.5",
+          "specialValue": null
+        },
+        {
+          "selection": "Sakte  5",
+          "specialValue": null
+        },
+        {
+          "selection": "Poshte  4.5",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6783",
+      "name": "Lart/Poshtë Korne Totali",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart  6.5",
+          "specialValue": null
+        },
+        {
+          "selection": "Sakte  6",
+          "specialValue": null
+        },
+        {
+          "selection": "Poshte  5.5",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6784",
+      "name": "Lart/Poshtë Korne Totali",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart  7.5",
+          "specialValue": null
+        },
+        {
+          "selection": "Sakte  7",
+          "specialValue": null
+        },
+        {
+          "selection": "Poshte  6.5",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6798",
+      "name": "Rezultati Sakte Live                                                                                                                                                                                                                                           ",
+      "family": "exact_score",
+      "examples": [
+        {
+          "selection": "1-1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "2-1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "3-1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "4-1 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6811",
+      "name": "Gol / Jo Gol Ne P2                                                                                                                                                                                                                                             ",
+      "family": "second_half_btts",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6812",
+      "name": "Nr-Gola Pritesi                                                                                                                                                                                                                                                ",
+      "family": "home_goals_count",
+      "examples": [
+        {
+          "selection": "1 Gol ",
+          "specialValue": null
+        },
+        {
+          "selection": "2 Gola ",
+          "specialValue": null
+        },
+        {
+          "selection": "3+ Gola ",
+          "specialValue": null
+        },
+        {
+          "selection": "0 Gola ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6813",
+      "name": "Nr-Gola Udhetuesi                                                                                                                                                                                                                                              ",
+      "family": "away_goals_count",
+      "examples": [
+        {
+          "selection": "1 Gol ",
+          "specialValue": null
+        },
+        {
+          "selection": "2 Gola ",
+          "specialValue": null
+        },
+        {
+          "selection": "3+ Gola ",
+          "specialValue": null
+        },
+        {
+          "selection": "0 Gola ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6818",
+      "name": "Shenon Pritesi ne P2                                                                                                                                                                                                                                           ",
+      "family": "home_scores_second_half",
+      "examples": [
+        {
+          "selection": "Po ",
+          "specialValue": null
+        },
+        {
+          "selection": "Jo ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6819",
+      "name": "Shenon Udhetuesi ne P2                                                                                                                                                                                                                                         ",
+      "family": "away_scores_second_half",
+      "examples": [
+        {
+          "selection": "Po ",
+          "specialValue": null
+        },
+        {
+          "selection": "Jo ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6844",
+      "name": "Lart/Poshtë Korne Totali",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart  3.5",
+          "specialValue": null
+        },
+        {
+          "selection": "Sakte  3",
+          "specialValue": null
+        },
+        {
+          "selection": "Poshte  2.5",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "8999",
+      "name": "Rezultati Final Gola 4+",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1|4+ ",
+          "specialValue": null
+        },
+        {
+          "selection": "2|4+ ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "9078",
+      "name": "Handikap Europian (1:0)",
+      "family": "euro_handicap",
+      "examples": [
+        {
+          "selection": "1 1:0",
+          "specialValue": "1:0"
+        },
+        {
+          "selection": "X 1:0",
+          "specialValue": "1:0"
+        },
+        {
+          "selection": "2 1:0",
+          "specialValue": "1:0"
+        }
+      ]
+    },
+    {
+      "id": "9079",
+      "name": "Handikap Europian (2:0)",
+      "family": "euro_handicap",
+      "examples": [
+        {
+          "selection": "1 2:0",
+          "specialValue": "2:0"
+        },
+        {
+          "selection": "X 2:0",
+          "specialValue": "2:0"
+        },
+        {
+          "selection": "2 2:0",
+          "specialValue": "2:0"
+        }
+      ]
+    },
+    {
+      "id": "9086",
+      "name": "Handikap Europian (0:1)",
+      "family": "euro_handicap",
+      "examples": [
+        {
+          "selection": "1 0:1",
+          "specialValue": "0:1"
+        },
+        {
+          "selection": "X 0:1",
+          "specialValue": "0:1"
+        },
+        {
+          "selection": "2 0:1",
+          "specialValue": "0:1"
+        }
+      ]
+    },
+    {
+      "id": "9087",
+      "name": "Handikap Europian (0:2)",
+      "family": "euro_handicap",
+      "examples": [
+        {
+          "selection": "1 0:2",
+          "specialValue": "0:2"
+        },
+        {
+          "selection": "X 0:2",
+          "specialValue": "0:2"
+        },
+        {
+          "selection": "2 0:2",
+          "specialValue": "0:2"
+        }
+      ]
+    },
+    {
+      "id": "9088",
+      "name": "Handikap Europian (0:3)",
+      "family": "euro_handicap",
+      "examples": [
+        {
+          "selection": "1 0:3",
+          "specialValue": "0:3"
+        },
+        {
+          "selection": "X 0:3",
+          "specialValue": "0:3"
+        },
+        {
+          "selection": "2 0:3",
+          "specialValue": "0:3"
+        }
+      ]
+    },
+    {
+      "id": "6583",
+      "name": "Shenon golin e katert (skuadra)",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "S'ka Gol te 4",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6592",
+      "name": "Numri i Golave ne Ndeshje",
+      "family": "goals_total",
+      "examples": [
+        {
+          "selection": "Lart 6.5",
+          "specialValue": "6.5"
+        },
+        {
+          "selection": "Poshte 6.5",
+          "specialValue": "6.5"
+        }
+      ]
+    },
+    {
+      "id": "6593",
+      "name": "Numri i Golave ne Ndeshje",
+      "family": "goals_total",
+      "examples": [
+        {
+          "selection": "Lart 7.5",
+          "specialValue": "7.5"
+        },
+        {
+          "selection": "Poshte 7.5",
+          "specialValue": "7.5"
+        }
+      ]
+    },
+    {
+      "id": "6596",
+      "name": "Numri i Golave ne Ndeshje",
+      "family": "goals_total",
+      "examples": [
+        {
+          "selection": "Lart 8.5",
+          "specialValue": "8.5"
+        },
+        {
+          "selection": "Poshte 8.5",
+          "specialValue": "8.5"
+        }
+      ]
+    },
+    {
+      "id": "6615",
+      "name": "Lart/Poshtë Korne",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 6.5",
+          "specialValue": "6.5"
+        },
+        {
+          "selection": "Poshte 6.5",
+          "specialValue": "6.5"
+        }
+      ]
+    },
+    {
+      "id": "6640",
+      "name": "Godet kornen e peste                                                                                                                                                                                                                                           ",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6662",
+      "name": "Rezultati i Pjeses se Dyte",
+      "family": "second_half_result",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "X ",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6668",
+      "name": "Handikap Aziatik",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -1.0",
+          "specialValue": "-1.0"
+        },
+        {
+          "selection": "2 -1.0",
+          "specialValue": "-1.0"
+        }
+      ]
+    },
+    {
+      "id": "6669",
+      "name": "Handikap Aziatik",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -1.25",
+          "specialValue": "-1.25"
+        },
+        {
+          "selection": "2 -1.25",
+          "specialValue": "-1.25"
+        }
+      ]
+    },
+    {
+      "id": "6723",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 4.75",
+          "specialValue": "4.75"
+        },
+        {
+          "selection": "Poshte 4.75",
+          "specialValue": "4.75"
+        }
+      ]
+    },
+    {
+      "id": "6724",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 5.0",
+          "specialValue": "5.0"
+        },
+        {
+          "selection": "Poshte 5.0",
+          "specialValue": "5.0"
+        }
+      ]
+    },
+    {
+      "id": "6725",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 5.25",
+          "specialValue": "5.25"
+        },
+        {
+          "selection": "Poshte 5.25",
+          "specialValue": "5.25"
+        }
+      ]
+    },
+    {
+      "id": "6727",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 5.75",
+          "specialValue": "5.75"
+        },
+        {
+          "selection": "Poshte 5.75",
+          "specialValue": "5.75"
+        }
+      ]
+    },
+    {
+      "id": "6766",
+      "name": "Sa Gola do shenohen nga ekipi vendas",
+      "family": "home_goals_total",
+      "examples": [
+        {
+          "selection": "Lart 4.5",
+          "specialValue": "4.5"
+        },
+        {
+          "selection": "Poshte 4.5",
+          "specialValue": "4.5"
+        }
+      ]
+    },
+    {
+      "id": "6767",
+      "name": "Sa Gola do shenohen nga ekipi vendas",
+      "family": "home_goals_total",
+      "examples": [
+        {
+          "selection": "Lart 5.5",
+          "specialValue": "5.5"
+        },
+        {
+          "selection": "Poshte 5.5",
+          "specialValue": "5.5"
+        }
+      ]
+    },
+    {
+      "id": "6768",
+      "name": "Sa Gola do shenohen nga ekipi vendas",
+      "family": "home_goals_total",
+      "examples": [
+        {
+          "selection": "Lart 6.5",
+          "specialValue": "6.5"
+        },
+        {
+          "selection": "Poshte 6.5",
+          "specialValue": "6.5"
+        }
+      ]
+    },
+    {
+      "id": "6769",
+      "name": "Sa Gola do shenohen nga ekipi vendas",
+      "family": "home_goals_total",
+      "examples": [
+        {
+          "selection": "Lart 7.5",
+          "specialValue": "7.5"
+        },
+        {
+          "selection": "Poshte 7.5",
+          "specialValue": "7.5"
+        }
+      ]
+    },
+    {
+      "id": "6780",
+      "name": "Gol Jo Gol Live",
+      "family": "btts",
+      "examples": [
+        {
+          "selection": "Po",
+          "specialValue": null
+        },
+        {
+          "selection": "Jo",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6785",
+      "name": "Lart/Poshtë Korne Totali",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart  8.5",
+          "specialValue": null
+        },
+        {
+          "selection": "Sakte  8",
+          "specialValue": null
+        },
+        {
+          "selection": "Poshte  7.5",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6786",
+      "name": "Lart/Poshtë Korne Totali",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart  9.5",
+          "specialValue": null
+        },
+        {
+          "selection": "Sakte  9",
+          "specialValue": null
+        },
+        {
+          "selection": "Poshte  8.5",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6840",
+      "name": "Rezultat Final/Gol-Gol                                                                                                                                                                                                                                         ",
+      "family": "1x2",
+      "examples": [
+        {
+          "selection": "1|G ",
+          "specialValue": null
+        },
+        {
+          "selection": "2|G ",
+          "specialValue": null
+        },
+        {
+          "selection": "1|JG ",
+          "specialValue": null
+        },
+        {
+          "selection": "2|JG ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "9089",
+      "name": "Handikap Europian (0:4)",
+      "family": "euro_handicap",
+      "examples": [
+        {
+          "selection": "1 0:4",
+          "specialValue": "0:4"
+        },
+        {
+          "selection": "X 0:4",
+          "specialValue": "0:4"
+        },
+        {
+          "selection": "2 0:4",
+          "specialValue": "0:4"
+        }
+      ]
+    },
+    {
+      "id": "9090",
+      "name": "Handikap Europian (0:5)",
+      "family": "euro_handicap",
+      "examples": [
+        {
+          "selection": "1 0:5",
+          "specialValue": "0:5"
+        },
+        {
+          "selection": "X 0:5",
+          "specialValue": "0:5"
+        },
+        {
+          "selection": "2 0:5",
+          "specialValue": "0:5"
+        }
+      ]
+    },
+    {
+      "id": "9091",
+      "name": "Handikap Europian (0:6)",
+      "family": "euro_handicap",
+      "examples": [
+        {
+          "selection": "1 0:6",
+          "specialValue": "0:6"
+        },
+        {
+          "selection": "X 0:6",
+          "specialValue": "0:6"
+        },
+        {
+          "selection": "2 0:6",
+          "specialValue": "0:6"
+        }
+      ]
+    },
+    {
+      "id": "6576",
+      "name": "Rezultati Pjesa I                                                                                                                                                                                                                                              ",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "X ",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6578",
+      "name": "Shenon golin e pare (skuadra)",
+      "family": "first_goal",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "S'ka Gol",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6579",
+      "name": "Numri i Golave ne Ndeshje",
+      "family": "goals_total",
+      "examples": [
+        {
+          "selection": "Lart 1.5",
+          "specialValue": "1.5"
+        },
+        {
+          "selection": "Poshte 1.5",
+          "specialValue": "1.5"
+        }
+      ]
+    },
+    {
+      "id": "6617",
+      "name": "Lart/Poshtë Korne",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 8.5",
+          "specialValue": "8.5"
+        },
+        {
+          "selection": "Poshte 8.5",
+          "specialValue": "8.5"
+        }
+      ]
+    },
+    {
+      "id": "6630",
+      "name": "Sa Gola Shënohen në Pjesën e 1re",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 0.5",
+          "specialValue": "0.5"
+        },
+        {
+          "selection": "Poshte 0.5",
+          "specialValue": "0.5"
+        }
+      ]
+    },
+    {
+      "id": "6631",
+      "name": "Sa Gola Shënohen në Pjesën e 1re",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 1.5",
+          "specialValue": "1.5"
+        },
+        {
+          "selection": "Poshte 1.5",
+          "specialValue": "1.5"
+        }
+      ]
+    },
+    {
+      "id": "6632",
+      "name": "Sa Gola Shënohen në Pjesën e 1re",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 2.5",
+          "specialValue": "2.5"
+        },
+        {
+          "selection": "Poshte 2.5",
+          "specialValue": "2.5"
+        }
+      ]
+    },
+    {
+      "id": "6633",
+      "name": "Sa Gola Shënohen në Pjesën e 1re",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 3.5",
+          "specialValue": "3.5"
+        },
+        {
+          "selection": "Poshte 3.5",
+          "specialValue": "3.5"
+        }
+      ]
+    },
+    {
+      "id": "6637",
+      "name": "Godet kornen e dyte                                                                                                                                                                                                                                            ",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6663",
+      "name": "Pjesa pare / Pjesa dyte                                                                                                                                                                                                                                        ",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1-1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "1-X ",
+          "specialValue": null
+        },
+        {
+          "selection": "1-2 ",
+          "specialValue": null
+        },
+        {
+          "selection": "X-1 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6670",
+      "name": "Handikap Aziatik",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -1.5",
+          "specialValue": "-1.5"
+        },
+        {
+          "selection": "2 -1.5",
+          "specialValue": "-1.5"
+        }
+      ]
+    },
+    {
+      "id": "6671",
+      "name": "Handikap Aziatik",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -1.75",
+          "specialValue": "-1.75"
+        },
+        {
+          "selection": "2 -1.75",
+          "specialValue": "-1.75"
+        }
+      ]
+    },
+    {
+      "id": "6672",
+      "name": "Handikap Aziatik",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -2.0",
+          "specialValue": "-2.0"
+        },
+        {
+          "selection": "2 -2.0",
+          "specialValue": "-2.0"
+        }
+      ]
+    },
+    {
+      "id": "6673",
+      "name": "Handikap Aziatik",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -2.25",
+          "specialValue": "-2.25"
+        },
+        {
+          "selection": "2 -2.25",
+          "specialValue": "-2.25"
+        }
+      ]
+    },
+    {
+      "id": "6674",
+      "name": "Handikap Aziatik",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -2.5",
+          "specialValue": "-2.5"
+        },
+        {
+          "selection": "2 -2.5",
+          "specialValue": "-2.5"
+        }
+      ]
+    },
+    {
+      "id": "6690",
+      "name": "Handikap Aziatik Pjesa 1-rë",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -0.25",
+          "specialValue": "-0.25"
+        },
+        {
+          "selection": "2 -0.25",
+          "specialValue": "-0.25"
+        }
+      ]
+    },
+    {
+      "id": "6691",
+      "name": "Handikap Aziatik Pjesa 1-rë",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -0.5",
+          "specialValue": "-0.5"
+        },
+        {
+          "selection": "2 -0.5",
+          "specialValue": "-0.5"
+        }
+      ]
+    },
+    {
+      "id": "6692",
+      "name": "Handikap Aziatik Pjesa 1-rë",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -0.75",
+          "specialValue": "-0.75"
+        },
+        {
+          "selection": "2 -0.75",
+          "specialValue": "-0.75"
+        }
+      ]
+    },
+    {
+      "id": "6693",
+      "name": "Handikap Aziatik Pjesa 1-rë",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -1.0",
+          "specialValue": "-1.0"
+        },
+        {
+          "selection": "2 -1.0",
+          "specialValue": "-1.0"
+        }
+      ]
+    },
+    {
+      "id": "6694",
+      "name": "Handikap Aziatik Pjesa 1-rë",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 -1.25",
+          "specialValue": "-1.25"
+        },
+        {
+          "selection": "2 -1.25",
+          "specialValue": "-1.25"
+        }
+      ]
+    },
+    {
+      "id": "6719",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 3.75",
+          "specialValue": "3.75"
+        },
+        {
+          "selection": "Poshte 3.75",
+          "specialValue": "3.75"
+        }
+      ]
+    },
+    {
+      "id": "6720",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 4.0",
+          "specialValue": "4.0"
+        },
+        {
+          "selection": "Poshte 4.0",
+          "specialValue": "4.0"
+        }
+      ]
+    },
+    {
+      "id": "6721",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 4.25",
+          "specialValue": "4.25"
+        },
+        {
+          "selection": "Poshte 4.25",
+          "specialValue": "4.25"
+        }
+      ]
+    },
+    {
+      "id": "6743",
+      "name": "Lart/Poshtë Gola Aziatikë në Pjesën e 1rë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 1.0",
+          "specialValue": "1.0"
+        },
+        {
+          "selection": "Poshte 1.0",
+          "specialValue": "1.0"
+        }
+      ]
+    },
+    {
+      "id": "6744",
+      "name": "Lart/Poshtë Gola Aziatikë në Pjesën e 1rë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 1.25",
+          "specialValue": "1.25"
+        },
+        {
+          "selection": "Poshte 1.25",
+          "specialValue": "1.25"
+        }
+      ]
+    },
+    {
+      "id": "6746",
+      "name": "Lart/Poshtë Gola Aziatikë në Pjesën e 1rë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 1.75",
+          "specialValue": "1.75"
+        },
+        {
+          "selection": "Poshte 1.75",
+          "specialValue": "1.75"
+        }
+      ]
+    },
+    {
+      "id": "6747",
+      "name": "Lart/Poshtë Gola Aziatikë në Pjesën e 1rë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 2.0",
+          "specialValue": "2.0"
+        },
+        {
+          "selection": "Poshte 2.0",
+          "specialValue": "2.0"
+        }
+      ]
+    },
+    {
+      "id": "6761",
+      "name": "Sa Gola do shenohen nga ekipi udhetues",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 3.5",
+          "specialValue": "3.5"
+        },
+        {
+          "selection": "Poshte 3.5",
+          "specialValue": "3.5"
+        }
+      ]
+    },
+    {
+      "id": "6787",
+      "name": "Lart/Poshtë Korne Totali",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart  10.5",
+          "specialValue": null
+        },
+        {
+          "selection": "Sakte  10",
+          "specialValue": null
+        },
+        {
+          "selection": "Poshte  9.5",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6788",
+      "name": "Lart/Poshtë Korne Totali",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart  11.5",
+          "specialValue": null
+        },
+        {
+          "selection": "Sakte  11",
+          "specialValue": null
+        },
+        {
+          "selection": "Poshte  10.5",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6799",
+      "name": "Rezultati Sakte Pjesa 1 Live                                                                                                                                                                                                                                   ",
+      "family": "exact_score",
+      "examples": [
+        {
+          "selection": "0-0 ",
+          "specialValue": null
+        },
+        {
+          "selection": "1-0 ",
+          "specialValue": null
+        },
+        {
+          "selection": "2-0 ",
+          "specialValue": null
+        },
+        {
+          "selection": "3-0 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6800",
+      "name": "Shenon Golin e 1 Pjesa1",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "S'ka Gol",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6809",
+      "name": "Gol JoGol Pjesa 1 Live                                                                                                                                                                                                                                         ",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6810",
+      "name": "Rezultati Final Gola 3+",
+      "family": "final_3plus_combo",
+      "examples": [
+        {
+          "selection": "1|3+ ",
+          "specialValue": null
+        },
+        {
+          "selection": "2|3+ ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6816",
+      "name": "Shenon Pritesi ne P1/P2                                                                                                                                                                                                                                        ",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Po ",
+          "specialValue": null
+        },
+        {
+          "selection": "Jo ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6817",
+      "name": "Shenon Udhetuesi ne P1/P2                                                                                                                                                                                                                                      ",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Po ",
+          "specialValue": null
+        },
+        {
+          "selection": "Jo ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6847",
+      "name": "Lart/Poshtë Korne Pjesa 1-rë",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 3.5",
+          "specialValue": "3.5"
+        },
+        {
+          "selection": "Poshte 3.5",
+          "specialValue": "3.5"
+        }
+      ]
+    },
+    {
+      "id": "6924",
+      "name": "Lart/Poshtë Korne Totali  Pjesa 1-rë",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart  3.5",
+          "specialValue": null
+        },
+        {
+          "selection": "Sakte  3",
+          "specialValue": null
+        },
+        {
+          "selection": "Poshte  2.5",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "8668",
+      "name": "Lart/Poshtë Korne Pjesa 1-rë",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 2.5",
+          "specialValue": "2.5"
+        },
+        {
+          "selection": "Poshte 2.5",
+          "specialValue": "2.5"
+        }
+      ]
+    },
+    {
+      "id": "9094",
+      "name": "Handikap Live Pjesa Pare (1:0)",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1 1:0",
+          "specialValue": "1:0"
+        },
+        {
+          "selection": "X 1:0",
+          "specialValue": "1:0"
+        },
+        {
+          "selection": "2 1:0",
+          "specialValue": "1:0"
+        }
+      ]
+    },
+    {
+      "id": "9099",
+      "name": "Handikap Live Pjesa Pare (0:1)",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1 0:1",
+          "specialValue": "0:1"
+        },
+        {
+          "selection": "X 0:1",
+          "specialValue": "0:1"
+        },
+        {
+          "selection": "2 0:1",
+          "specialValue": "0:1"
+        }
+      ]
+    },
+    {
+      "id": "9100",
+      "name": "Handikap Live Pjesa Pare (0:2)",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1 0:2",
+          "specialValue": "0:2"
+        },
+        {
+          "selection": "X 0:2",
+          "specialValue": "0:2"
+        },
+        {
+          "selection": "2 0:2",
+          "specialValue": "0:2"
+        }
+      ]
+    },
+    {
+      "id": "6580",
+      "name": "Numri i Golave ne Ndeshje",
+      "family": "goals_total",
+      "examples": [
+        {
+          "selection": "Lart 0.5",
+          "specialValue": "0.5"
+        },
+        {
+          "selection": "Poshte 0.5",
+          "specialValue": "0.5"
+        }
+      ]
+    },
+    {
+      "id": "6595",
+      "name": "Skuadra qe kualifikohet                                                                                                                                                                                                                                        ",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1 ",
+          "specialValue": null
+        },
+        {
+          "selection": "2 ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6618",
+      "name": "Lart/Poshtë Korne",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 9.5",
+          "specialValue": "9.5"
+        },
+        {
+          "selection": "Poshte 9.5",
+          "specialValue": "9.5"
+        }
+      ]
+    },
+    {
+      "id": "6678",
+      "name": "Handikap Aziatik",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 +0.5",
+          "specialValue": "+0.5"
+        },
+        {
+          "selection": "2 +0.5",
+          "specialValue": "+0.5"
+        }
+      ]
+    },
+    {
+      "id": "6689",
+      "name": "Handikap Aziatik Pjesa 1-rë",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 0",
+          "specialValue": "0"
+        },
+        {
+          "selection": "2 0",
+          "specialValue": "0"
+        }
+      ]
+    },
+    {
+      "id": "6698",
+      "name": "Handikap Aziatik Pjesa 1-rë",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 +0.25",
+          "specialValue": "+0.25"
+        },
+        {
+          "selection": "2 +0.25",
+          "specialValue": "+0.25"
+        }
+      ]
+    },
+    {
+      "id": "6699",
+      "name": "Handikap Aziatik Pjesa 1-rë",
+      "family": "asian_handicap",
+      "examples": [
+        {
+          "selection": "1 +0.5",
+          "specialValue": "+0.5"
+        },
+        {
+          "selection": "2 +0.5",
+          "specialValue": "+0.5"
+        }
+      ]
+    },
+    {
+      "id": "6709",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 1.25",
+          "specialValue": "1.25"
+        },
+        {
+          "selection": "Poshte 1.25",
+          "specialValue": "1.25"
+        }
+      ]
+    },
+    {
+      "id": "6711",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 1.75",
+          "specialValue": "1.75"
+        },
+        {
+          "selection": "Poshte 1.75",
+          "specialValue": "1.75"
+        }
+      ]
+    },
+    {
+      "id": "6712",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 2.0",
+          "specialValue": "2.0"
+        },
+        {
+          "selection": "Poshte 2.0",
+          "specialValue": "2.0"
+        }
+      ]
+    },
+    {
+      "id": "6713",
+      "name": "Lart/Poshtë Gola Aziatikë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 2.25",
+          "specialValue": "2.25"
+        },
+        {
+          "selection": "Poshte 2.25",
+          "specialValue": "2.25"
+        }
+      ]
+    },
+    {
+      "id": "6742",
+      "name": "Lart/Poshtë Gola Aziatikë në Pjesën e 1rë",
+      "family": "goals_asian_total",
+      "examples": [
+        {
+          "selection": "Lart 0.75",
+          "specialValue": "0.75"
+        },
+        {
+          "selection": "Poshte 0.75",
+          "specialValue": "0.75"
+        }
+      ]
+    },
+    {
+      "id": "6831",
+      "name": "Fitohet Loja ne Shtese                                                                                                                                                                                                                                         ",
+      "family": "extra_time_winner",
+      "examples": [
+        {
+          "selection": "Po ",
+          "specialValue": null
+        },
+        {
+          "selection": "Jo ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6832",
+      "name": "Fitohet Loja mbas Penalltive                                                                                                                                                                                                                                   ",
+      "family": "penalty_shootout_winner",
+      "examples": [
+        {
+          "selection": "Po ",
+          "specialValue": null
+        },
+        {
+          "selection": "Jo ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6833",
+      "name": "Menyra e Fitores                                                                                                                                                                                                                                               ",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "1|90 Min. ",
+          "specialValue": null
+        },
+        {
+          "selection": "2|90 Min. ",
+          "specialValue": null
+        },
+        {
+          "selection": "1|K. Shte. ",
+          "specialValue": null
+        },
+        {
+          "selection": "2|K. Shte. ",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "6848",
+      "name": "Lart/Poshtë Korne Pjesa 1-rë",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 4.5",
+          "specialValue": "4.5"
+        },
+        {
+          "selection": "Poshte 4.5",
+          "specialValue": "4.5"
+        }
+      ]
+    },
+    {
+      "id": "6925",
+      "name": "Lart/Poshtë Korne Totali  Pjesa 1-rë",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart  4.5",
+          "specialValue": null
+        },
+        {
+          "selection": "Sakte  4",
+          "specialValue": null
+        },
+        {
+          "selection": "Poshte  3.5",
+          "specialValue": null
+        }
+      ]
+    },
+    {
+      "id": "8669",
+      "name": "Lart/Poshtë Korne Pjesa 1-rë",
+      "family": "unknown",
+      "examples": [
+        {
+          "selection": "Lart 3.5",
+          "specialValue": "3.5"
+        },
+        {
+          "selection": "Poshte 3.5",
+          "specialValue": "3.5"
+        }
+      ]
+    },
+    {
+      "id": "9080",
+      "name": "Handikap Europian (3:0)",
+      "family": "euro_handicap",
+      "examples": [
+        {
+          "selection": "1 3:0",
+          "specialValue": "3:0"
+        },
+        {
+          "selection": "X 3:0",
+          "specialValue": "3:0"
+        },
+        {
+          "selection": "2 3:0",
+          "specialValue": "3:0"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "time": "2026-10-01T16:43:56.446Z",
+  "account": "user123",
+  "match": "Guinea - Kenya",
+  "score": "1-0",
+  "minute": "40:03",
+  "request": {
+    "stake": 10,
+    "selections": [
+      {
+        "gameId": "3008324",
+        "gameApiId": "14660427",
+        "coefId": "535538881",
+        "odd": 1.09,
+        "selection": "1",
+        "marketId": "6575",
+        "market": "Rezultat Final",
+        "home": "Guinea",
+        "away": "Kenya",
+        "league": "Africa Cup of Nations Qualification",
+        "marketType": "detail",
+        "isLive": true
+      }
+    ]
+  },
+  "httpStatus": 200,
+  "response": {
+    "ok": true,
+    "betId": 95,
+    "totalOdds": 1.09,
+    "potentialWin": 10.9,
+    "status": "accepted",
+    "balance": 7866003.22,
+    "reservedBalance": 0,
+    "availableBalance": 7866003.22
+  }
+}

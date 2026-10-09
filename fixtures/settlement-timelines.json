@@ -1,0 +1,334 @@
+{
+  "14560190": [
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "1",
+      "game_status": "1",
+      "minute": "05:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "2",
+      "game_status": "1",
+      "minute": "20:00"
+    },
+    {
+      "type": "Goal",
+      "type_id": "1",
+      "team": "1",
+      "value": "1",
+      "game_status": "1",
+      "minute": "20:00"
+    },
+    {
+      "type": "",
+      "type_id": "40",
+      "team": "1",
+      "value": "1",
+      "game_status": "1",
+      "minute": "Diego Duarte"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "3",
+      "game_status": "1",
+      "minute": "31:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "4",
+      "game_status": "1",
+      "minute": "33:00"
+    },
+    {
+      "type": "Goal",
+      "type_id": "1",
+      "team": "2",
+      "value": "2",
+      "game_status": "1",
+      "minute": "34:00"
+    },
+    {
+      "type": "",
+      "type_id": "40",
+      "team": "2",
+      "value": "2",
+      "game_status": "1",
+      "minute": "Ian Poveda-Ocampo"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "5",
+      "game_status": "1",
+      "minute": "39:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "1",
+      "value": "1",
+      "game_status": "1",
+      "minute": "42:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "6",
+      "game_status": "1",
+      "minute": "44:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "7",
+      "game_status": "1",
+      "minute": "48:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "1",
+      "value": "2",
+      "game_status": "1",
+      "minute": "47:00"
+    },
+    {
+      "type": "End of the first half",
+      "type_id": "5",
+      "team": "0",
+      "value": "0",
+      "game_status": "2",
+      "minute": "1-1"
+    },
+    {
+      "type": "Goal",
+      "type_id": "1",
+      "team": "2",
+      "value": "3",
+      "game_status": "3",
+      "minute": "62:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "8",
+      "game_status": "3",
+      "minute": "74:00"
+    },
+    {
+      "type": "",
+      "type_id": "40",
+      "team": "2",
+      "value": "3",
+      "game_status": "3",
+      "minute": "Elias Cabrera"
+    },
+    {
+      "type": "Goal",
+      "type_id": "1",
+      "team": "1",
+      "value": "4",
+      "game_status": "3",
+      "minute": "83:00"
+    },
+    {
+      "type": "",
+      "type_id": "40",
+      "team": "1",
+      "value": "4",
+      "game_status": "3",
+      "minute": "Yojan Garces"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "9",
+      "game_status": "3",
+      "minute": "87:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "2",
+      "value": "3",
+      "game_status": "3",
+      "minute": "88:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "10",
+      "game_status": "3",
+      "minute": "90:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "11",
+      "game_status": "3",
+      "minute": "92:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "12",
+      "game_status": "3",
+      "minute": "99:00"
+    },
+    {
+      "type": "Goal",
+      "type_id": "1",
+      "team": "2",
+      "value": "5",
+      "game_status": "3",
+      "minute": "99:00"
+    },
+    {
+      "type": "End of the match",
+      "type_id": "6",
+      "team": "0",
+      "value": "0",
+      "game_status": "255",
+      "minute": "2-3"
+    }
+  ],
+  "14595016": [
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "1",
+      "game_status": "1",
+      "minute": "16:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "2",
+      "value": "2",
+      "game_status": "1",
+      "minute": "16:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "1",
+      "value": "1",
+      "game_status": "1",
+      "minute": "24:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "3",
+      "game_status": "1",
+      "minute": "36:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "2",
+      "value": "2",
+      "game_status": "1",
+      "minute": "40:00"
+    },
+    {
+      "type": "End of the first half",
+      "type_id": "5",
+      "team": "0",
+      "value": "0",
+      "game_status": "2",
+      "minute": "0-0"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "2",
+      "value": "3",
+      "game_status": "3",
+      "minute": "54:00"
+    },
+    {
+      "type": "Red card",
+      "type_id": "3",
+      "team": "1",
+      "value": "1",
+      "game_status": "3",
+      "minute": "57:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "2",
+      "value": "4",
+      "game_status": "3",
+      "minute": "66:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "2",
+      "value": "5",
+      "game_status": "3",
+      "minute": "68:00"
+    },
+    {
+      "type": "Red card",
+      "type_id": "3",
+      "team": "1",
+      "value": "2",
+      "game_status": "3",
+      "minute": "74:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "1",
+      "value": "6",
+      "game_status": "3",
+      "minute": "86:00"
+    },
+    {
+      "type": "Yellow card",
+      "type_id": "4",
+      "team": "2",
+      "value": "7",
+      "game_status": "3",
+      "minute": "88:00"
+    },
+    {
+      "type": "Corner",
+      "type_id": "2",
+      "team": "1",
+      "value": "4",
+      "game_status": "3",
+      "minute": "96:00"
+    },
+    {
+      "type": "End of the match",
+      "type_id": "6",
+      "team": "0",
+      "value": "0",
+      "game_status": "255",
+      "minute": "0-0"
+    }
+  ]
+}
