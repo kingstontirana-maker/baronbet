@@ -142,11 +142,11 @@ function addPick(g,key,val){
   const odd=info?Number(info.odd):Number(val);
   if(lock(odd))return;
   const id=String(g.id)+'|'+key;
-  const i=slip.findIndex(x=>x.id===id);
+  const i=slip.findIndex(x=>String(x.gameId)===String(g.id)&&(info?.coefId?String(x.coefId)===String(info.coefId):x.id===id));
   if(i>=0){
     slip.splice(i,1);
   }else{
-    slip=slip.filter(x=>String(x.gameId)!==String(g.id));
+    slip=slip.filter(x=>String(x.gameId)!==String(g.id)||String(x.marketId)!==String(info?.marketId||'')||String(x.specialValue??'')!=='');
     slip.push({id,gameId:g.id,gameApiId:g.game_api_id||g.api_id||'',key,odd,currentOdd:odd,coefId:info?.coefId||'',marketId:info?.marketId||'',market:'Fulltime Result',marketType:'summary',specialValue:'',oddsChanged:false,invalid:false,league:g.league||'',home:g.home_team||g.name||'',away:g.away_team||'',eventTime:g.game_time||g.game_date||''});
   }
   renderSlip();
@@ -165,9 +165,9 @@ function addMarketPick(g, option){
   const marketId=String(option.market_id??'');
   const key=`${marketId}|${coefId}`;
   const id=String(g.id)+'|'+key;
-  const i=slip.findIndex(x=>x.id===id);
+  const i=slip.findIndex(x=>String(x.gameId)===String(g.id)&&String(x.marketId)===marketId&&String(x.coefId)===coefId&&String(x.specialValue??'')===String(option.special_value??option.specialValue??''));
   if(i>=0){slip.splice(i,1)}else{
-    slip=slip.filter(x=>String(x.gameId)!==String(g.id));
+    slip=slip.filter(x=>String(x.gameId)!==String(g.id)||String(x.marketId)!==marketId||String(x.specialValue??'')!==String(option.special_value??option.specialValue??''));
     slip.push({id,gameId:g.id,gameApiId:g.game_api_id||g.api_id||'',key:option.market_option||'',odd, currentOdd:odd,coefId,marketId,market:option.market||'Market',marketType:'detail',specialValue:option.special_value??option.specialValue??'',oddsChanged:false,invalid:false,league:g.league||'',home:g.home_team||g.name||'',away:g.away_team||'',eventTime:g.game_time||g.game_date||''});
   }
   renderSlip();
@@ -566,7 +566,7 @@ $('slipbody').addEventListener('pointerdown',removeSlipSelection);
 $('slipbody').addEventListener('click',removeSlipSelection);
 
 function updatePotential(){const stake=Number($('stake').value||0),valid=slip.filter(x=>!x.invalid),odds=valid.reduce((a,x)=>a*Number(x.odd),1),potential=stake>0&&valid.length?(stake*odds).toFixed(2):'0.00';$('potential').textContent=potential;const placePotential=$('placePotential');if(placePotential)placePotential.textContent=stake>0&&valid.length?`Fitimi ${potential}`:''}
-function oddHtml(g,key,val,old){const raw=val&&typeof val==='object'?val.odd:val;const l=lock(raw),sel=slip.some(x=>String(x.gameId)===String(g.id)&&x.key===key);return `<button class="odd ${l?'locked':''} ${sel?'selected':''}" ${l?'disabled':''} data-game="${esc(g.id)}" data-key="${key}" data-odd="${esc(raw??'')}">${l?oddsLockIcon():Number(raw).toFixed(2)}</button>`}
+function oddHtml(g,key,val,old){const raw=val&&typeof val==='object'?val.odd:val;const l=lock(raw),sel=slip.some(x=>String(x.gameId)===String(g.id)&&x.key===key&&String(x.marketId)===String(parseOdds(g.odd)[key]?.marketId||''));return `<button class="odd ${l?'locked':''} ${sel?'selected':''}" ${l?'disabled':''} data-game="${esc(g.id)}" data-key="${key}" data-odd="${esc(raw??'')}">${l?oddsLockIcon():Number(raw).toFixed(2)}</button>`}
 let sportsCatalogRows=[],homeExtras={main:[],live:[]},sportsHomeTab='home';
 async function sportsList(path){const r=await fetch('/api/sports-catalog/'+path,{signal:AbortSignal.timeout(15000)}),d=await SportsbookApi.readJson(r);if(!r.ok||!Array.isArray(d))throw Error(d.error||'Lista nuk u ngarkua.');return d;}
 function openSportsHome(){document.querySelector('.sidebar').classList.remove('sports-drawer');selectedPrematchLeague='';sportsHomeTab='home';activeLeague='';query='';$('search').value='';setMode('home');}
@@ -697,7 +697,7 @@ function renderLive(data,reset=false){
   content.onpointerdown=null;
 }
 
-function liveOddHtml(g,key,val){const raw=val&&typeof val==='object'?val.odd:val;const l=lock(raw),sel=slip.some(x=>String(x.gameId)===String(g.id)&&x.key===key);return `<button class="live-odd ${l?'locked':''} ${sel?'selected':''}" ${l?'disabled':''} data-game="${esc(g.id)}" data-key="${key}" data-odd="${esc(raw??'')}">${l?oddsLockIcon():Number(raw).toFixed(2)}</button>`}
+function liveOddHtml(g,key,val){const raw=val&&typeof val==='object'?val.odd:val;const l=lock(raw),sel=slip.some(x=>String(x.gameId)===String(g.id)&&x.key===key&&String(x.marketId)===String(parseOdds(g.odd)[key]?.marketId||''));return `<button class="live-odd ${l?'locked':''} ${sel?'selected':''}" ${l?'disabled':''} data-game="${esc(g.id)}" data-key="${key}" data-odd="${esc(raw??'')}">${l?oddsLockIcon():Number(raw).toFixed(2)}</button>`}
 
 let pageLoad=null,livePaintTimer=null;
 let liveSnapshot=null,livePrefetch=null;
@@ -1195,7 +1195,7 @@ async function placeBet(){
   renderOddsAcceptance();
   const requestBody=JSON.stringify({stake,selections:slip.map(p=>({gameId:p.gameId,gameApiId:p.gameApiId||'',league:p.league,home:p.home,away:p.away,market:p.market||'Fulltime Result',marketType:p.marketType||'',marketId:p.marketId||'',specialValue:p.specialValue||'',selection:p.key,coefId:p.coefId,odd:p.odd,eventTime:p.eventTime}))});
   if(!lastBetRequest||lastBetRequest.body!==requestBody)lastBetRequest={body:requestBody,key:crypto.randomUUID()};
-  try{const r=await fetch('/api/bets',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,'Idempotency-Key':lastBetRequest.key},body:requestBody});const d=await SportsbookApi.readJson(r);if(!r.ok){if(d.code==='BET_LIMIT_EXCEEDED'&&Number.isFinite(d.limitAmount)){showSlipLimit(d.limitAmount,d.limitKind);return;}if(Array.isArray(d.invalidSelections)){for(const inv of d.invalidSelections){const p=slip.find(x=>String(x.gameId)===String(inv.gameId)&&String(x.key)===String(inv.selection));if(p){p.invalid=true;p.invalidReason=inv.reason||'Koeficienti nuk është më aktiv.'}}}if(Array.isArray(d.oddsChanged)){for(const ch of d.oddsChanged){const p=slip.find(x=>String(x.gameId)===String(ch.gameId)&&String(x.key)===String(ch.selection));if(p){p.previousOdd=Number(p.odd);p.odd=Number(ch.newOdd);p.currentOdd=Number(ch.newOdd);p.serverQuoted=true;p.oddsChanged=true;p.invalid=false;p.invalidReason=''}}}if(d.oddsChanged?.length&&!d.invalidSelections?.length)oddsConfirmationRequested=true;renderSlip();if(d.oddsChanged?.length&&!d.invalidSelections?.length)return;throw Error(d.error||'Koeficienti u përditësua. Luaje bastin përsëri me vlerën e re.')}lastBetRequest=null;user.balance=d.balance;user.reservedBalance=d.reservedBalance||0;pendingTicket=d.status==='accepted'?null:{id:d.betId,stake,odds:d.totalOdds,selections:slip.map(p=>({...p}))};slip=[];$('stake').value='';setAuthState(user);$('betMsg').textContent=d.status==='accepted'?`Biletë #${d.betId} u pranua automatikisht.`:`Biletë #${d.betId} u dërgua në Qendër dhe është në pritje të pranimit.`;$('betMsg').className='notice ok';renderSlip();if(d.status!=='accepted')pollPendingTicket(d.betId)}catch(e){$('betMsg').textContent=e.message;$('betMsg').className='notice error'}finally{if(placeBtn){placeBtn.dataset.busy='0';placeBtn.disabled=false;placeBtn.removeAttribute('aria-busy');}renderOddsAcceptance();}
+  try{const r=await fetch('/api/bets',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,'Idempotency-Key':lastBetRequest.key},body:requestBody});const d=await SportsbookApi.readJson(r);if(!r.ok){if(d.code==='BET_LIMIT_EXCEEDED'&&Number.isFinite(d.limitAmount)){showSlipLimit(d.limitAmount,d.limitKind);return;}if(Array.isArray(d.invalidSelections)){for(const inv of d.invalidSelections){const p=slip.find(x=>String(x.gameId)===String(inv.gameId)&&(inv.coefId?String(x.coefId)===String(inv.coefId):String(x.key)===String(inv.selection)));if(p){p.invalid=true;p.invalidReason=inv.reason||'Koeficienti nuk është më aktiv.'}}}if(Array.isArray(d.oddsChanged)){for(const ch of d.oddsChanged){const p=slip.find(x=>String(x.gameId)===String(ch.gameId)&&(ch.coefId?String(x.coefId)===String(ch.coefId):String(x.key)===String(ch.selection)));if(p){p.previousOdd=Number(p.odd);p.odd=Number(ch.newOdd);p.currentOdd=Number(ch.newOdd);p.serverQuoted=true;p.oddsChanged=true;p.invalid=false;p.invalidReason=''}}}if(d.oddsChanged?.length&&!d.invalidSelections?.length)oddsConfirmationRequested=true;renderSlip();if(d.oddsChanged?.length&&!d.invalidSelections?.length)return;throw Error(d.error||'Koeficienti u përditësua. Luaje bastin përsëri me vlerën e re.')}lastBetRequest=null;user.balance=d.balance;user.reservedBalance=d.reservedBalance||0;pendingTicket=d.status==='accepted'?null:{id:d.betId,stake,odds:d.totalOdds,selections:slip.map(p=>({...p}))};slip=[];$('stake').value='';setAuthState(user);$('betMsg').textContent=d.status==='accepted'?`Biletë #${d.betId} u pranua automatikisht.`:`Biletë #${d.betId} u dërgua në Qendër dhe është në pritje të pranimit.`;$('betMsg').className='notice ok';renderSlip();if(d.status!=='accepted')pollPendingTicket(d.betId)}catch(e){$('betMsg').textContent=e.message;$('betMsg').className='notice error'}finally{if(placeBtn){placeBtn.dataset.busy='0';placeBtn.disabled=false;placeBtn.removeAttribute('aria-busy');}renderOddsAcceptance();}
 }
 
 let pendingPoll=null;async function pollPendingTicket(id){if(pendingPoll)clearInterval(pendingPoll);const check=async()=>{if(!user||!pendingTicket||pendingTicket.id!==id)return;try{const r=await fetch('/api/my-bets/'+id,{headers:{Authorization:'Bearer '+token}});if(!r.ok)return;const d=await SportsbookApi.readJson(r),st=d.bet.status;if(st==='pending'){pendingTicket.stake=d.bet.stake;pendingTicket.selections=(d.bet.selections||[]).map(s=>({...s,home:s.home_team||s.home,away:s.away_team||s.away,key:s.selection,market:s.market}));const previousOffer=!!pendingTicket.offer;pendingTicket.offer=d.bet.offer||null;if(previousOffer!==!!pendingTicket.offer||pendingTicket.offer)renderSlip();return}pendingTicket=null;if(st==='accepted'||st==='cancelled'){const mr=await fetch('/api/me',{headers:{Authorization:'Bearer '+token}});if(mr.ok)user=(await SportsbookApi.readJson(mr)).user;setAuthState(user)}if(st==='accepted')$('betMsg').textContent=`Biletë #${id} u pranua nga Qendra.`;else if(st==='cancelled')$('betMsg').textContent=`Biletë #${id} u anulua nga Qendra.`;$('betMsg').className='notice '+(st==='accepted'?'ok':'error');renderSlip();clearInterval(pendingPoll);pendingPoll=null}catch(_){}};await check();pendingPoll=setInterval(check,2500)}
