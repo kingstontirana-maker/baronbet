@@ -2,6 +2,18 @@
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const source=fs.readFileSync('public/euro07.bet/vbet/user/build/main.js','utf8');
 
+test('live selections wait for a completed click instead of the start of scrolling',()=>{
+  const ctx=vm.createContext({});
+  vm.runInContext(source.slice(source.indexOf('function isNewLiveActivation'),source.indexOf('function clockToSeconds')),ctx);
+  for(const pointerType of ['touch','pen','mouse']){
+    assert.equal(ctx.isNewLiveActivation({type:'pointerdown',button:0,pointerType},'live-odd:1:1'),false);
+    assert.equal(ctx.isNewLiveActivation({type:'pointercancel',button:0,pointerType},'live-odd:1:1'),false);
+  }
+  assert.equal(ctx.isNewLiveActivation({type:'click',button:0},'live-odd:1:1'),true);
+  assert.equal(ctx.isNewLiveActivation({type:'click',button:0,detail:0},'live-option:1:1:1'),true,'keyboard activation works');
+  assert.equal(ctx.isNewLiveActivation({type:'click',button:2},'live-odd:1:1'),false);
+});
+
 test('slow feeds share one request and navigation aborts the previous request',async()=>{
   const requests=[];
   const ctx=vm.createContext({AbortController,setTimeout,clearTimeout,mode:'live',selectedPrematchLeague:'',sportsHomeTab:'home',loadOnce:signal=>new Promise(resolve=>{requests.push({signal,resolve});})});

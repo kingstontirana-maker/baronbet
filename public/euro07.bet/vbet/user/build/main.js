@@ -12,15 +12,10 @@ const liveMarketRequestSeq=new Map();
 // Keep one request per match so those updates cannot race each other or overload
 // the provider while the player is trying to open the markets.
 const liveMarketRequests=new Map();
-let lastLiveActivation={id:'',at:0};
 function isNewLiveActivation(e,id){
-  if(e.type==='pointerdown'){
-    if(e.button!==0)return false;
-    lastLiveActivation={id,at:Date.now()};
-    return true;
-  }
-  if(e.type==='click'&&lastLiveActivation.id===id&&Date.now()-lastLiveActivation.at<900)return false;
-  return true;
+  // The browser emits click after a completed tap and cancels it for scrolling.
+  // Never select an odd at the beginning of a touch/drag gesture.
+  return e.type==='click' && (e.button==null || e.button===0);
 }
 function clockToSeconds(v){const m=String(v??'').match(/^(\d{1,3}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null}
 function secondsToClock(sec){sec=Math.max(0,Math.floor(sec));return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
@@ -105,6 +100,36 @@ function updateLiveList(html){
   bindLiveSearch();
 }
 $('sideSearch').oninput=e=>{applySidebarSearch();if(mode==='home'||mode==='live')setEventSearch(e.target.value);};
+// Replace the decorative mobile A-Z label with an accessible drawer control.
+const sportsSidebar=document.querySelector('.sidebar');
+sportsSidebar.id='sportsSidebar';
+const sportsMenuButton=document.createElement('button');
+sportsMenuButton.id='sportsMenuButton';sportsMenuButton.type='button';
+sportsMenuButton.textContent='☰  A-Z';
+sportsMenuButton.setAttribute('aria-controls','sportsSidebar');
+sportsMenuButton.setAttribute('aria-expanded','false');
+document.querySelector('.top').appendChild(sportsMenuButton);
+const sportsMenuBackdrop=document.createElement('button');
+sportsMenuBackdrop.id='sportsMenuBackdrop';sportsMenuBackdrop.type='button';
+sportsMenuBackdrop.setAttribute('aria-label','Mbyll listën e sporteve');
+sportsMenuBackdrop.hidden=true;document.body.appendChild(sportsMenuBackdrop);
+const sportsMenuClose=document.createElement('button');
+sportsMenuClose.id='sportsMenuClose';sportsMenuClose.type='button';
+sportsMenuClose.textContent='×  A-Z';sportsMenuClose.setAttribute('aria-label','Mbyll listën e sporteve');
+sportsSidebar.appendChild(sportsMenuClose);
+function setSportsDrawer(open,restoreFocus=false){
+  sportsSidebar.classList.toggle('sports-drawer',open);
+  document.body.classList.toggle('sports-menu-open',open);
+  sportsMenuBackdrop.hidden=!open;
+  sportsMenuButton.setAttribute('aria-expanded',String(open));
+  if(open)sportsMenuClose.focus({preventScroll:true});
+  else if(restoreFocus)sportsMenuButton.focus({preventScroll:true});
+}
+sportsMenuButton.onclick=()=>setSportsDrawer(!sportsSidebar.classList.contains('sports-drawer'));
+sportsMenuClose.onclick=sportsMenuBackdrop.onclick=()=>setSportsDrawer(false,true);
+sportsSidebar.addEventListener('click',e=>{if(e.target.closest('.sideRow,.sideTool'))setSportsDrawer(false);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sportsSidebar.classList.contains('sports-drawer'))setSportsDrawer(false,true);});
+window.addEventListener('resize',()=>{if(window.innerWidth>1100)setSportsDrawer(false);});
 function parseOdds(s){const o={1:null,X:null,2:null};if(typeof s!=='string')return o;for(const x of s.split(',')){const p=x.split('|');if(p.length>=4&&['1','X','2'].includes(String(p[2])))o[String(p[2])]={odd:Number(p[1]),coefId:String(p[0]),marketId:String(p[3])}}return o}
 function oddsLockIcon(){return '<svg class="odds-lock-icon" viewBox="0 0 24 24" role="img" aria-label="Koeficient i bllokuar"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></svg>'}
 function lock(v){const n=Number(v);return v==null||v===''||v==='-'||!Number.isFinite(n)||n<=1}
@@ -312,7 +337,7 @@ function bindLiveDetail(){
     }
   };
   content.onclick=handle;
-  content.onpointerdown=handle;
+  content.onpointerdown=null;
 }
 
 function bindLiveMarketsOverlay(){return;}
@@ -660,8 +685,7 @@ function renderLive(data,reset=false){
   html+='</div>';
   updateLiveList(html);
   bindLiveSearch();
-  // Handle pointerdown as well as click. Live updates replace rows frequently;
-  // pointerdown arrives before a refresh can detach the tapped element.
+  // Wait for a completed click so touching a row to scroll cannot select odds.
   const content=$('content');
   const handle=e=>{
     const odd=e.target.closest('.live-odd:not(.locked)');
@@ -670,7 +694,7 @@ function renderLive(data,reset=false){
     if(row){const action='live-game:'+row.dataset.liveGame;if(!isNewLiveActivation(e,action))return;e.preventDefault();const g=findLiveGame(row.dataset.liveGame);if(g)toggleLiveMarkets(g);}
   };
   content.onclick=handle;
-  content.onpointerdown=handle;
+  content.onpointerdown=null;
 }
 
 function liveOddHtml(g,key,val){const raw=val&&typeof val==='object'?val.odd:val;const l=lock(raw),sel=slip.some(x=>String(x.gameId)===String(g.id)&&x.key===key);return `<button class="live-odd ${l?'locked':''} ${sel?'selected':''}" ${l?'disabled':''} data-game="${esc(g.id)}" data-key="${key}" data-odd="${esc(raw??'')}">${l?oddsLockIcon():Number(raw).toFixed(2)}</button>`}
