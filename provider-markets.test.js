@@ -4,6 +4,18 @@ const fs=require('fs'),vm=require('vm');
 const source=fs.readFileSync('server.js','utf8'),ctx={};vm.createContext(ctx);
 vm.runInContext(source.slice(source.indexOf('function norm('),source.indexOf('let settlementRunning=')),ctx);
 const event=(type_id,team,minute,game_status)=>({type_id:String(type_id),team:String(team),minute,game_status:String(game_status)});
+test('Rezultat Final/Gol-Gol combines the final result with GG or JG',()=>{
+  for(const market_id of ['6840','new']){
+    for(const [home,away,selection,status] of [
+      [0,2,'2|JG','won'],[1,2,'2|JG','lost'],[2,0,'2|JG','lost'],[0,0,'2|JG','lost'],
+      [1,2,'2|GG','won'],[0,2,'2|GG','lost'],[2,0,'1|JG','won'],[0,0,'X|JG','won']
+    ]){
+      const score={home,away};
+      const outcome=ctx.evaluateSelection({market_id,market:'Rezultat Final/Gol-Gol',selection,odd:2},ctx.buildStats(null,score),{finished:true,score},null);
+      assert.equal(outcome?.status,status,`${market_id} ${selection} at ${home}-${away}`);
+    }
+  }
+});
 test('first-half markets settle at the confirmed interval while full-match and second-half markets wait',()=>{
   const events=[event(1,1,'48:00',1),event(5,0,'1-0',2)];
   const game={finished:false,score:{home:1,away:0}};

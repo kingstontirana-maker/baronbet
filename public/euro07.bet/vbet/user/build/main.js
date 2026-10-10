@@ -559,7 +559,17 @@ function renderOddsAcceptance(){
   notice.querySelector('.changed-odds-list').innerHTML=changed.map(p=>'<div><span>'+esc(p.home)+' – '+esc(p.away)+' · '+esc(p.key)+'</span><b>'+Number(p.previousOdd).toFixed(2)+' → '+Number(p.odd).toFixed(2)+'</b></div>').join('');
   notice.querySelector('button').disabled=$('place').dataset.busy==='1';
 }
+function syncSelectedMarketButtons(){
+  document.querySelectorAll('[data-live-market-option],.odd[data-game],.live-odd[data-game]').forEach(button=>{
+    const detail=button.dataset.liveMarketOption!==undefined;
+    const selected=slip.some(p=>String(p.gameId)===String(detail?button.dataset.liveMarketGame:button.dataset.game)&&
+      (detail?String(p.marketId)===String(button.dataset.liveMarketId)&&String(p.coefId)===String(button.dataset.liveMarketOption):p.key===button.dataset.key));
+    button.classList.toggle('selected',selected);
+    button.setAttribute('aria-pressed',String(selected));
+  });
+}
 function renderSlip(){
+  syncSelectedMarketButtons();
   refreshSlipState();
   const validSlip=slip.filter(x=>!x.invalid&&Number.isFinite(Number(x.odd))&&Number(x.odd)>1),total=validSlip.reduce((a,x)=>a*Number(x.odd),1),has=slip.length>0,hasInvalid=slip.some(x=>x.invalid),hasChanged=slip.some(x=>x.oddsChanged);
   $('slipcount').textContent=slip.length;$('selCount').textContent=slip.length;$('totalOdds').textContent=validSlip.length?total.toFixed(2):'0.00';$('slipTopOdds').textContent=validSlip.length?total.toFixed(2):'0.00';$('mobileSlipCount').textContent=slip.length;$('mobileSlipOdds').textContent=validSlip.length?total.toFixed(2):'0.00';$('mobileSlipBar').classList.toggle('show',has||!!pendingTicket);

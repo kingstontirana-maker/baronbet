@@ -454,6 +454,7 @@ function marketFamily(sel){
   const m=norm(sel.market);
   const named=namedGoalMarket(m);if(named)return named.family;
   if(/pjes|half|\bp[12]\b/.test(m)&&!['6662','6811','6818','6819'].includes(id))return 'unknown';
+  if(id==='6840'||/^rezultat(?:i)? final\s*\/\s*gol\s*-\s*gol(?: live)?$/.test(m))return 'ft_btts';
   if(id==='6575'||m.includes('fulltime result')||m.includes('rezultat final'))return '1x2';
   if(id==='6653'||m.includes('double chance'))return 'doublechance';
   if(id==='6577'||id==='6579'||m.includes('total gol'))return 'goals_total';
@@ -474,7 +475,6 @@ function marketFamily(sel){
   if(id==='6818')return 'home_scores_second_half';
   if(id==='6819')return 'away_scores_second_half';
   if(id==='6810')return 'final_3plus_combo';
-  if(id==='6840')return 'ft_btts';
   if(id==='6664'||id==='6665'||id==='6666'||id==='6677'||m.includes('handikap aziatik'))return 'asian_handicap';
   if(id==='9086'||id==='9087'||m.includes('handikap europian'))return 'euro_handicap';
   if(m.includes('rezultati sakte')||m.includes('rezultat sakte'))return 'exact_score';
