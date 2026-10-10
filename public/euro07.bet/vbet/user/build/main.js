@@ -1218,7 +1218,15 @@ async function handleStaffAction(action){
   if(action.startsWith('create:')){openControl(user.role,'create',action.split(':')[1]);return}
 }
 async function openControl(role,view='directory',createRole=''){
-  if(!user||user.role==='user')return;
+  if(!user)return;
+  if(view==='password'){
+    closeControlPoll();
+    $('controlModal').classList.add('show');
+    $('controlTitle').textContent='Ndrysho Fjalëkalimin';
+    renderOwnPasswordForm();
+    return;
+  }
+  if(user.role==='user')return;
   if(['partner','admin'].includes(user?.role)){location.replace('/backoffice.html#/'+({directory:'accounts',password:'security/password',tickets:'bets',transactions:'finance'}[view]||'accounts'));return;}
   $('controlModal').classList.add('show');
   $('controlTitle').textContent=staffRoleLabel(role);
@@ -1226,10 +1234,28 @@ async function openControl(role,view='directory',createRole=''){
   if(view==='tickets'){await renderOperatorControl();controlPoll=setInterval(()=>renderOperatorControl(true),2500);return}
   await renderManagementView(view,createRole);
 }
+function renderOwnPasswordForm(){
+  $('controlApp').innerHTML=`<div class="controlSection"><h3>Ndrysho Fjalëkalimin</h3><form id="passwordForm" class="controlForm"><label>Fjalëkalimi i vjetër<input id="oldPass" type="password" autocomplete="current-password" required></label><label>Fjalëkalimi i ri<input id="newPass" type="password" autocomplete="new-password" minlength="6" required></label><label>Përsërit fjalëkalimin e ri<input id="newPass2" type="password" autocomplete="new-password" minlength="6" required></label><button id="saveOwnPassword" type="submit">Ruaj</button></form><div id="controlMsg" class="controlMsg" role="status" aria-live="polite"></div></div>`;
+  const form=$('passwordForm'),button=$('saveOwnPassword'),message=$('controlMsg');
+  form.onsubmit=async e=>{
+    e.preventDefault();if(button.disabled)return;
+    message.className='controlMsg error';
+    if(!$('oldPass').value){message.textContent='Vendos fjalëkalimin e vjetër.';return;}
+    if($('newPass').value.length<6){message.textContent='Fjalëkalimi i ri duhet të ketë të paktën 6 karaktere.';return;}
+    if($('newPass').value!==$('newPass2').value){message.textContent='Fjalëkalimet e reja nuk përputhen.';return;}
+    button.disabled=true;message.textContent='Duke ruajtur…';
+    try{
+      await controlFetch('/api/staff/password',{method:'POST',body:JSON.stringify({oldPassword:$('oldPass').value,newPassword:$('newPass').value})});
+      form.reset();message.textContent='Fjalëkalimi u ruajt me sukses.';message.className='controlMsg ok';
+    }catch(err){message.textContent=err.message;message.className='controlMsg error';}
+    finally{button.disabled=false;}
+  };
+}
 function roleVisibleLabel(role){return ({center:'Qendra',operator:'Operator',partner:'Partner',admin:'Administrator',senior:'Senior',manager:'Manager',supermanager:'Senior (legacy)',agent:'Agjent',user:'User'})[role]||role}
 function hideAdminWorkspace(){document.getElementById('adminWorkspace')?.remove()}
 function showAdminWorkspace(){if(user&&['partner','admin'].includes(user.role))location.replace('/backoffice.html#/accounts');}
 async function renderManagementView(view,createRole=''){
+  if(view==='password'){renderOwnPasswordForm();return;}
   try{
     const d=await controlFetch('/api/staff/overview');
     if(view==='directory'){
@@ -1257,12 +1283,28 @@ async function renderManagementView(view,createRole=''){
       document.querySelectorAll('[data-fin]').forEach(b=>b.onclick=async()=>{const id=b.dataset.fin,amount=document.querySelector(`[data-fin-amount="${id}"]`).value;try{await controlFetch('/api/staff/'+id+'/credit',{method:'POST',body:JSON.stringify({amount,direction:b.dataset.dir})});$('financeMsg').textContent='Transferimi u krye.';$('financeMsg').className='controlMsg ok';setAuthState({...user,balance:(await fetch('/api/me',{headers:{Authorization:'Bearer '+token}}).then(r=>SportsbookApi.readJson(r))).user.balance});await renderManagementView('finance');}catch(e){$('financeMsg').textContent=e.message;$('financeMsg').className='controlMsg error'}});
       return;
     }
-    if(view==='password'){
-      $('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Ndrysho Fjalëkalimin</button></div><div class="controlSection"><h3>Ndrysho Fjalëkalimin</h3><form id="passwordForm" class="controlForm"><input id="oldPass" type="password" placeholder="Password aktual" required><input id="newPass" type="password" placeholder="Password i ri" required><input id="newPass2" type="password" placeholder="Përsërite passwordin" required><button>Ruaj</button></form><div id="controlMsg" class="controlMsg"></div></div>`;
-      $('passwordForm').onsubmit=async e=>{e.preventDefault();if($('newPass').value!==$('newPass2').value){$('controlMsg').textContent='Password-et nuk përputhen.';$('controlMsg').className='controlMsg error';return}try{await controlFetch('/api/staff/password',{method:'POST',body:JSON.stringify({oldPassword:$('oldPass').value,newPassword:$('newPass').value})});$('controlMsg').textContent='Password u ndryshua.';$('controlMsg').className='controlMsg ok';$('passwordForm').reset()}catch(err){$('controlMsg').textContent=err.message;$('controlMsg').className='controlMsg error'}};
-    }
   }catch(e){$('controlApp').innerHTML=`<div class="controlSection controlMsg error">${esc(e.message)}</div>`}
 }
+// Mobile keyboards shrink/pan the visual viewport without resizing the layout.
+// Keep the stake footer above the keyboard; only the selections list shrinks.
+function syncMobileSlipViewport(){
+  const panel=$('betslip');
+  if(window.innerWidth>1100){
+    panel.style.removeProperty('--mobile-slip-height');
+    panel.style.removeProperty('--mobile-slip-top');
+    return;
+  }
+  const viewport=window.visualViewport;
+  const visibleHeight=viewport?viewport.height:window.innerHeight;
+  const height=Math.min(720,visibleHeight*.86);
+  panel.style.setProperty('--mobile-slip-height',height+'px');
+  panel.style.setProperty('--mobile-slip-top',((viewport?.offsetTop||0)+visibleHeight-height)+'px');
+}
+window.visualViewport?.addEventListener('resize',syncMobileSlipViewport);
+window.visualViewport?.addEventListener('scroll',syncMobileSlipViewport);
+window.addEventListener('resize',syncMobileSlipViewport);
+$('stake').addEventListener('focus',syncMobileSlipViewport);
+syncMobileSlipViewport();
 function ticketTable(tickets){const pending=tickets.filter(b=>b.status==='pending');return `<div class="controlSection"><h3>Biletat në pritje</h3>${pending.length?`<table class="controlTable"><thead><tr><th># / Koha</th><th>User</th><th>Seleksionet dhe oferta e koeficientit</th><th>Luajtur</th><th>Odds</th><th>Fitimi i mundshëm</th><th>Veprime</th></tr></thead><tbody>${pending.map(b=>{const placed=b.created_at?new Date(String(b.created_at).replace(' ','T')+'Z').toLocaleString('sq-AL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';return `<tr class="ticketPending"><td><b>#${b.id}</b><div class="ticketDetails">${esc(placed)}</div></td><td><b>${esc(b.username||'')}</b><div class="ticketDetails">${esc(b.agent_username||'')}</div></td><td>${b.selections.map(s=>`<div class="ticketDetails"><b>${esc(s.home)} - ${esc(s.away)}</b><br>${esc(s.market||'Market')} · ${esc(s.selection)}<br><label>Koeficienti: <input data-offer-odd="${s.id}" type="number" min="1.01" max="${Number(s.odd)}" step="0.01" value="${Number(s.odd).toFixed(2)}" style="width:64px"></label></div>`).join('<hr style="border:0;border-top:1px solid #ddd">')}</td><td>€${Number(b.stake).toFixed(2)}</td><td>${Number(b.total_odds).toFixed(2)}</td><td><b>€${Number(b.potential_win).toFixed(2)}</b></td><td><div class="ticketActions"><button class="lost" data-ticket-action="offer" data-ticket="${b.id}">Ruaj ofertën</button><button data-ticket-action="accept" data-ticket="${b.id}">Prano</button><button class="cancel" data-ticket-action="cancel" data-ticket="${b.id}">Refuzo</button></div></td></tr>`}).join('')}</tbody></table>`:'<div class="noBets">Nuk ka bileta në pritje.</div>'}</div>`}
 async function renderOperatorControl(silent=false){const d=await controlFetch('/api/operator/tickets?status=pending');$('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Biletat në pritje</button><span style="margin-left:auto;padding:10px;color:#666">${d.tickets.length} në pritje</span></div>${ticketTable(d.tickets)}`;document.querySelectorAll('[data-ticket-action]').forEach(b=>b.onclick=async()=>{const id=b.dataset.ticket,action=b.dataset.ticketAction;try{if(action==='accept')await controlFetch('/api/operator/tickets/'+id+'/accept',{method:'POST'});else if(action==='cancel')await controlFetch('/api/operator/tickets/'+id+'/cancel',{method:'POST'});else{const row=b.closest('tr'),offers=[...row.querySelectorAll('[data-offer-odd]')].map(x=>({id:x.dataset.offerOdd,odd:x.value}));await controlFetch('/api/operator/tickets/'+id+'/offer',{method:'POST',body:JSON.stringify({offers})})}await renderOperatorControl()}catch(e){alert(e.message)}})}
 function closeControlPoll(){if(controlPoll){clearInterval(controlPoll);controlPoll=null}}

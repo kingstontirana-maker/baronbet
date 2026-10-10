@@ -744,12 +744,27 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   #sportsMenuBackdrop:not([hidden]){display:block;position:fixed;inset:0;border:0;padding:0;background:transparent;z-index:230}
   .sidebar.sports-drawer{display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;width:min(320px,calc(100vw - 66px));max-width:none;height:100dvh;background:#333;z-index:240;overflow:visible;box-shadow:3px 0 10px #0003}
   .sidebar.sports-drawer .sideSearch{height:35px;min-height:35px;box-sizing:border-box;flex-shrink:0;border-bottom:1px solid #414141}
-  .sidebar.sports-drawer .sideTools{height:36px;min-height:36px;flex-shrink:0}
-  .sidebar.sports-drawer .sideTool{gap:2px;font-size:10px}
-  .sidebar.sports-drawer .side-tool-icon{width:16px;height:16px}
+  .sidebar.sports-drawer .sideTools{height:46px;min-height:46px;flex-shrink:0}
+  .sidebar.sports-drawer .sideTool{gap:3px;font-size:12px}
+  .sidebar.sports-drawer .side-tool-icon{width:20px;height:20px}
   .sidebar.sports-drawer .sideList{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 0 env(safe-area-inset-bottom)}
-  .sidebar.sports-drawer .sideRow{min-height:33px;height:33px;box-sizing:border-box;padding:0 12px;font-size:12px;font-weight:400;border-bottom:1px solid #414141}
+  .sidebar.sports-drawer .sideRow{min-height:37px;height:37px;box-sizing:border-box;padding:0 12px;font-size:14px;font-weight:400;border-bottom:1px solid #414141}
   .sidebar.sports-drawer .sideRow[hidden]{display:none}
-  .sidebar.sports-drawer #sportsMenuClose{display:block;position:absolute;left:100%;top:0;width:66px;height:35px;border:0;border-left:1px solid #ffffff20;border-bottom:1px solid #ffffff20;background:#148765;color:#fff;font-size:12px;cursor:pointer}
+  .sidebar.sports-drawer #sportsMenuClose{display:block;position:absolute;left:100%;top:0;width:66px;height:35px;border:0;border-left:1px solid #ffffff20;border-bottom:1px solid #ffffff20;background:#148765;color:#fff;font-size:14px;cursor:pointer}
 }
 @media(max-width:650px){#sportsMenuButton{position:static;grid-column:1;grid-row:1;height:56px;padding:0;text-align:left;white-space:nowrap}}
+
+#passwordForm.controlForm{grid-template-columns:1fr;max-width:420px;margin:0 auto}
+#passwordForm label{display:flex;flex-direction:column;gap:6px;font-size:14px}
+#passwordForm input{width:100%;box-sizing:border-box;min-width:0}
+#saveOwnPassword:disabled{opacity:.65;cursor:wait}
+
+/* Anchor the mobile stake footer inside the viewport above the keyboard. */
+@media(max-width:1100px){
+  .desktopSlip.mobile-open{top:var(--mobile-slip-top,auto);bottom:0;height:var(--mobile-slip-height,min(86dvh,720px));box-sizing:border-box}
+  .desktopSlip.mobile-open[style*="--mobile-slip-top"]{bottom:auto}
+  .desktopSlip.mobile-open #slipView{flex:1;height:auto;min-height:0}
+  .desktopSlip.mobile-open .slipbody{min-height:0;overscroll-behavior:contain}
+  .desktopSlip.mobile-open .betfooter{flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
+  .desktopSlip.mobile-open .stakeInput{font-size:20px;scroll-margin-block:12px}
+}

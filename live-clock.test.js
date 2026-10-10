@@ -2,6 +2,22 @@
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const source=fs.readFileSync('public/euro07.bet/vbet/user/build/main.js','utf8');
 
+test('mobile stake panel remains inside the visible viewport while the keyboard opens and pans',()=>{
+  const styles=new Map();
+  const window={innerWidth:390,innerHeight:844,visualViewport:{height:844,offsetTop:0}};
+  const ctx=vm.createContext({window,$:()=>({style:{setProperty:(key,value)=>styles.set(key,value),removeProperty:key=>styles.delete(key)}})});
+  vm.runInContext(source.slice(source.indexOf('function syncMobileSlipViewport('),source.indexOf("window.visualViewport?.addEventListener('resize'")),ctx);
+  for(const viewport of [{height:844,offsetTop:0},{height:400,offsetTop:0},{height:400,offsetTop:180},{height:844,offsetTop:0}]){
+    window.visualViewport=viewport;ctx.syncMobileSlipViewport();
+    const top=parseFloat(styles.get('--mobile-slip-top')),height=parseFloat(styles.get('--mobile-slip-height'));
+    assert(top>=viewport.offsetTop);assert(height<=viewport.height);
+    assert(Math.abs(top+height-(viewport.offsetTop+viewport.height))<.001,'stake footer stays directly above keyboard');
+  }
+  window.visualViewport=null;window.innerHeight=450;ctx.syncMobileSlipViewport();
+  assert.equal(parseFloat(styles.get('--mobile-slip-top'))+parseFloat(styles.get('--mobile-slip-height')),450);
+  window.innerWidth=1440;ctx.syncMobileSlipViewport();assert.equal(styles.size,0,'desktop layout is restored');
+});
+
 test('live selections wait for a completed click instead of the start of scrolling',()=>{
   const ctx=vm.createContext({});
   vm.runInContext(source.slice(source.indexOf('function isNewLiveActivation'),source.indexOf('function clockToSeconds')),ctx);
