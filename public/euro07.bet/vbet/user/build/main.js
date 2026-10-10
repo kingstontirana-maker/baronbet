@@ -233,6 +233,41 @@ async function switchLiveView(button){
   }catch(error){if(media.isConnected&&!tv.hidden&&media.streamRequest===controller){tv.innerHTML='<div class="live-tv-error" role="status"></div>';tv.firstChild.textContent=error.name==='AbortError'?'Transmetimi po vonon. Provo sërish butonin TV.':error.message;}}
   finally{clearTimeout(timeout);if(media.streamRequest===controller)media.streamRequest=null;}
 }
+const liveCornerScores=new Map(),liveCornerRequests=new Map();
+function cornerScoreFromTimeline(events){
+  if(!Array.isArray(events))return null;
+  let home=0,away=0;
+  for(const event of events){
+    if(String(event.type_id)!=='2'&&String(event.type||'').toLowerCase()!=='corner')continue;
+    if(String(event.team)==='1')home++;
+    else if(String(event.team)==='2')away++;
+    else return null;
+  }
+  return {home,away};
+}
+function cornerMarketSuffix(market,gameId){
+  if(!/korn|corner/i.test(String(market.market||'')+' '+String(market.mainCategory||'')))return '';
+  const score=liveCornerScores.get(String(gameId));
+  return score?` (${score.home}:${score.away})`:'';
+}
+async function refreshLiveCorners(game){
+  const id=liveGameId(game);
+  if(liveCornerRequests.has(id))return liveCornerRequests.get(id);
+  const request=(async()=>{
+    const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),7000);
+    try{
+      const response=await fetch('/api/livegame/'+encodeURIComponent(id)+'/timeline?ts='+Date.now(),{cache:'no-store',signal:controller.signal});
+      if(!response.ok)throw Error('Timeline unavailable');
+      const score=cornerScoreFromTimeline(await SportsbookApi.readJson(response));
+      if(!score)throw Error('Invalid timeline');
+      liveCornerScores.set(id,score);
+    }catch(_){liveCornerScores.delete(id);}
+    finally{clearTimeout(timeout);}
+    if(openLiveGameId===id){const current=findLiveGame(id),groups=liveMarketsCache.get(id);if(current&&groups?.length)renderLiveMarketPanel(current,groups,false);}
+  })();
+  liveCornerRequests.set(id,request);
+  try{await request}finally{liveCornerRequests.delete(id);}
+}
 function renderLiveMarketPanel(game, groups, loading=false, error=''){
   const detailId=String(game.id);
   if(displayedLiveDetailId!==detailId){displayedLiveDetailId=detailId;requestAnimationFrame(()=>{if(displayedLiveDetailId===detailId&&document.body.classList.contains('live-markets-open')){window.scrollTo({top:0,left:0,behavior:'instant'});}});}
@@ -277,7 +312,7 @@ function renderLiveMarketPanel(game, groups, loading=false, error=''){
   marketGroups.sort((a,b)=>marketOrderValue(a[0]?.market_order)-marketOrderValue(b[0]?.market_order));
   for(const group of marketGroups){
     const m=group[0]||{};
-    const marketName=String(m.market||'Market').trim()||'Market';
+    const marketName=(String(m.market||'Market').trim()||'Market')+cornerMarketSuffix(m,game.id);
     const opts=group.filter(x=>x&&Number.isFinite(Number(x.odd))&&Number(x.odd)>1);
     if(!opts.length)continue;
     const columns=Math.min(Math.max(opts.length,1),3);
@@ -368,6 +403,7 @@ async function refreshLiveMarkets(game,force=false){
   const id=liveGameId(game);
   const activeRequest=liveMarketRequests.get(id);
   if(activeRequest)return activeRequest;
+  void refreshLiveCorners(game);
   const seq=(liveMarketRequestSeq.get(id)||0)+1;
   liveMarketRequestSeq.set(id,seq);
   const request=(async()=>{
@@ -547,6 +583,7 @@ function renderSlip(){
   }).join('');
   if(!body)body='<div class="emptySlip" aria-label="Skedina është bosh."></div>';
   if($('slipbody')._renderedBody!==body){$('slipbody').innerHTML=body;$('slipbody')._renderedBody=body;}
+  syncMobileSlipViewport();
 
   document.querySelectorAll('[data-user-offer]').forEach(b=>b.onclick=async()=>{try{await controlFetch('/api/my-bets/'+pendingTicket.id+'/offer-response',{method:'POST',body:JSON.stringify({accept:b.dataset.userOffer==='accept'})});pendingTicket.offer=null;renderSlip();pollPendingTicket(pendingTicket.id)}catch(e){$('betMsg').textContent=e.message;$('betMsg').className='notice error'}});
 }
@@ -1296,7 +1333,8 @@ function syncMobileSlipViewport(){
   }
   const viewport=window.visualViewport;
   const visibleHeight=viewport?viewport.height:window.innerHeight;
-  const height=Math.min(720,visibleHeight*.86);
+  const contentHeight=['.sliphead','.slipModeTabs','.slipbody','.betfooter'].reduce((total,selector)=>total+(panel.querySelector?.(selector)?.scrollHeight||0),0);
+  const height=Math.min(contentHeight||visibleHeight*.86,visibleHeight*.86);
   panel.style.setProperty('--mobile-slip-height',height+'px');
   panel.style.setProperty('--mobile-slip-top',((viewport?.offsetTop||0)+visibleHeight-height)+'px');
 }

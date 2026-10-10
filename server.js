@@ -807,6 +807,21 @@ async function start(){
   app.get('/api/livegames',async(req,res)=>{try{const r=await proxy('/ajax/livegames?market_type=1');rememberFeedIdentities(r);sendFeedResponse(res,r)}catch(e){jsonError(res,502,'Live feed unavailable.')}});
   app.get('/api/livegame/:gameId',async(req,res)=>{try{if(!/^\d+$/.test(String(req.params.gameId)))return jsonError(res,400,'Invalid game id.');const r=await proxy('/ajax/livegame/'+encodeURIComponent(req.params.gameId));sendFeedResponse(res,r)}catch(e){jsonError(res,502,'Live match markets unavailable.')}});
   app.get('/api/live-status',(req,res)=>res.json({upstreamConnected,clients:liveClients.size,reconnectDelay:upstreamReconnectDelay}));
+  app.get('/api/livegame/:gameId/timeline',async(req,res)=>{
+    if(!/^\d+$/.test(String(req.params.gameId)))return jsonError(res,400,'Invalid game id.');
+    try{
+      let identity=get('SELECT api_id FROM event_identities WHERE game_id=?',[String(req.params.gameId)]);
+      if(!identity){
+        const feed=await proxy('/ajax/livegames?market_type=1');
+        rememberFeedIdentities(feed);
+        identity=get('SELECT api_id FROM event_identities WHERE game_id=?',[String(req.params.gameId)]);
+      }
+      if(!/^\d+$/.test(String(identity?.api_id??'')))return jsonError(res,502,'Live match timeline identity unavailable.');
+      const r=await proxy('/games-timeline/'+encodeURIComponent(identity.api_id)+'.json');
+      res.set('Cache-Control','no-store');
+      sendFeedResponse(res,r);
+    }catch(e){jsonError(res,502,'Live match timeline unavailable.');}
+  });
   app.get('/api/livegame/:gameId/stream',auth,async(req,res)=>{
     res.set('Cache-Control','no-store');
     try{

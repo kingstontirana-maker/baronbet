@@ -759,6 +759,12 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #passwordForm input{width:100%;box-sizing:border-box;min-width:0}
 #saveOwnPassword:disabled{opacity:.65;cursor:wait}
 
+/* Grow with selections and scroll only once the available viewport is full. */
+@media(min-width:1101px){
+  .desktopSlip{height:auto;max-height:calc(100dvh - 66px)}
+  .desktopSlip #slipView{height:auto;min-height:0;flex:0 1 auto}
+  .desktopSlip .slipbody{flex:0 1 auto;overflow-y:auto}
+}
 /* Anchor the mobile stake footer inside the viewport above the keyboard. */
 @media(max-width:1100px){
   .desktopSlip.mobile-open{top:var(--mobile-slip-top,auto);bottom:0;height:var(--mobile-slip-height,min(86dvh,720px));box-sizing:border-box}

@@ -18,6 +18,22 @@ test('mobile stake panel remains inside the visible viewport while the keyboard 
   window.innerWidth=1440;ctx.syncMobileSlipViewport();assert.equal(styles.size,0,'desktop layout is restored');
 });
 
+test('mobile betslip grows and shrinks with selections and keeps the footer above the keyboard',()=>{
+  const styles=new Map();let selectionsHeight=0;
+  const window={innerWidth:390,innerHeight:844,visualViewport:{height:844,offsetTop:0}};
+  const panel={style:{setProperty:(key,value)=>styles.set(key,value),removeProperty:key=>styles.delete(key)},querySelector:selector=>({scrollHeight:selector==='.slipbody'?selectionsHeight:selector==='.sliphead'?50:selector==='.slipModeTabs'?40:60})};
+  const ctx=vm.createContext({window,$:()=>panel});
+  vm.runInContext(source.slice(source.indexOf('function syncMobileSlipViewport('),source.indexOf("window.visualViewport?.addEventListener('resize'")),ctx);
+  for(const count of [0,1,2,3,2,1,0]){
+    selectionsHeight=count*90;ctx.syncMobileSlipViewport();
+    assert.equal(parseFloat(styles.get('--mobile-slip-height')),150+count*90);
+    assert.equal(parseFloat(styles.get('--mobile-slip-top'))+parseFloat(styles.get('--mobile-slip-height')),844);
+  }
+  selectionsHeight=1500;window.visualViewport={height:400,offsetTop:100};ctx.syncMobileSlipViewport();
+  assert.equal(parseFloat(styles.get('--mobile-slip-height')),344);
+  assert.equal(parseFloat(styles.get('--mobile-slip-top'))+344,500);
+});
+
 test('live selections wait for a completed click instead of the start of scrolling',()=>{
   const ctx=vm.createContext({});
   vm.runInContext(source.slice(source.indexOf('function isNewLiveActivation'),source.indexOf('function clockToSeconds')),ctx);
