@@ -4,6 +4,17 @@ const fs=require('fs'),vm=require('vm');
 const source=fs.readFileSync('server.js','utf8'),ctx={};vm.createContext(ctx);
 vm.runInContext(source.slice(source.indexOf('function norm('),source.indexOf('let settlementRunning=')),ctx);
 const event=(type_id,team,minute,game_status)=>({type_id:String(type_id),team:String(team),minute,game_status:String(game_status)});
+test('Fitore / Fitore refunds draws at factor 1 and settles only the chosen winner',()=>{
+  for(const market of ['Fitore / Fitore','Fitore/Fitore','Fitore / Fitore Live']){
+    for(const [home,away,selection,status,factor] of [[0,0,'1','void',1],[2,2,'2','void',1],[2,0,'1','won',2.5],[0,2,'2','won',2.5],[2,0,'2','lost',0],[0,2,'1','lost',0]]){
+      const score={home,away},result=ctx.evaluateSelection({market_id:'6661',market,selection,odd:2.5},ctx.buildStats(null,score),{finished:true,score},null);
+      assert.equal(result?.status,status,`${market} ${selection} ${home}-${away}`);assert.equal(result?.factor,factor);
+    }
+  }
+  const score={home:1,away:1},stats=ctx.buildStats(null,score);
+  assert.equal(ctx.evaluateSelection({market:'Fitore / Fitore',selection:'1',odd:2},stats,{finished:false,score},null),null);
+  assert.equal(ctx.evaluateSelection({market:'Fitore / Fitore',selection:'X',odd:2},stats,{finished:true,score},null),null);
+});
 test('Rezultat Final/Gol-Gol combines the final result with GG or JG',()=>{
   for(const market_id of ['6840','new']){
     for(const [home,away,selection,status] of [
@@ -82,7 +93,7 @@ test('missing periods, unsupported semantics, partial goals and invalid Asian li
 });
 test('all observed first-half market aliases preserve the first-half scope',()=>{
   const catalog=require('./artifacts/settlement-market-analysis.json');
-  const ambiguous=new Set(['6661','6663','6595','6831','6832','6833']);
+  const ambiguous=new Set(['6663','6595','6831','6832','6833']);
   for(const market of catalog.markets){
     const selection={market_id:market.id,market:market.name};
     if(ambiguous.has(market.id)){assert.equal(ctx.marketFamily(selection),'unknown');continue;}

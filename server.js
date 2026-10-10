@@ -401,6 +401,7 @@ function namedGoalMarket(market){
   for(const [key,re] of periods)if(re.test(name)){period=key;name=name.replace(re,'');break;}
   const suffix=name.match(/\s*[-:]?\s+(first half|1st half|pjesa e pare|p1|second half|2nd half|pjesa e dyte|p2)$/);
   if(suffix){period=/^(first|1st|pjesa e pare|p1)/.test(suffix[1])?'first':'second';name=name.slice(0,suffix.index).trim();}
+  if(/^fitore\s*\/\s*fitore$|^draw no bet$/.test(name))return {family:'draw_no_bet',period};
   const aliases={
     '1x2':'1x2','match result':'1x2','fulltime result':'1x2','rezultat final':'1x2','rezultati':'1x2',
     'double chance':'doublechance','shans i dyfishte':'doublechance','shansi i dyfishte':'doublechance',
@@ -422,8 +423,10 @@ function providerMarket(sel){
   const period=first?'first':'full';
   const base=m.replace(/\s+(?:ne )?(?:pjesa (?:1(?:-re)?|i|pare)|pjesen e 1re|pjesa1)$/, '');
   const rule=(family,extra={})=>({family,period,...extra});
+  // Confirmed by the platform owner: Fitore / Fitore refunds a draw.
+  if(id==='6661'||/^fitore\s*\/\s*fitore$/.test(base))return rule('draw_no_bet');
   // These labels/options do not establish their settlement convention.
-  if(['6661','6663','6595','6831','6832','6833'].includes(id))return rule('unknown');
+  if(['6663','6595','6831','6832','6833'].includes(id))return rule('unknown');
   if(id==='6576')return rule('1x2',{period:'first'});
   if(id==='6799')return rule('exact_score',{period:'first'});
   if(id==='6809'||id==='6811')return rule('btts',{period:id==='6809'?'first':'second'});
@@ -568,6 +571,12 @@ function evaluateSelection(sel,stats,game,timeline){
   // A partial goal timeline cannot establish which team scored first or second.
   if(['first_goal','second_goal','nth_goal'].includes(family)&&(stats.goals.filter(g=>g.team==='home').length!==stats.homeGoals||stats.goals.filter(g=>g.team==='away').length!==stats.awayGoals))return null;
   const totalGoals=stats.homeGoals+stats.awayGoals;
+  if(family==='draw_no_bet'){
+    if(!['1','2'].includes(s))return null;
+    if(stats.homeGoals===stats.awayGoals)return {status:'void',factor:1};
+    const winner=stats.homeGoals>stats.awayGoals?'1':'2',ok=s===winner;
+    return {status:ok?'won':'lost',factor:ok?odd:0};
+  }
   if(family==='1x2'){
     const r=stats.homeGoals>stats.awayGoals?'1':stats.homeGoals<stats.awayGoals?'2':'x';
     const want=({home:'1',away:'2',draw:'x'})[s]||s;

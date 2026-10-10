@@ -13,3 +13,18 @@
 .live-toolbar{flex-wrap:wrap}.live-toolbar input{flex:1;min-width:180px}.live-event .teams{gap:15px}.live-event .teams>span{line-height:1.8}.live-event .score{white-space:nowrap;font-size:28px}.live-odds{display:flex;gap:8px;margin:16px 0 8px;flex-wrap:wrap}.live-odds>div{flex:1;min-width:65px;display:flex;justify-content:space-between;gap:10px;padding:10px;background:#f1f5f9;border:1px solid #dfe7ee;border-radius:6px}.live-risk{display:grid;grid-template-columns:1fr 1fr;gap:14px;border-top:1px solid #e6ecf2;padding-top:15px;margin:16px 0 0}.live-risk dt{font-size:12px;color:#718095}.live-risk dd{margin:5px 0 0;font-size:16px;font-weight:650}.live-event .event-meta{line-height:1.6}
 
 .acceptance-toggle{display:flex;align-items:center;gap:10px;margin-bottom:20px}.acceptance-toggle input{width:18px;height:18px;accent-color:#00b98f}
+/* Unified Center account directory and network workspace. */
+.management-roles{display:flex;flex-wrap:wrap;gap:8px;padding:18px 22px 0}
+.management-roles .button span{margin-left:6px;opacity:.75;font-variant-numeric:tabular-nums}
+.management-filters{flex-wrap:wrap;gap:10px}
+.management-filters input{flex:1 1 220px}
+.management-filters select{flex:1 1 150px;min-width:0;max-width:260px}
+.management-viewbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 22px 18px;border-bottom:1px solid var(--border,#e4e9f0)}
+.management-viewbar>.result-count{margin-right:auto}
+.management-viewbar>div{display:flex;flex-wrap:wrap;gap:6px}
+.management-actions{display:flex;flex-wrap:wrap;gap:8px;min-width:180px;max-width:260px}
+.management-actions button{border:0;background:none;padding:0;font:inherit;cursor:pointer}
+.management-pagination{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:16px 22px}
+.management-pagination:empty{display:none}
+#treeControls[hidden],#accountRows[hidden],#tree[hidden]{display:none}
+@media(max-width:760px){.management-roles{padding:14px 16px 0}.management-viewbar{padding:0 16px 14px}.management-filters select{max-width:none}.management-actions{min-width:150px}.management-pagination{padding:14px 16px}}

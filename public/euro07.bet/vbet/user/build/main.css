@@ -727,9 +727,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 @media(max-width:650px){
   .app{min-height:100dvh}
   .sidebar.sports-drawer{top:56px;max-width:85vw}
-  .live-row{height:auto;min-height:76px}
+  .live-row{height:56px;min-height:56px}
   .live-league-head .lname{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .live-info{grid-template-columns:12px 32px minmax(0,1fr) 16px;gap:3px}
+  .live-info{grid-template-columns:12px 32px minmax(0,1fr) 16px;gap:3px;padding:7px 5px}
   .top .actions .balance,.top .actions .balance b{font-size:clamp(10px,2.8vw,12px)}
   .mobile-slip-bar{padding-bottom:env(safe-area-inset-bottom);height:calc(40px + env(safe-area-inset-bottom));box-sizing:border-box}
   .workspace,.live-page .workspace{padding-bottom:calc(40px + env(safe-area-inset-bottom))}
@@ -761,10 +761,10 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 
 /* Mobile grows upward with selections, keeping the footer above the keyboard. */
 @media(max-width:1100px){
-  .desktopSlip.mobile-open{top:var(--mobile-slip-top,auto);bottom:0;height:var(--mobile-slip-height,min(86dvh,720px));box-sizing:border-box}
+  .desktopSlip.mobile-open{top:var(--mobile-slip-top,auto);bottom:0;height:var(--mobile-slip-height,auto);max-height:86dvh;box-sizing:border-box}
   .desktopSlip.mobile-open[style*="--mobile-slip-top"]{bottom:auto}
-  .desktopSlip.mobile-open #slipView{flex:1;height:auto;min-height:0}
-  .desktopSlip.mobile-open .slipbody{min-height:0;overscroll-behavior:contain}
+  .desktopSlip.mobile-open #slipView{flex:0 1 auto;height:auto;min-height:0}
+  .desktopSlip.mobile-open .slipbody{flex:0 1 auto;min-height:0;overscroll-behavior:contain}
   .desktopSlip.mobile-open .betfooter{flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
   .desktopSlip.mobile-open .stakeInput{font-size:20px;scroll-margin-block:12px}
 }

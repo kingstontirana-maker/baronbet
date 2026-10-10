@@ -26,6 +26,7 @@ const can=permission=>permissions.has(permission);
 let sessionToken=sessionStorage.getItem('sportsbook_token')||'';
 const modules=[
   {key:'dashboard',title:'Pasqyra e platformës',nav:'Pasqyra',description:'Një pamje e qartë e aktivitetit, financave dhe rrjetit tuaj.',icon:'grid',permission:'reports.view',group:'PËRMBLEDHJA'},
+  {key:'user-management',title:'User Management',nav:'User Management',description:'Llogaritë, stafi dhe struktura e rrjetit në një vend.',icon:'users',permission:'users.view',center:true,group:'MENAXHIMI'},
   {key:'partners',title:'Partnerët',nav:'Partnerët',description:'Menaxhoni partnerët dhe hyni në rrjetin e secilit.',icon:'users',permission:'users.view',center:true,group:'MENAXHIMI I RRJETIT'},
   {key:'operators',title:'Operatorët e Qendrës',nav:'Operatorët',description:'Llogaritë e stafit operacional dhe akseset e tyre.',icon:'shield',permission:'users.view',center:true},
   {key:'accounts',title:'Llogaritë',nav:'Llogaritë',description:'Llogaritë brenda strukturës suaj, të organizuara sipas rolit.',icon:'users',permission:'users.view'},
@@ -57,7 +58,7 @@ function tabs(items,active){return `<nav class="tabs" aria-label="Nënfaqet">${i
 function accountColumns(){return [['LLOGARIA',accountLink],['ROLI',u=>`<span class="role-badge">${esc(labels[u.role])}</span>`],['STATUSI',u=>badge(u.status)],['BALANCA',u=>u.balance===undefined?'—':`<strong>${money(u.balance)}</strong>`],['PRINDI',u=>'#'+(u.businessParentId??u.parentId??'—')],['',u=>`<a class="table-action" href="#/account/${u.id}/profile">Detajet ${icon('arrow')}</a>`]];}
 function betColumns(){return [['BILETA',b=>`<a href="#/ticket/${b.id}"><strong>${esc(b.ticket_code||'T-'+b.id)}</strong></a><span class="subline">${esc(date(b.created_at))}</span>`],['LOJTARI',b=>esc(b.username||'#'+b.user_id)],['SHUMA',b=>money(b.stake)],['KOEFICIENTI',b=>Number(b.total_odds||0).toFixed(2)],['FITIMI I MUNDSHËM',b=>`<strong>${money(b.potential_win)}</strong>`],['STATUSI',b=>badge(b.status)],['',b=>`<a class="table-action" href="#/ticket/${b.id}">Hap ${icon('arrow')}</a>`]];}
 const transactionColumns=[['ID / DATA',r=>`<strong>#${r.id}</strong><span class="subline">${esc(date(r.created_at))}</span>`],['LLOGARIA',r=>esc(r.username||'#'+r.user_id)],['LLOJI',r=>`<span class="role-badge">${esc(r.type)}</span>`],['SHUMA',r=>`<strong class="${r.amount>=0?'positive':'negative'}">${r.amount>0?'+':''}${money(r.amount)}</strong>`],['PARA',r=>money(r.balance_before)],['PAS',r=>money(r.balance_after)],['REFERENCA',r=>esc(r.reference||'—')]];
-function navigation(){let group='';$('navigation').innerHTML=modules.filter(allowed).map(m=>{const heading=m.group&&m.group!==group?`<div class="nav-group">${esc(m.group)}</div>`:'';if(m.group)group=m.group;return heading+`<a class="nav-item" href="#/${m.key}" data-nav="${m.key}">${icon(m.icon)}<span>${m.nav}</span>${m.key==='bets'?'<span class="nav-count" id="pendingBadge" hidden></span>':''}</a>`;}).join('');$('search').hidden=!can('users.view');}
+function navigation(){let group='';$('navigation').innerHTML=modules.filter(allowed).filter(m=>me.role!=='center'||!['partners','operators','accounts','network'].includes(m.key)).map(m=>{const heading=m.group&&m.group!==group?`<div class="nav-group">${esc(m.group)}</div>`:'';if(m.group)group=m.group;return heading+`<a class="nav-item" href="#/${m.key}" data-nav="${m.key}">${icon(m.icon)}<span>${m.nav}</span>${m.key==='bets'?'<span class="nav-count" id="pendingBadge" hidden></span>':''}</a>`;}).join('');$('search').hidden=!can('users.view');}
 function heading(title,description,eyebrow='CONTROL CENTER',actions=''){$('title').textContent=title;$('description').textContent=description;$('eyebrow').textContent=eyebrow;$('breadcrumb').textContent=title;$('pageActions').innerHTML=actions;document.title=title+' · EURO97';}
 
 async function dashboardPage(ctx,reports=false){
@@ -83,6 +84,65 @@ async function accountsPage(ctx,kind,query){
   $('accountFilter').oninput=filter;if($('roleFilter'))$('roleFilter').onchange=filter;$('statusFilter').onchange=filter;filter();
   const create=document.querySelector('[data-action="create"]');if(create)create.onclick=()=>createAccount(users,fixedRole);
 }
+function filterManagedUsers(users,state){
+  const byId=new Map(users.map(u=>[String(u.id),u]));
+  const inBranch=u=>{
+    if(!state.branch)return true;
+    const seen=new Set();let current=u;
+    while(current&&!seen.has(String(current.id))){
+      const id=String(current.id);if(id===state.branch)return true;seen.add(id);
+      current=byId.get(String(current.businessParentId??current.parentId));
+    }
+    return false;
+  };
+  const q=state.q.trim().toLowerCase();
+  return users.filter(u=>(!q||String(u.username).toLowerCase().includes(q)||String(u.id)===q)&&
+    (!state.role||u.role===state.role||(state.role==='senior'&&u.role==='supermanager'))&&
+    (!state.status||u.status===state.status)&&inBranch(u)).sort((a,b)=>state.sort==='balance'?Number(b.balance||0)-Number(a.balance||0):state.sort==='newest'?Number(b.id)-Number(a.id):String(a.username).localeCompare(String(b.username)));
+}
+function managedTreeUsers(users,matches){
+  const byId=new Map(users.map(u=>[String(u.id),u])),shown=new Set();
+  for(const user of matches){let current=user;while(current&&!shown.has(String(current.id))){shown.add(String(current.id));current=byId.get(String(current.businessParentId??current.parentId));}}
+  return users.filter(u=>shown.has(String(u.id)));
+}
+async function userManagementPage(ctx,query){
+  const {users}=await ctx.get('/api/accounts');if(!ctx.valid())return;
+  const state={q:query.get('q')||'',role:query.get('role')||'',status:query.get('status')||'',branch:query.get('branch')||'',sort:query.get('sort')||'name',view:query.get('view')==='tree'?'tree':'list',page:Math.max(1,Number(query.get('page'))||1)};
+  const byId=new Map(users.map(u=>[String(u.id),u])),pageSize=25;
+  $('pageActions').innerHTML=button('Rifresko','refresh','','refresh')+(can('users.create')?button('Llogari e re','create','primary','plus'):'');
+  ctx.commit(`<div class="metrics">${metric('Llogari gjithsej',number(users.length),'Të gjitha llogaritë në rrjet','users')}${metric('Aktive',number(users.filter(u=>u.status==='active').length),'Llogari të aktivizuara','check')}${metric('Të kufizuara',number(users.filter(u=>u.status!=='active').length),'Pezulluar, bllokuar ose arkivuar','shield')}${metric('Balanca totale',can('wallet.view')?money(users.reduce((n,u)=>n+Number(u.balance||0),0)):'—','Gjendja e llogarive','wallet')}</div>`+
+    panel('Llogaritë dhe rrjeti','Kërkoni një llogari, filtroni një degë ose eksploroni hierarkinë.',
+    `<div class="management-roles" role="group" aria-label="Filtra të shpejtë sipas rolit">${[['','Të gjithë'],...Object.entries(labels).filter(([r])=>r!=='center'&&r!=='supermanager')].map(([r,label])=>`<button class="button ${state.role===r?'primary':''}" data-management-role="${r}">${esc(label)} <span>${number(r?users.filter(u=>u.role===r||(r==='senior'&&u.role==='supermanager')).length:users.length)}</span></button>`).join('')}</div>
+    <div class="toolbar management-filters"><input id="accountFilter" value="${esc(state.q)}" aria-label="Kërko llogaritë" placeholder="Kërko username ose ID…"><select id="roleFilter" aria-label="Roli"><option value="">Të gjitha rolet</option>${Object.entries(labels).filter(([r])=>r!=='center').map(([r,l])=>`<option value="${r}" ${state.role===r?'selected':''}>${esc(l)}</option>`).join('')}</select><select id="statusFilter" aria-label="Statusi"><option value="">Të gjitha statuset</option>${Object.entries(statusLabels).filter(([s])=>['active','suspended','disabled','locked','blocked','archived'].includes(s)).map(([s,l])=>`<option value="${s}" ${state.status===s?'selected':''}>${esc(l)}</option>`).join('')}</select><select id="branchFilter" aria-label="Dega e rrjetit"><option value="">I gjithë rrjeti</option>${users.filter(u=>!['user','operator'].includes(u.role)).map(u=>`<option value="${u.id}" ${state.branch===String(u.id)?'selected':''}>${esc(u.username)} · ${esc(labels[u.role])}</option>`).join('')}</select><select id="accountSort" aria-label="Renditja">${[['name','Emri A–Z'],['newest','Më të rejat'],...(can('wallet.view')?[['balance','Balanca më e lartë']]:[])].map(([k,l])=>`<option value="${k}" ${state.sort===k?'selected':''}>${l}</option>`).join('')}</select><button class="button" id="resetManagement">Pastro filtrat</button></div>
+    <div class="management-viewbar"><span class="result-count" id="rowCount" aria-live="polite"></span><div role="group" aria-label="Pamja e llogarive"><button class="button" data-management-view="list">${icon('users')} Lista</button><button class="button" data-management-view="tree">${icon('tree')} Rrjeti</button></div><div id="treeControls"><button class="button" id="expandTree">Zgjero të gjitha</button><button class="button" id="collapseTree">Mbyll të gjitha</button></div></div><div id="accountRows"></div><div class="panel-body" id="tree" hidden></div><div class="management-pagination" id="managementPagination"></div>`));
+  const actions=u=>`<div class="management-actions"><a class="table-action" href="#/account/${u.id}/profile">Profili</a>${can('wallet.view')?`<a class="table-action" href="#/account/${u.id}/finance">Financat</a>`:''}${can('users.edit')?`<a class="table-action" href="#/account/${u.id}/limits">Limitet</a>`:''}${u.role!=='user'?`<a class="table-action" href="#/account/${u.id}/permissions">Akseset</a>`:''}${can('users.password.reset')?`<a class="table-action" href="#/account/${u.id}/security">Siguria</a>`:''}${!['user','operator'].includes(u.role)?`<button class="table-action" data-management-branch="${u.id}">Shiko degën</button>`:''}</div>`;
+  const columns=accountColumns().slice(0,4).concat([['PRINDI',u=>{const id=u.businessParentId??u.parentId,parent=byId.get(String(id));return parent?`<a href="#/account/${parent.id}/profile">${esc(parent.username)}<span class="subline">#${parent.id}</span></a>`:id?'#'+esc(id):'—';}],['VEPRIMET',actions]]);
+  function draw(){
+    const visible=filterManagedUsers(users,state),pages=Math.max(1,Math.ceil(visible.length/pageSize));state.page=Math.min(state.page,pages);
+    $('rowCount').textContent=visible.length+' nga '+users.length+' llogari';
+    $('accountRows').hidden=state.view!=='list';$('tree').hidden=state.view!=='tree';$('treeControls').hidden=state.view!=='tree';
+    document.querySelectorAll('[data-management-view]').forEach(b=>{b.classList.toggle('primary',b.dataset.managementView===state.view);b.setAttribute('aria-pressed',String(b.dataset.managementView===state.view));});
+    document.querySelectorAll('[data-management-role]').forEach(b=>{b.classList.toggle('primary',b.dataset.managementRole===state.role);b.setAttribute('aria-pressed',String(b.dataset.managementRole===state.role));});
+    if(state.view==='tree'){$('tree').innerHTML=visible.length?HierarchyTree(managedTreeUsers(users,visible)):empty('Nuk ka rezultate','Provoni të ndryshoni filtrat.');$('managementPagination').innerHTML='';}
+    else{$('accountRows').innerHTML=table(visible.slice((state.page-1)*pageSize,state.page*pageSize),columns);$('managementPagination').innerHTML=`<span>Faqja ${state.page} / ${pages}</span><button class="button" data-management-page="-1" ${state.page===1?'disabled':''}>← Para</button><button class="button" data-management-page="1" ${state.page===pages?'disabled':''}>Pas →</button>`;}
+    const params=new URLSearchParams();for(const [k,v] of Object.entries(state))if(v&&!(k==='page'&&v===1)&&!(k==='sort'&&v==='name')&&!(k==='view'&&v==='list'))params.set(k,String(v));
+    currentRoute='user-management'+(params.size?'?'+params:'');history.replaceState(null,'','#/'+currentRoute);
+  }
+  const filter=()=>{Object.assign(state,{q:$('accountFilter').value,role:$('roleFilter').value,status:$('statusFilter').value,branch:$('branchFilter').value,sort:$('accountSort').value,page:1});draw();};
+  $('accountFilter').oninput=filter;for(const id of ['roleFilter','statusFilter','branchFilter','accountSort'])$(id).onchange=filter;
+  $('resetManagement').onclick=()=>{$('accountFilter').value=$('roleFilter').value=$('statusFilter').value=$('branchFilter').value='';$('accountSort').value='name';filter();};
+  $('content').onclick=e=>{
+    const role=e.target.closest('[data-management-role]'),view=e.target.closest('[data-management-view]'),branch=e.target.closest('[data-management-branch]'),page=e.target.closest('[data-management-page]');
+    if(role){$('roleFilter').value=role.dataset.managementRole;filter();}
+    if(view){state.view=view.dataset.managementView;draw();}
+    if(branch){$('branchFilter').value=branch.dataset.managementBranch;$('accountFilter').value=$('roleFilter').value=$('statusFilter').value='';filter();}
+    if(page&&!page.disabled){state.page+=Number(page.dataset.managementPage);draw();}
+  };
+  $('expandTree').onclick=()=>$('tree').querySelectorAll('.tree-node').forEach(d=>d.open=true);
+  $('collapseTree').onclick=()=>$('tree').querySelectorAll('.tree-node').forEach(d=>d.open=false);
+  document.querySelector('[data-action="create"]')?.addEventListener('click',()=>createAccount(users,state.role||null));
+  draw();
+}
 function createAccount(users,fixedRole){
   const parents=(me.role==='center'?[me,...users]:[me]).filter(u=>u.status==='active'&&children[u.role]?.length&&(!fixedRole||children[u.role].includes(fixedRole)));
   showDialog(fixedRole==='operator'?'Krijo operator':fixedRole==='partner'?'Krijo partner':'Krijo llogari',`<form id="createAccount" class="form-grid"><label>Username<input name="username" minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.-]{3,32}" autocomplete="off" required placeholder="p.sh. partner_tirana"></label><label>Fjalëkalimi<input name="password" type="password" minlength="6" autocomplete="new-password" required placeholder="Të paktën 6 karaktere"></label><label>Llogaria prind<select name="parentId" id="newParent">${parents.map(u=>`<option value="${u.id}">${esc(u.username)} · ${labels[u.role]}</option>`).join('')}</select></label><label>Roli<select name="role" id="newRole"></select></label><p class="form-note full">${fixedRole==='operator'?'Operatori krijohet pa permissions. Caktoni akseset te nënfaqja Permissions e llogarisë.':'Llogaria e re trashëgon scope-in dhe kufijtë e degës së zgjedhur.'}</p><div class="form-actions full"><button class="button primary" ${parents.length?'':'disabled'}>Krijo llogarinë</button><button type="button" class="button" data-close-dialog>Anulo</button></div></form>`);
@@ -95,7 +155,7 @@ async function networkPage(ctx){const {users}=await ctx.get('/api/network');if(!
 
 async function accountPage(ctx,id,tab='profile'){
   const {user:u,limits}=await ctx.get('/api/accounts/'+id);if(!ctx.valid())return;
-  heading(u.username,labels[u.role]+' · Llogaria #'+u.id,'MENAXHIMI I LLOGARISË',link('Kthehu te llogaritë',u.role==='partner'?'partners':u.role==='operator'?'operators':'accounts','','users'));
+  heading(u.username,labels[u.role]+' · Llogaria #'+u.id,'MENAXHIMI I LLOGARISË',link('Kthehu te llogaritë',me.role==='center'?'user-management':u.role==='partner'?'partners':u.role==='operator'?'operators':'accounts','','users'));
   const items=[['profile','Profili'],...(can('users.edit')?[['limits','Limitet']]:[]),...(can('wallet.view')?[['finance','Financat']]:[]),...(can('bets.view')?[['bets','Biletat']]:[]),...(me.role==='center'&&u.role!=='user'?[['permissions','Permissions']]:[]),...(can('users.password.reset')?[['security','Siguria']]:[])];
   if(!items.some(x=>x[0]===tab))throw Error('Kjo nënfaqe nuk është e disponueshme.');
   const shell=`<div class="account-banner"><span class="account-initial">${esc(u.username.slice(0,2).toUpperCase())}</span><div><h2>${esc(u.username)}</h2><p>${esc(labels[u.role])} · ID #${u.id} · Prindi #${u.businessParentId??u.parentId??'—'}</p></div>${badge(u.status)}</div>`+tabs(items.map(([k,l])=>[k,l,`account/${id}/${k}`]),tab);
@@ -294,9 +354,11 @@ async function securityPage(ctx,tab='password'){
 async function searchPage(ctx,query){const q=query.get('q')||'';heading('Rezultatet e kërkimit',q?'Rezultate për “'+q+'”':'Shkruani username, ID, kod bilete ose ID transaksioni.','KËRKIMI GLOBAL');const d=await ctx.get('/api/search?q='+encodeURIComponent(q));if(ctx.valid())ctx.commit(panel('Llogari',d.users.length+' rezultate',table(d.users,accountColumns()))+panel('Bileta',d.bets.length+' rezultate',table(d.bets,[['BILETA',b=>`<a href="#/ticket/${b.id}">${esc(b.ticket_code||'T-'+b.id)} →</a>`],['LOJTARI',b=>'#'+b.user_id],['STATUSI',b=>badge(b.status)]]))+panel('Transaksione',d.transactions.length+' rezultate',table(d.transactions,[['ID',r=>r.id],['LLOGARIA',r=>`<a href="#/account/${r.user_id}/finance">#${r.user_id} →</a>`],['LLOJI',r=>esc(r.type)],['SHUMA',r=>money(r.amount)]])));}
 
 async function renderRoute(){
+  $('content').onclick=null;
   if(!me)return;const version=++routeVersion;if(routeAbort)routeAbort.abort();routeAbort=new AbortController();clearTimeout(routeTimer);$('dialog').close();notice('');
   currentRoute=location.hash.replace(/^#\/?/,'')||modules.find(allowed)?.key||'security';const [pathname,qs='']=currentRoute.split('?'),parts=pathname.split('/'),key=parts[0],query=new URLSearchParams(qs);
-  const navKey=key==='account'?'accounts':key==='ticket'?'bets':key;const module=modules.find(m=>m.key===navKey);
+  const managementRoute=me.role==='center'&&['user-management','partners','operators','accounts','network','account'].includes(key);
+  const navKey=managementRoute?'user-management':key==='account'?'accounts':key==='ticket'?'bets':key;const module=modules.find(m=>m.key===navKey);
   document.querySelectorAll('[data-nav]').forEach(a=>{const selected=a.dataset.nav===navKey;a.classList.toggle('active',selected);if(selected)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   closeMobile();$('content').innerHTML='<div class="loading"><span class="spinner"></span>Duke ngarkuar të dhënat…</div>';if(module)heading(module.title,module.description,module.group||'CONTROL CENTER',key==='live'?'':button('Rifresko','refresh','','refresh'));
   const ctx={get:url=>api(url,'GET',undefined,undefined,routeAbort.signal),valid:()=>version===routeVersion,commit:html=>{if(version!==routeVersion)return;$('content').innerHTML=html;$('updated').textContent='Përditësuar '+new Date().toLocaleTimeString('sq-AL',{hour:'2-digit',minute:'2-digit'});}};
@@ -304,6 +366,7 @@ async function renderRoute(){
     if(key==='search'){if(!can('users.view'))throw Error('Nuk keni permission për kërkim.');return await searchPage(ctx,query);}
     if(!module||!allowed(module))throw Error('Nuk keni akses në këtë seksion.');
     if(key==='account')return await accountPage(ctx,Number(parts[1]),parts[2]||'profile');
+    if(managementRoute){if(key==='partners')query.set('role','partner');if(key==='operators')query.set('role','operator');if(key==='network')query.set('view','tree');return await userManagementPage(ctx,query);}
     if(key==='ticket')return await ticketPage(ctx,Number(parts[1]));
     if(key==='dashboard'||key==='reports')return await dashboardPage(ctx,key==='reports');
     if(['partners','operators','accounts'].includes(key))return await accountsPage(ctx,key,query);
