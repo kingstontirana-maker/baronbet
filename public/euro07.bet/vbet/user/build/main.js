@@ -910,7 +910,7 @@ function setAuthState(u){
   if(myTop)myTop.hidden=!u;
   if(token)sessionStorage.setItem('sportsbook_token',token);else sessionStorage.removeItem('sportsbook_token');
   if(user){
-    if(['partner','admin'].includes(user.role)){location.replace('/backoffice.html#/dashboard');return;}
+    if(user.role==='operator'){location.replace('/backoffice.html#/ticket-accept');return;}if(['partner','admin'].includes(user.role)){location.replace('/backoffice.html#/dashboard');return;}
     if(user.role!=='user')stopTicketNotifications();
     if(!['partner','admin'].includes(user.role))hideAdminWorkspace();
     if(user.role==='center'){

@@ -25,6 +25,7 @@ const pendingTransfers=new Map();
 const can=permission=>permissions.has(permission);
 let sessionToken=sessionStorage.getItem('sportsbook_token')||'';
 const modules=[
+  {key:'ticket-accept',title:'Ticket Accept',nav:'Ticket Accept',description:'Biletat në pritje · Prematch dhe Live',icon:'ticket',permission:'bets.view',operator:true},
   {key:'dashboard',title:'Pasqyra e platformës',nav:'Pasqyra',description:'Një pamje e qartë e aktivitetit, financave dhe rrjetit tuaj.',icon:'grid',permission:'reports.view',group:'PËRMBLEDHJA'},
   {key:'user-management',title:'User Management',nav:'User Management',description:'Llogaritë, stafi dhe struktura e rrjetit në një vend.',icon:'users',permission:'users.view',center:true,group:'MENAXHIMI'},
   {key:'partners',title:'Partnerët',nav:'Partnerët',description:'Menaxhoni partnerët dhe hyni në rrjetin e secilit.',icon:'users',permission:'users.view',center:true,group:'MENAXHIMI I RRJETIT'},
@@ -42,7 +43,7 @@ const modules=[
   {key:'configuration',title:'Konfigurimi i pranimit',nav:'Konfigurime',description:'Rregulla të veçanta për pranimin automatik të biletave Live dhe Prematch.',icon:'settings',center:true},
   {key:'security',title:'Siguria e llogarisë',nav:'Siguria',description:'Menaxhoni fjalëkalimin, kontrolloni sesionet dhe hyrjet tuaja.',icon:'settings'}
 ];
-const allowed=m=>(!m.permission||can(m.permission))&&(!m.center||me.role==='center');
+const allowed=m=>(!m.permission||can(m.permission))&&(!m.center||me.role==='center')&&(!m.operator||me.role==='operator');
 function notice(text,error=false){$('message').textContent=text;$('message').className='notice'+(error?' error':'');$('message').hidden=!text;}
 async function api(url,method='GET',body,key,signal){
   const response=await fetch(url,{method,headers:{Authorization:'Bearer '+sessionToken,'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{})},body:body===undefined?undefined:JSON.stringify(body),signal});
@@ -58,7 +59,7 @@ function tabs(items,active){return `<nav class="tabs" aria-label="Nënfaqet">${i
 function accountColumns(){return [['LLOGARIA',accountLink],['ROLI',u=>`<span class="role-badge">${esc(labels[u.role])}</span>`],['STATUSI',u=>badge(u.status)],['BALANCA',u=>u.balance===undefined?'—':`<strong>${money(u.balance)}</strong>`],['PRINDI',u=>'#'+(u.businessParentId??u.parentId??'—')],['',u=>`<a class="table-action" href="#/account/${u.id}/profile">Detajet ${icon('arrow')}</a>`]];}
 function betColumns(){return [['BILETA',b=>`<a href="#/ticket/${b.id}"><strong>${esc(b.ticket_code||'T-'+b.id)}</strong></a><span class="subline">${esc(date(b.created_at))}</span>`],['LOJTARI',b=>esc(b.username||'#'+b.user_id)],['SHUMA',b=>money(b.stake)],['KOEFICIENTI',b=>Number(b.total_odds||0).toFixed(2)],['FITIMI I MUNDSHËM',b=>`<strong>${money(b.potential_win)}</strong>`],['STATUSI',b=>badge(b.status)],['',b=>`<a class="table-action" href="#/ticket/${b.id}">Hap ${icon('arrow')}</a>`]];}
 const transactionColumns=[['ID / DATA',r=>`<strong>#${r.id}</strong><span class="subline">${esc(date(r.created_at))}</span>`],['LLOGARIA',r=>esc(r.username||'#'+r.user_id)],['LLOJI',r=>`<span class="role-badge">${esc(r.type)}</span>`],['SHUMA',r=>`<strong class="${r.amount>=0?'positive':'negative'}">${r.amount>0?'+':''}${money(r.amount)}</strong>`],['PARA',r=>money(r.balance_before)],['PAS',r=>money(r.balance_after)],['REFERENCA',r=>esc(r.reference||'—')]];
-function navigation(){let group='';$('navigation').innerHTML=modules.filter(allowed).filter(m=>me.role!=='center'||!['partners','operators','accounts','network'].includes(m.key)).map(m=>{const heading=m.group&&m.group!==group?`<div class="nav-group">${esc(m.group)}</div>`:'';if(m.group)group=m.group;return heading+`<a class="nav-item" href="#/${m.key}" data-nav="${m.key}">${icon(m.icon)}<span>${m.nav}</span>${m.key==='bets'?'<span class="nav-count" id="pendingBadge" hidden></span>':''}</a>`;}).join('');$('search').hidden=!can('users.view');}
+function navigation(){let group='';$('navigation').innerHTML=modules.filter(allowed).filter(m=>me.role!=='operator'||['ticket-accept','bets','security'].includes(m.key)).filter(m=>me.role!=='center'||!['partners','operators','accounts','network'].includes(m.key)).map(m=>{const heading=m.group&&m.group!==group?`<div class="nav-group">${esc(m.group)}</div>`:'';if(m.group)group=m.group;return heading+`<a class="nav-item" href="#/${m.key}" data-nav="${m.key}">${icon(m.icon)}<span>${m.nav}</span>${m.key==='bets'?'<span class="nav-count" id="pendingBadge" hidden></span>':''}</a>`;}).join('');$('search').hidden=me.role==='operator'||!can('users.view');}
 function heading(title,description,eyebrow='CONTROL CENTER',actions=''){$('title').textContent=title;$('description').textContent=description;$('eyebrow').textContent=eyebrow;$('breadcrumb').textContent=title;$('pageActions').innerHTML=actions;document.title=title+' · EURO97';}
 
 async function dashboardPage(ctx,reports=false){
@@ -177,6 +178,75 @@ async function offerDialog(b,onComplete){
   $('dialog').classList.add('offer-dialog');
   $('offerForm').oninput=()=>{$('offerPotential').textContent=money(Number(b.stake)*[...$('offerForm').querySelectorAll('input')].reduce((n,i)=>n*Number(i.value||0),1));};
   bindForm('offerForm',async f=>{await api('/api/operator/tickets/'+b.id+'/offer','POST',{offers:[...f].map(([id,odd])=>({id:Number(id),odd:Number(odd)}))});$('dialog').close();await onComplete();notice('Oferta iu dërgua lojtarit · '+(b.ticket_code||'T-'+b.id)+'.');});
+}
+function operatorTicketKind(ticket){
+  const types=(ticket.selections||[]).map(s=>s.acceptanceType||s.acceptance_type||'unknown');
+  if(types.length&&types.every(t=>t==='prematch'))return 'prematch';
+  if(types.length&&types.every(t=>t==='live'))return 'live';
+  return types.includes('unknown')||!types.length?'unknown':'mixed';
+}
+function operatorTicketCard(b,games,alert){
+  const selections=b.selections||[],kind=operatorTicketKind(b),kindLabel={prematch:'Prematch',live:'Live',mixed:'E përzier',unknown:'Tip i pakonfirmuar'}[kind];
+  const chain=[b.supermanager_username,b.agent_username,b.username||'#'+b.user_id].filter(Boolean).map(esc).join(' → ');
+  return `<article class="operator-ticket ${Number(b.potential_win)>=alert?'win-alert':''}" data-operator-ticket="${b.id}">
+    <header class="operator-ticket-head"><a href="#/ticket/${b.id}">${esc(b.ticket_code||'T-'+b.id)}</a><time>${esc(date(b.created_at))}</time><span class="operator-owner"><span class="operator-chain">${chain}</span><strong class="operator-repeat ${Number(b.repeatCount)>3?'repeat-high':'repeat-normal'}" title="Ky përdorues ka luajtur të njëjtën ndeshje dhe market ${Number(b.repeatCount)||1} herë; për Multi shfaqet numri më i lartë" aria-label="Bileta e përsëritur ${Number(b.repeatCount)||1} herë">${Number(b.repeatCount)||1}</strong></span></header>
+    <div class="operator-ticket-totals"><div><small>LLOJI</small><strong>${selections.length===1?'Single':'Multi'} · ${kindLabel}</strong></div><div><small>SHUMA</small><strong>${money(b.stake)}</strong></div><div><small>KOEFICIENTI</small><strong>${Number(b.total_odds).toFixed(2)}</strong></div><div><small>FITIMI I MUNDSHËM</small><strong>${money(b.potential_win)}</strong></div></div>
+    ${b.offer?.status==='pending'?'<div class="operator-offer-status">Oferta është dërguar · në pritje të përgjigjes së lojtarit</div>':''}
+    <div class="operator-selection-list">${selections.map(s=>{const g=games.get(String(s.gameId??s.game_id)),type=s.acceptanceType||s.acceptance_type||'unknown';return `<div class="operator-selection"><div class="operator-match"><span class="operator-type ${type==='live'?'is-live':''}">${type==='live'?'Live':type==='prematch'?'Prematch':'Pa tip'}</span><strong>${esc(s.home||s.home_team)} – ${esc(s.away||s.away_team)}</strong><small>${esc(s.league||'')} ${s.eventTime||s.event_time?' · '+esc(date(s.eventTime||s.event_time)):''}</small></div><div class="operator-market"><strong>${esc(s.market)}</strong><span>${esc(s.selection)}</span></div><div class="operator-result"><small>REZULTATI</small><strong>${g?esc(g.result||'—'):'—'}</strong>${g?.current_minute!=null?`<span>${esc(g.current_minute)}</span>`:''}</div><div class="operator-selection-odd"><small>ODD</small><strong>${Number(s.odd).toFixed(2)}</strong></div></div>`;}).join('')}</div>
+    <footer class="operator-ticket-actions">${can('bets.accept')?`<button class="operator-accept" data-operator-action="accept" data-ticket-id="${b.id}">${icon('check')} Prano</button>`:''}${can('bets.offer_odds')?`<button class="operator-offer" data-operator-action="offer" data-ticket-id="${b.id}">Oferto</button>`:''}${can('bets.cancel')?`<button class="operator-refuse" data-operator-action="cancel" data-ticket-id="${b.id}">Refuzo</button>`:''}</footer></article>`;
+}
+async function operatorAcceptPage(ctx){
+  const initial=await ctx.get('/api/operator/tickets?status=pending');if(!ctx.valid())return;
+  let tickets=initial.tickets,games=new Map(),feedAvailable=false;const busy=new Set(),filters={prematch:{q:'',type:'',alert:5000,bulk:''},live:{q:'',type:'',alert:5000,bulk:''}};
+  $('pageActions').innerHTML=button('Rifresko','refresh','','refresh');
+  ctx.commit(`<div class="operator-status"><span><i></i> Biletat e reja shfaqen automatikisht</span><span id="operatorSync" role="status">Duke lidhur radhën…</span></div><div class="operator-columns">${['prematch','live'].map(kind=>`<section class="operator-lane" data-lane="${kind}"><header class="operator-lane-head"><div><span class="operator-lane-dot ${kind}"></span><h2>${kind==='live'?'Live':'Prematch'}</h2><span class="operator-lane-count" id="${kind}Count">0</span></div><small>${kind==='live'?'Biletat live dhe të përziera':'Biletat para fillimit të ndeshjeve'}</small></header><div class="operator-filters"><label class="operator-search">User, agjent ose biletë<input data-lane-filter="q" data-kind="${kind}" placeholder="Kërko…" autocomplete="off"></label><label>Lloji<select data-lane-filter="type" data-kind="${kind}"><option value="">Të gjitha</option><option value="single">Single</option><option value="multi">Multi</option></select></label><label>Sinjal fitimi ≥ EUR<input type="number" min="0" step="1" value="5000" data-lane-filter="alert" data-kind="${kind}"></label></div><details class="operator-bulk"><summary>Veprime për disa bileta</summary><div><label>Shuma e biletës ≤ EUR<input type="number" min="0.01" step="0.01" placeholder="Vendos kufirin" data-lane-filter="bulk" data-kind="${kind}"></label>${can('bets.accept')?`<button class="button success" data-operator-bulk="accept" data-kind="${kind}" disabled>Prano të filtruarat</button>`:''}${can('bets.cancel')?`<button class="button danger" data-operator-bulk="cancel" data-kind="${kind}" disabled>Refuzo të filtruarat</button>`:''}</div></details><div class="operator-lane-tickets" id="${kind}Tickets"></div></section>`).join('')}</div>`);
+  const lane=b=>operatorTicketKind(b)==='prematch'?'prematch':'live';
+  function filtered(kind){const f=filters[kind],q=f.q.trim().toLowerCase();return tickets.filter(b=>lane(b)===kind&&(!f.type||(f.type==='single'?(b.selections||[]).length===1:(b.selections||[]).length>1))&&(!q||[b.id,b.ticket_code,b.username,b.agent_username,b.supermanager_username].some(v=>String(v||'').toLowerCase().includes(q)))).sort((a,b)=>Number(a.id)-Number(b.id));}
+  function draw(){
+    for(const kind of ['prematch','live']){
+      const rows=filtered(kind);$(`${kind}Count`).textContent=rows.length;
+      const html=rows.map(b=>operatorTicketCard(b,games,Number(filters[kind].alert)||Infinity)).join('')||`<div class="operator-empty">${icon('check')}<strong>${tickets.some(b=>lane(b)===kind)?'Nuk ka bileta për këta filtra':'Nuk ka bileta në pritje'}</strong><span>${kind==='live'?'Biletat e reja Live do të shfaqen këtu.':'Biletat e reja Prematch do të shfaqen këtu.'}</span></div>`;
+      const target=$(`${kind}Tickets`);if(target._html!==html){target.innerHTML=html;target._html=html;}
+      target.querySelectorAll('[data-operator-ticket]').forEach(card=>card.querySelectorAll('button').forEach(btn=>btn.disabled=busy.has(Number(card.dataset.operatorTicket))));
+      document.querySelectorAll(`[data-operator-bulk][data-kind="${kind}"]`).forEach(btn=>btn.disabled=busy.size>0||!(Number(filters[kind].bulk)>0)||!rows.some(b=>Number(b.stake)<=Number(filters[kind].bulk)));
+    }
+  }
+  async function refresh(){
+    if(!ctx.valid())return;
+    try{
+      if(!busy.size&&!$('dialog').open&&!document.hidden){
+        const results=await Promise.allSettled([ctx.get('/api/operator/tickets?status=pending'),ctx.get('/api/livegames')]);
+        if(!ctx.valid()||busy.size||$('dialog').open)return;
+        if(results[0].status==='rejected')throw results[0].reason;
+        tickets=results[0].value.tickets;feedAvailable=results[1].status==='fulfilled'&&Array.isArray(results[1].value);
+        games=feedAvailable?new Map(results[1].value.map(g=>[String(g.id??g.game_id),g])):new Map();draw();
+        $('operatorSync').textContent='Përditësuar '+new Date().toLocaleTimeString('sq-AL')+(feedAvailable?'':' · Rezultatet live të padisponueshme');
+      }
+    }catch(e){if(ctx.valid())$('operatorSync').textContent='Lidhja po vonon · po provojmë përsëri';}
+    finally{if(ctx.valid())routeTimer=setTimeout(refresh,3000);}
+  }
+  document.querySelectorAll('[data-lane-filter]').forEach(input=>input.addEventListener('input',()=>{filters[input.dataset.kind][input.dataset.laneFilter]=input.value;draw();}));
+  $('content').onclick=async e=>{
+    const bulk=e.target.closest('[data-operator-bulk]');
+    if(bulk&&!bulk.disabled){
+      const kind=bulk.dataset.kind,action=bulk.dataset.operatorBulk,rows=filtered(kind).filter(b=>Number(b.stake)<=Number(filters[kind].bulk));
+      if(!rows.length)return;
+      showDialog(action==='accept'?'Prano biletat e filtruarа':'Refuzo biletat e filtruara',`<p class="form-note">${rows.length} bileta ${kind==='live'?'Live':'Prematch'} · shuma gjithsej ${money(rows.reduce((sum,b)=>sum+Number(b.stake),0))}. Zbatimi përfshin vetëm biletat e shfaqura nga filtrat, me shumën deri në ${money(filters[kind].bulk)}.</p><form id="confirmOperatorBulk"><div class="form-actions"><button class="button ${action==='accept'?'success':'danger'}">Konfirmo ${rows.length} bileta</button><button type="button" class="button" data-close-dialog>Anulo</button></div></form>`,'VEPRIM NË GRUP');
+      bindForm('confirmOperatorBulk',async()=>{
+        let done=0,failed=0;rows.forEach(b=>busy.add(Number(b.id)));draw();
+        try{for(const b of rows){if(!ctx.valid())break;try{await api('/api/operator/tickets/'+b.id+'/'+action,'POST',{});tickets=tickets.filter(t=>t.id!==b.id);done++;}catch{failed++;}}}
+        finally{rows.forEach(b=>busy.delete(Number(b.id)));if(ctx.valid()){$('dialog').close();draw();notice(done+' bileta u përditësuan'+(failed?' · '+failed+' nuk u përditësuan; rifreskoni radhën.':'.'),failed>0);}}
+      });return;
+    }
+    const btn=e.target.closest('[data-operator-action]');if(!btn||btn.disabled)return;
+    const id=Number(btn.dataset.ticketId),action=btn.dataset.operatorAction;if(busy.has(id))return;busy.add(id);draw();
+    try{
+      if(action==='offer'){const {bet}=await ctx.get('/api/admin/bets/'+id);if(!ctx.valid())return;if(bet.status!=='pending')throw Error('Bileta është shqyrtuar tashmë. Rifresko radhën.');await offerDialog(bet,async()=>{const ticket=tickets.find(b=>Number(b.id)===id);if(ticket)ticket.offer={status:'pending'};if(ctx.valid())draw();});}
+      else{await api('/api/operator/tickets/'+id+'/'+action,'POST',{});if(!ctx.valid())return;tickets=tickets.filter(b=>Number(b.id)!==id);notice((action==='accept'?'U pranua ':'U refuzua ')+(tickets.find(b=>Number(b.id)===id)?.ticket_code||'T-'+id)+'.');}
+    }catch(e){if(ctx.valid())notice(e.message,true);}
+    finally{busy.delete(id);if(ctx.valid())draw();}
+  };
+  draw();void refresh();
 }
 async function betsPage(ctx,query){
   const selected=query.get('status')||'',data=await ctx.get('/api/admin/bets'+(selected?'?status='+encodeURIComponent(selected):''));if(!ctx.valid())return;
@@ -355,8 +425,14 @@ async function searchPage(ctx,query){const q=query.get('q')||'';heading('Rezulta
 
 async function renderRoute(){
   $('content').onclick=null;
+  document.body.classList.toggle('operator-workspace',me?.role==='operator');
+  if(me?.role==='operator'){
+    document.querySelector('.sidebar .brand').href='#/ticket-accept';
+    $('workspaceLabel').textContent='Ticket desk';
+  }
   if(!me)return;const version=++routeVersion;if(routeAbort)routeAbort.abort();routeAbort=new AbortController();clearTimeout(routeTimer);$('dialog').close();notice('');
   currentRoute=location.hash.replace(/^#\/?/,'')||modules.find(allowed)?.key||'security';const [pathname,qs='']=currentRoute.split('?'),parts=pathname.split('/'),key=parts[0],query=new URLSearchParams(qs);
+  document.body.classList.toggle('operator-queue',me.role==='operator'&&key==='ticket-accept');
   const managementRoute=me.role==='center'&&['user-management','partners','operators','accounts','network','account'].includes(key);
   const navKey=managementRoute?'user-management':key==='account'?'accounts':key==='ticket'?'bets':key;const module=modules.find(m=>m.key===navKey);
   document.querySelectorAll('[data-nav]').forEach(a=>{const selected=a.dataset.nav===navKey;a.classList.toggle('active',selected);if(selected)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
@@ -365,6 +441,7 @@ async function renderRoute(){
   try{
     if(key==='search'){if(!can('users.view'))throw Error('Nuk keni permission për kërkim.');return await searchPage(ctx,query);}
     if(!module||!allowed(module))throw Error('Nuk keni akses në këtë seksion.');
+    if(key==='ticket-accept')return await operatorAcceptPage(ctx);
     if(key==='account')return await accountPage(ctx,Number(parts[1]),parts[2]||'profile');
     if(managementRoute){if(key==='partners')query.set('role','partner');if(key==='operators')query.set('role','operator');if(key==='network')query.set('view','tree');return await userManagementPage(ctx,query);}
     if(key==='ticket')return await ticketPage(ctx,Number(parts[1]));

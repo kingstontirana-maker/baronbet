@@ -2,7 +2,7 @@
   "name": "sportsbook-pro",
   "version": "3.0.0",
   "private": true,
-  "scripts": {"start": "node server.js", "test": "node settlement.test.js && node odds-routing.test.cjs && node --test same-event-markets.test.js ticket-acceptance.test.js authorization.test.js api-client.test.js live-clock.test.js live-corners.test.js session-expiry.test.js password-change.test.js market-results.test.js provider-markets.test.js reliability.test.js", "test:navigation": "node navigation-search-browser.cjs", "test:ui": "node backoffice.test.cjs", "test:user-management": "node user-management-browser.cjs"},
+  "scripts": {"start": "node server.js", "test": "node settlement.test.js && node odds-routing.test.cjs && node --test same-event-markets.test.js ticket-acceptance.test.js ticket-repeats.test.js authorization.test.js api-client.test.js live-clock.test.js live-corners.test.js session-expiry.test.js password-change.test.js market-results.test.js provider-markets.test.js reliability.test.js", "test:navigation": "node navigation-search-browser.cjs", "test:ui": "node backoffice.test.cjs", "test:user-management": "node user-management-browser.cjs", "test:operator": "node operator-browser.cjs"},
   "dependencies": {
     "express": "^4.21.2",
     "sql.js": "^1.13.0",
