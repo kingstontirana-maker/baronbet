@@ -268,6 +268,12 @@ async function refreshLiveCorners(game){
   liveCornerRequests.set(id,request);
   try{await request}finally{liveCornerRequests.delete(id);}
 }
+function prematchHeader(game){
+ const sport=game.sport_name||({soccer:'Soccer',basketball:'Basketball',tennis:'Tennis',american:'American Football',baseball:'Baseball',pingpong:'Table Tennis'}[sportOf(game)]||'Sport');
+ const title=[sport,game.league,(game.home_team||game.name||'')+' vs '+(game.away_team||'')].filter(Boolean).join(' / ');
+ const kickoff=[game.game_date,String(game.game_time||'').slice(0,5)].filter(Boolean).join(' ');
+ return '<div class="prematch-match-header"><button type="button" class="prematch-header-back" data-live-detail-back="1" aria-label="Kthehu te ndeshjet">‹</button><span class="prematch-match-title">'+esc(title)+'</span><time class="prematch-match-date">'+esc(kickoff)+'</time></div>';
+}
 function renderLiveMarketPanel(game, groups, loading=false, error=''){
   const detailId=String(game.id);
   if(displayedLiveDetailId!==detailId){displayedLiveDetailId=detailId;requestAnimationFrame(()=>{if(displayedLiveDetailId===detailId&&document.body.classList.contains('live-markets-open')){window.scrollTo({top:0,left:0,behavior:'instant'});}});}
@@ -277,23 +283,23 @@ function renderLiveMarketPanel(game, groups, loading=false, error=''){
   const sb=$('sportsbar');if(sb)sb.style.display='none';
   const status=game?.api_status??game?.game_status;
   const result=String(game?.result||'').split('-');
-  const homeScore=result[0]||'0', awayScore=result[1]||'0';
+  const homeScore=game.isPrematch?String(game.game_time||'').slice(0,5):(result[0]||'0'), awayScore=game.isPrematch?'':(result[1]||'0');
   const running=liveClockRunning(game);
   const activeClock=getLiveClock(game);
   if(loading){
-    target.innerHTML=`<div class="live-detail"><div class="live-detail-scorebar"><button class="live-detail-back" data-live-detail-back="1">‹</button><div class="live-detail-team">${esc(game.home_team||game.name||'')}</div><div class="live-detail-score"><b>${esc(homeScore)}</b><span>:</span><b>${esc(awayScore)}</b></div><div class="live-detail-team away">${esc(game.away_team||'')}</div></div>${brandLoading("market-loading-stage")}</div>`;
+    target.innerHTML=`<div class="live-detail${game.isPrematch?' prematch-detail':''}">${game.isPrematch?prematchHeader(game):`<div class="live-detail-scorebar"><button class="live-detail-back" data-live-detail-back="1">‹</button><div class="live-detail-team">${esc(game.home_team||game.name||'')}</div><div class="live-detail-score"><b>${esc(homeScore)}</b><span>:</span><b>${esc(awayScore)}</b></div><div class="live-detail-team away">${esc(game.away_team||'')}</div></div>`}${brandLoading("market-loading-stage")}</div>`;
     bindLiveDetail();
     return;
   }
   if(error){
-    target.innerHTML=`<div class="live-detail"><div class="live-detail-scorebar"><button class="live-detail-back" data-live-detail-back="1">‹</button><div class="live-detail-team">${esc(game.home_team||game.name||'')}</div><div class="live-detail-score"><b>${esc(homeScore)}</b><span>:</span><b>${esc(awayScore)}</b></div><div class="live-detail-team away">${esc(game.away_team||'')}</div></div><div class="live-detail-error">Marketet nuk u ngarkuan.<button class="live-markets-retry" data-retry-live-markets="${esc(game.id)}">Provo përsëri</button></div></div>`;
+    target.innerHTML=`<div class="live-detail${game.isPrematch?' prematch-detail':''}">${game.isPrematch?prematchHeader(game):`<div class="live-detail-scorebar"><button class="live-detail-back" data-live-detail-back="1">‹</button><div class="live-detail-team">${esc(game.home_team||game.name||'')}</div><div class="live-detail-score"><b>${esc(homeScore)}</b><span>:</span><b>${esc(awayScore)}</b></div><div class="live-detail-team away">${esc(game.away_team||'')}</div></div>`}<div class="live-detail-error">Marketet nuk u ngarkuan.<button class="live-markets-retry" data-retry-live-markets="${esc(game.id)}">Provo përsëri</button></div></div>`;
     bindLiveDetail();
     return;
   }
 
   const cleanGroups=(groups||[]).filter(Boolean).map(g=>g.filter(Boolean)).filter(g=>g.length);
   if(!cleanGroups.length){
-    target.innerHTML=`<div class="live-detail"><div class="live-detail-scorebar"><button class="live-detail-back" data-live-detail-back="1">‹</button><div class="live-detail-team">${esc(game.home_team||game.name||'')}</div><div class="live-detail-score"><b>${esc(homeScore)}</b><span>:</span><b>${esc(awayScore)}</b></div><div class="live-detail-team away">${esc(game.away_team||'')}</div></div><div class="live-markets-empty live-detail-empty">Nuk ka markets aktive për këtë ndeshje.</div></div>`;
+    target.innerHTML=`<div class="live-detail${game.isPrematch?' prematch-detail':''}">${game.isPrematch?prematchHeader(game):`<div class="live-detail-scorebar"><button class="live-detail-back" data-live-detail-back="1">‹</button><div class="live-detail-team">${esc(game.home_team||game.name||'')}</div><div class="live-detail-score"><b>${esc(homeScore)}</b><span>:</span><b>${esc(awayScore)}</b></div><div class="live-detail-team away">${esc(game.away_team||'')}</div></div>`}<div class="live-markets-empty live-detail-empty">Nuk ka markets aktive për këtë ndeshje.</div></div>`;
     bindLiveDetail();
     return;
   }
@@ -304,7 +310,7 @@ function renderLiveMarketPanel(game, groups, loading=false, error=''){
     const category=String(first.mainCategory||'Të tjera').trim()||'Të tjera';
     (sections[category]??=[]).push(group);
   });
-  const cats=Object.keys(sections);
+  const cats=Object.keys(sections);if(game.isPrematch){const order=['Kryesore','45/90','Golat','Gol/JoGol','RS/DSH','Minuta','Kartona','Golashenues','Gola VIP','Azian'];cats.sort((a,b)=>{const rank=c=>{const i=order.indexOf(c);return i<0?order.length:i;};return rank(a)-rank(b);});}
   if(!cats.includes(liveMarketCategory))liveMarketCategory=cats[0]||'Kryesore';
   const tabs=cats.map(c=>`<button class="live-detail-tab ${c===liveMarketCategory?'active':''}" data-live-category="${esc(c)}">${esc(c)}</button>`).join('');
   let html='';
@@ -325,7 +331,7 @@ function renderLiveMarketPanel(game, groups, loading=false, error=''){
   }
 
   const pause=status==='2';
-  const panelHtml=`<div class="live-detail"><div class="live-detail-scorebar"><button class="live-detail-back" data-live-detail-back="1">‹</button><div class="live-detail-team">${esc(game.home_team||game.name||'')}</div><div class="live-detail-score"><b>${esc(homeScore)}</b><span>${pause?'':' '}</span><b>${esc(awayScore)}</b></div><div class="live-detail-team away">${esc(game.away_team||'')}</div></div>${liveMediaHtml(game,cleanGroups)}<div class="live-detail-tabs">${tabs}</div><div class="live-detail-body">${html||'<div class="live-markets-empty live-detail-empty">Nuk ka markets aktive për këtë kategori.</div>'}</div></div>`;
+  const panelHtml=`<div class="live-detail${game.isPrematch?' prematch-detail':''}">${game.isPrematch?prematchHeader(game):`<div class="live-detail-scorebar"><button class="live-detail-back" data-live-detail-back="1">‹</button><div class="live-detail-team">${esc(game.home_team||game.name||'')}</div><div class="live-detail-score"><b>${esc(homeScore)}</b><span>${pause?'':' '}</span><b>${esc(awayScore)}</b></div><div class="live-detail-team away">${esc(game.away_team||'')}</div></div>`}${game.isPrematch?'':liveMediaHtml(game,cleanGroups)}<div class="live-detail-tabs">${tabs}</div><div class="live-detail-body">${html||'<div class="live-markets-empty live-detail-empty">Nuk ka markets aktive për këtë kategori.</div>'}</div></div>`;
   const tracker=target.querySelector('.live-match-tracker');
   if(tracker && tracker.dataset.gameId===String(game.id)){
     const template=document.createElement('template');template.innerHTML=panelHtml;
@@ -355,7 +361,7 @@ function bindLiveDetail(){
       return;
     }
     const back=e.target.closest('[data-live-detail-back]');
-    if(back){if(!isNewLiveActivation(e,'live-back'))return;e.preventDefault();setMode('live');return;}
+    if(back){if(!isNewLiveActivation(e,'live-back'))return;e.preventDefault();const g=findLiveGame(openLiveGameId);if(g?.isPrematch){closeLiveMarkets();openSportsHome();}else setMode('live');return;}
     const retry=e.target.closest('[data-retry-live-markets]');
     if(retry){const action='live-retry:'+retry.dataset.retryLiveMarkets;if(!isNewLiveActivation(e,action))return;e.preventDefault();const g=findLiveGame(retry.dataset.retryLiveMarkets);if(g)fetchLiveMarkets(g,true);return;}
     const tab=e.target.closest('[data-live-category]');
@@ -403,7 +409,7 @@ async function refreshLiveMarkets(game,force=false){
   const id=liveGameId(game);
   const activeRequest=liveMarketRequests.get(id);
   if(activeRequest)return activeRequest;
-  void refreshLiveCorners(game);
+  if(!game.isPrematch)void refreshLiveCorners(game);
   const seq=(liveMarketRequestSeq.get(id)||0)+1;
   liveMarketRequestSeq.set(id,seq);
   const request=(async()=>{
@@ -411,7 +417,7 @@ async function refreshLiveMarkets(game,force=false){
       try{
         const controller=new AbortController(); const timeout=setTimeout(()=>controller.abort(),7000);
         let r;
-        try{r=await fetch('/api/livegame/'+encodeURIComponent(id)+'?ts='+Date.now(),{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json',Pragma:'no-cache'}})}finally{clearTimeout(timeout)}
+        try{r=await fetch((game.isPrematch?'/api/prematchgame/':'/api/livegame/')+encodeURIComponent(id)+'?ts='+Date.now(),{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json',Pragma:'no-cache'}})}finally{clearTimeout(timeout)}
         if(!r.ok)throw Error('HTTP '+r.status);
         const data=await SportsbookApi.readJson(r); const groups=normalizeLiveMarkets(data);
         if(liveMarketRequestSeq.get(id)!==seq)return liveMarketsCache.get(id)||null;
@@ -511,6 +517,11 @@ function refreshSlipState(){
   }
 }
 
+function showSlipMessage(message,kind='error'){
+ let box=$('slipMessageAlert');
+ if(!box){box=document.createElement('div');box.id='slipMessageAlert';box.setAttribute('role','status');box.setAttribute('aria-live','polite');const text=document.createElement('p');text.className='slip-message-text';const close=document.createElement('button');close.type='button';close.textContent='Në rregull';close.onclick=()=>{box.hidden=true;$('betslip').classList.remove('has-message-notice');};box.append(text,close);$('betslip').appendChild(box);}
+ box.querySelector('p').textContent=message;box.dataset.kind=kind;box.hidden=false;$('betslip').classList.add('has-message-notice','mobile-open');requestAnimationFrame(syncMobileSlipViewport);
+}
 let slipLimitNotice=null;
 function showSlipLimit(amount,kind){
   if(slipLimitNotice)clearTimeout(slipLimitNotice.timer);
@@ -595,7 +606,7 @@ function renderSlip(){
   if($('slipbody')._renderedBody!==body){$('slipbody').innerHTML=body;$('slipbody')._renderedBody=body;}
   syncMobileSlipViewport();
 
-  document.querySelectorAll('[data-user-offer]').forEach(b=>b.onclick=async()=>{try{await controlFetch('/api/my-bets/'+pendingTicket.id+'/offer-response',{method:'POST',body:JSON.stringify({accept:b.dataset.userOffer==='accept'})});pendingTicket.offer=null;renderSlip();pollPendingTicket(pendingTicket.id)}catch(e){$('betMsg').textContent=e.message;$('betMsg').className='notice error'}});
+  document.querySelectorAll('[data-user-offer]').forEach(b=>b.onclick=async()=>{try{await controlFetch('/api/my-bets/'+pendingTicket.id+'/offer-response',{method:'POST',body:JSON.stringify({accept:b.dataset.userOffer==='accept'})});pendingTicket.offer=null;renderSlip();pollPendingTicket(pendingTicket.id)}catch(e){showSlipMessage(e.message)}});
 }
 
 // Delegate to the stable slip container: live odds renders replace its children.
@@ -614,7 +625,7 @@ $('slipbody').addEventListener('click',removeSlipSelection);
 
 function updatePotential(){const stake=Number($('stake').value||0),valid=slip.filter(x=>!x.invalid),odds=valid.reduce((a,x)=>a*Number(x.odd),1),potential=stake>0&&valid.length?(stake*odds).toFixed(2):'0.00';$('potential').textContent=potential;const placePotential=$('placePotential');if(placePotential)placePotential.textContent=stake>0&&valid.length?`Fitimi ${potential}`:''}
 function oddHtml(g,key,val,old){const raw=val&&typeof val==='object'?val.odd:val;const l=lock(raw),sel=slip.some(x=>String(x.gameId)===String(g.id)&&x.key===key&&String(x.marketId)===String(parseOdds(g.odd)[key]?.marketId||''));return `<button class="odd ${l?'locked':''} ${sel?'selected':''}" ${l?'disabled':''} data-game="${esc(g.id)}" data-key="${key}" data-odd="${esc(raw??'')}">${l?oddsLockIcon():Number(raw).toFixed(2)}</button>`}
-let sportsCatalogRows=[],homeExtras={main:[],live:[]},sportsHomeTab='home';
+let sportsCatalogRows=[],homeExtras={featured:[],main:[],live:[]},sportsHomeTab='home';
 async function sportsList(path){const r=await fetch('/api/sports-catalog/'+path,{signal:AbortSignal.timeout(15000)}),d=await SportsbookApi.readJson(r);if(!r.ok||!Array.isArray(d))throw Error(d.error||'Lista nuk u ngarkua.');return d;}
 function openSportsHome(){document.querySelector('.sidebar').classList.remove('sports-drawer');selectedPrematchLeague='';sportsHomeTab='home';activeLeague='';query='';$('search').value='';setMode('home');}
 document.querySelector('.top .brand').addEventListener('click',event=>{
@@ -630,6 +641,7 @@ function sportsCategoryHeader(title,back){
   $('content').innerHTML='<div class="sports-category-header"><button id="categoryBack" aria-label="Kthehu">‹</button><strong>'+esc(title)+'</strong><button id="categoryLive">Live <b>InPlay</b> →</button></div><div id="categoryBody">'+brandLoading()+'</div>';
   $('categoryBack').onclick=back;$('categoryLive').onclick=()=>setMode('live');
 }
+const formatPrematchKickoff=g=>{const d=String(g.game_date||'').match(/^\d{4}-(\d{2})-(\d{2})/);return (d?d[2]+'-'+d[1]:String(g.game_date||''))+(g.game_time?', '+String(g.game_time).slice(0,5):'');};
 async function openSportsCategory(id){
   if(mode!=='home')setMode('home');
   const sequence=++sportsCategorySequence;++liveLoadSequence;clearInterval(timer);timer=null;
@@ -641,7 +653,7 @@ async function openSportsCategory(id){
   try{
     const countries=await sportsList('countries/'+id);if(!valid())return;const main=homeExtras.main;
     const fixtures=main.filter(g=>String(g.sport_id??1)===String(id));cache=fixtures;
-    const cards=fixtures.map(g=>{const o=parseOdds(g.odd);return '<article class="sports-fixture"><div class="sports-fixture-teams"><span>'+esc(g.home_team||g.name)+'</span><span>'+esc(g.away_team||'')+'</span></div><div class="sports-fixture-meta">'+esc([g.game_date,g.game_time].filter(Boolean).join(' '))+'<span>'+esc(g.count_options||'')+' ›</span></div><div class="sports-fixture-odds">'+oddHtml(g,'1',o['1'])+oddHtml(g,'X',o.X)+oddHtml(g,'2',o['2'])+'</div></article>';}).join('');
+    const cards=fixtures.map(g=>{const o=parseOdds(g.odd);return '<article class="sports-fixture" data-home-match="'+esc(g.id)+'" tabindex="0"><div class="sports-fixture-teams"><span>'+esc(g.home_team||g.name)+'</span><span>'+esc(g.away_team||'')+'</span></div><div class="sports-fixture-meta">'+esc(formatPrematchKickoff(g))+'<span>'+esc(g.count_options||'')+' ›</span></div><div class="sports-fixture-odds">'+oddHtml(g,'1',o['1'])+oddHtml(g,'X',o.X)+oddHtml(g,'2',o['2'])+'</div></article>';}).join('');
     $('categoryBody').innerHTML='<div class="sports-section-title">Ndeshjet Kryesore</div><div class="sports-card-strip">'+(cards||'<p class="sports-category-empty">Nuk ka ndeshje kryesore për këtë sport.</p>')+'</div><div class="sports-section-title">Countries</div>'+countries.map(c=>'<button class="sports-category-row" data-open-country="'+esc(c.id)+'" data-country-name="'+esc(c.name)+'"><span>'+esc(c.name)+'</span><span>→</span></button>').join('');bindOdds();applyCategorySearch();
     document.querySelectorAll('[data-open-country]').forEach(btn=>btn.onclick=()=>openSportsCountry(id,btn.dataset.openCountry,btn.dataset.countryName));
   }catch(e){if(valid())$('categoryBody').textContent=e.message;}
@@ -662,11 +674,19 @@ function ensureSportsCatalog(){
   if(ensureSportsCatalog.loading)return;ensureSportsCatalog.loading=true;
   sportsList('sports').then(rows=>{sportsCatalogRows=rows;$('sideList').innerHTML='<button class="sideRow home" id="sportsHome">Home</button>'+rows.map(r=>'<button class="sideRow" data-side-category="'+esc(r.id)+'"><span>'+esc(r.name)+'</span><span>›</span></button>').join('');$('sportsHome').onclick=openSportsHome;document.querySelectorAll('[data-side-category]').forEach(b=>b.onclick=()=>openSportsCategory(b.dataset.sideCategory));applySidebarSearch();if(mode==='home')drawSportsNavigation();}).catch(e=>{$('status').textContent=e.message;}).finally(()=>ensureSportsCatalog.loading=false);
 }
+async function openHomeMatch(id){const g=findLiveGame(id);if(!g)return;clearInterval(timer);++liveLoadSequence;g.isPrematch=true;openLiveGameId=String(id);liveMarketCategory='Kryesore';await fetchLiveMarkets(g);}
+function homeLiveRow(g){
+ const odds=parseOdds(g.odd),score=String(g.result||'').split(/[-:]/),home=score[0]||'—',away=score[1]||'—';
+ return '<div class="sports-live-row"><button type="button" class="home-live-meta" data-home-live="'+esc(g.id)+'"><span class="home-live-clock">'+(g.stream_id?'<span class="home-live-tv" aria-label="Transmetim">▱</span>':'')+esc(g.current_minute||'LIVE')+'</span><span class="home-live-markets">'+esc(g.count_options??'')+' ›</span></button><button type="button" class="sports-live-teams" data-home-live="'+esc(g.id)+'"><span>'+esc(g.home_team||g.name)+'</span><span>'+esc(g.away_team||'')+'</span></button><button type="button" class="home-live-score" data-home-live="'+esc(g.id)+'"><span>'+esc(home)+'</span><span>'+esc(away)+'</span></button>'+oddHtml(g,'1',odds['1'])+oddHtml(g,'X',odds.X)+oddHtml(g,'2',odds['2'])+'</div>';
+}
 function renderSportsHome(today){
-  const cards=rows=>'<div class="sports-card-strip">'+rows.map(g=>{const o=parseOdds(g.odd);return '<article class="sports-fixture"><div class="sports-fixture-teams"><span>'+esc(g.home_team||g.name)+'</span><span>'+esc(g.away_team||'')+'</span></div><div class="sports-fixture-meta">'+esc([g.game_date,g.game_time].filter(Boolean).join(' '))+'<span>'+esc(g.count_options||'')+' ›</span></div><div class="sports-fixture-odds">'+oddHtml(g,'1',o['1'])+oddHtml(g,'X',o.X)+oddHtml(g,'2',o['2'])+'</div></article>';}).join('')+'</div>';
-  const first=today[0]?.league,featured=today.filter(g=>g.league===first);
-  $('content').innerHTML='<section class="sports-home-section"><button class="sports-section-title" id="sportsToday">Ndeshjet Sot <span>Te Gjitha Ndeshjet ›</span></button>'+(featured.length?'<div class="sports-league-title">'+esc(first)+'</div>'+cards(featured):'<p>Nuk ka ndeshje.</p>')+'</section><section class="sports-home-section"><div class="sports-section-title">Ndeshjet Kryesore</div>'+cards(homeExtras.main)+'</section><section class="sports-home-section"><button class="sports-section-title sports-live-title" id="sportsAllLive">NË KOHË REALE <span>Te Gjitha Ndeshjet ›</span></button><div class="sports-live-list">'+homeExtras.live.map(g=>{const o=parseOdds(g.odd);return '<div class="sports-live-row"><button data-home-live="'+esc(g.id)+'">'+esc(g.current_minute||'LIVE')+'</button><button class="sports-live-teams" data-home-live="'+esc(g.id)+'">'+esc(g.home_team||g.name)+'<br>'+esc(g.away_team||'')+'</button><strong>'+esc(g.result||'—')+'</strong>'+oddHtml(g,'1',o['1'])+oddHtml(g,'X',o.X)+oddHtml(g,'2',o['2'])+'</div>';}).join('')+'</div></section>';
-  cache=[...today,...homeExtras.main,...homeExtras.live].filter((g,i,all)=>all.findIndex(x=>String(x.id)===String(g.id))===i);bindOdds();
+  const cardOdd=(g,k,o)=>oddHtml(g,k,o).replace(/(<button[^>]*>)/,'$1<span class="home-odd-label">'+k+'</span>');
+
+  const cards=rows=>'<div class="sports-card-strip">'+rows.map(g=>{const o=parseOdds(g.odd);return '<article class="sports-fixture"><button type="button" class="home-match-open" data-home-match="'+esc(g.id)+'" aria-label="Hap marketet: '+esc((g.home_team||g.name)+' – '+(g.away_team||''))+'"><span class="sports-fixture-teams"><span>'+esc(g.home_team||g.name)+'</span><span>'+esc(g.away_team||'')+'</span></span><span class="sports-fixture-meta">'+esc(formatPrematchKickoff(g))+'<span>'+esc(g.count_options||'')+' ›</span></span></button><div class="sports-fixture-odds">'+cardOdd(g,'1',o['1'])+cardOdd(g,'X',o.X)+cardOdd(g,'2',o['2'])+'</div></article>';}).join('')+'</div>';
+  const highlighted=homeExtras.featured.length?homeExtras.featured:today.filter(g=>g.home_team&&g.away_team&&Object.values(parseOdds(g.odd)).some(o=>Number(o?.odd)>1));const first=highlighted[0]?.league,featured=highlighted.filter(g=>g.league===first);const main=homeExtras.main.filter(g=>g.home_team&&g.away_team&&Object.values(parseOdds(g.odd)).some(o=>Number(o?.odd)>1));
+  $('content').innerHTML='<section class="sports-home-section"><button class="sports-section-title" id="sportsToday">Ndeshjet Sot <span>Te Gjitha Ndeshjet ›</span></button>'+(featured.length?'<div class="sports-league-title">'+esc(first)+'</div>'+cards(featured):'<p>Nuk ka ndeshje.</p>')+'</section><section class="sports-home-section"><div class="sports-section-title">Ndeshjet Kryesore</div>'+cards(main)+'</section><section class="sports-home-section"><button class="sports-section-title sports-live-title" id="sportsAllLive">NË KOHË REALE <span>Te Gjitha Ndeshjet ›</span></button><div class="sports-home-live-head"><span>Futboll</span><span>1</span><span>X</span><span>2</span></div><div class="sports-live-list">'+homeExtras.live.map(homeLiveRow).join('')+'</div></section>';
+  $('content').onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-home-match]')){e.preventDefault();openHomeMatch(e.target.dataset.homeMatch);}};
+  cache=[...today,...homeExtras.featured,...homeExtras.main,...homeExtras.live].filter((g,i,all)=>all.findIndex(x=>String(x.id)===String(g.id))===i);bindOdds();
   $('sportsToday').onclick=()=>{sportsHomeTab='today';selectedPrematchLeague='';selectedSport='all';load();};$('sportsAllLive').onclick=()=>setMode('live');
   document.querySelectorAll('[data-home-live]').forEach(b=>b.onclick=()=>{location.hash='/livematch/'+b.dataset.homeLive+'?sportId=1';});
 }
@@ -699,7 +719,7 @@ function bindOdds(){
   if(!content)return;
   content.onclick=e=>{
     const b=e.target.closest('.odd:not(.locked),.live-odd:not(.locked)');
-    if(!b)return;
+    if(!b){const card=e.target.closest('[data-home-match]');if(card)openHomeMatch(card.dataset.homeMatch);return;}
     e.preventDefault();e.stopPropagation();
     const g=cache.find(x=>String(x.id)===String(b.dataset.game));
     if(g)addPick(g,b.dataset.key,b.dataset.odd);
@@ -785,7 +805,7 @@ function queueLivePaint(){
     renderSlip();
   },250);
 }
-async function loadOnce(signal){if(mode==='mybets')return;const sequence=++liveLoadSequence,revisions=new Map(liveClockRevision);try{const liveMode=mode==='live'||mode==='livematch';const pageKey=selectedPrematchLeague||'today';const extras=!liveMode&&!selectedPrematchLeague&&sportsHomeTab==='home'?Promise.allSettled([sportsList('main-matches'),sportsList('home-live')]):null;const r=await fetch(liveMode?'/api/livegames?ts='+Date.now():(selectedPrematchLeague?'/api/sports-catalog/league-games/'+selectedPrematchLeague:'/api/prematch')+'?ts='+Date.now(),{signal});if(!r.ok)throw Error('HTTP '+r.status);const d=await SportsbookApi.readJson(r);const rows=Array.isArray(d)?d:[];if(sequence!==liveLoadSequence)return;if(liveMode){for(const row of rows){const id=String(row.id),latest=findLiveGame(id);if(latest&&(liveClockRevision.get(id)||0)!==(revisions.get(id)||0)){row.current_minute=latest.current_minute??latest.game_time;row.result=latest.result;}}rows.forEach(g=>syncLiveClock(g,true));cache=rows;rememberLiveSnapshot(rows);pruneLiveCaches();updateLeagues(cache);if(mode==='livematch'){const g=findLiveGame(openLiveGameId);if(g){const existing=liveMarketsCache.get(String(openLiveGameId));if(existing?.length)renderLiveMarketPanel(g,existing,false);refreshLiveMarkets(g,true);}}else{renderLive(cache,false)}}else{sportsPageCache.set(pageKey,rows);render(rows);warmLiveSnapshot();if(extras)extras.then(extra=>{if(sequence!==liveLoadSequence||mode!=='home'||sportsHomeTab!=='home')return;homeExtras={main:extra[0].status==='fulfilled'?extra[0].value:homeExtras.main,live:extra[1].status==='fulfilled'?extra[1].value:homeExtras.live};render(rows);renderSlip();})}renderSlip();if(!liveMode)$('status').textContent='PREMATCH • '+new Date().toLocaleTimeString('sq-AL');else if(mode==='livematch')$('status').textContent='LIVE MATCH • Real-time'}catch(e){if(sequence!==liveLoadSequence)return;if($('content').querySelector('.sports-loading')){$('content').innerHTML='<div class="emptySlip" role="status">Lidhja me furnizimin po vonon. <button id="retryFeed" type="button">Provo përsëri</button></div>';$('retryFeed').onclick=()=>load();}$('status').textContent=(mode==='live'||mode==='livematch')?'LIVE • Feed offline':'Feed error'}}
+async function loadOnce(signal){if(mode==='mybets')return;const sequence=++liveLoadSequence,revisions=new Map(liveClockRevision);try{const liveMode=mode==='live'||mode==='livematch';const pageKey=selectedPrematchLeague||'today';const extras=!liveMode&&!selectedPrematchLeague&&sportsHomeTab==='home'?Promise.allSettled([sportsList('main-matches'),sportsList('home-live'),sportsList('featured')]):null;const r=await fetch(liveMode?'/api/livegames?ts='+Date.now():(selectedPrematchLeague?'/api/sports-catalog/league-games/'+selectedPrematchLeague:'/api/prematch')+'?ts='+Date.now(),{signal});if(!r.ok)throw Error('HTTP '+r.status);const d=await SportsbookApi.readJson(r);const rows=Array.isArray(d)?d:[];if(sequence!==liveLoadSequence)return;if(liveMode){for(const row of rows){const id=String(row.id),latest=findLiveGame(id);if(latest&&(liveClockRevision.get(id)||0)!==(revisions.get(id)||0)){row.current_minute=latest.current_minute??latest.game_time;row.result=latest.result;}}rows.forEach(g=>syncLiveClock(g,true));cache=rows;rememberLiveSnapshot(rows);pruneLiveCaches();updateLeagues(cache);if(mode==='livematch'){const g=findLiveGame(openLiveGameId);if(g){const existing=liveMarketsCache.get(String(openLiveGameId));if(existing?.length)renderLiveMarketPanel(g,existing,false);refreshLiveMarkets(g,true);}}else{renderLive(cache,false)}}else{sportsPageCache.set(pageKey,rows);render(rows);warmLiveSnapshot();if(extras)extras.then(extra=>{if(sequence!==liveLoadSequence||mode!=='home'||sportsHomeTab!=='home')return;homeExtras={featured:extra[2].status==='fulfilled'?extra[2].value:homeExtras.featured,main:extra[0].status==='fulfilled'?extra[0].value:homeExtras.main,live:extra[1].status==='fulfilled'?extra[1].value:homeExtras.live};render(rows);renderSlip();})}renderSlip();if(!liveMode)$('status').textContent='PREMATCH • '+new Date().toLocaleTimeString('sq-AL');else if(mode==='livematch')$('status').textContent='LIVE MATCH • Real-time'}catch(e){if(sequence!==liveLoadSequence)return;if($('content').querySelector('.sports-loading')){$('content').innerHTML='<div class="emptySlip" role="status">Lidhja me furnizimin po vonon. <button id="retryFeed" type="button">Provo përsëri</button></div>';$('retryFeed').onclick=()=>load();}$('status').textContent=(mode==='live'||mode==='livematch')?'LIVE • Feed offline':'Feed error'}}
 function applyLiveCoefs(payload){if(mode!=='live'&&mode!=='livematch')return;if(!payload||payload.game_id==null)return;const g=findLiveGame(payload.game_id);if(!g)return;const map={};(payload.coefs||[]).forEach(c=>{map[String(c.coef_id)]=String(c.odd)});if(typeof g.odd==='string'){g.odd=g.odd.split(',').map(part=>{const p=part.split('|');if(p.length>=4&&map[String(p[0])]!==undefined)p[1]=map[String(p[0])];return p.join('|')}).join(',')}if(payload.current_result!=null)g.result=payload.current_result;if(payload.current_minute!=null){g.current_minute=payload.current_minute;syncLiveClock(g);liveClockRevision.set(String(g.id),(liveClockRevision.get(String(g.id))||0)+1);}queueLivePaint()}
 function applyLiveGame(payload){
   if(mode!=='live'&&mode!=='livematch')return;
@@ -1252,20 +1272,20 @@ async function placeBet(){
   if(slipLimitNotice||pendingTicket)return;
   if(!slip.length)return;if(!user){openAuth('login');return}
   const placeBtn=$('place');if(placeBtn?.dataset.busy==='1')return;
-  if(slip.some(p=>p.oddsChanged)){const amount=Number($('stake').value);if(!Number.isFinite(amount)||amount<.01){$('betMsg').textContent='Vendos një shumë të vlefshme.';return;}oddsConfirmationRequested=true;renderOddsAcceptance();return;}
+  if(slip.some(p=>p.oddsChanged)){const amount=Number($('stake').value);if(!Number.isFinite(amount)||amount<.01){showSlipMessage('Vendos një shumë të vlefshme.');return;}oddsConfirmationRequested=true;renderOddsAcceptance();return;}
   // Do not re-read the browser cache immediately before submission. The source
   // Bet Slip submits the coefficient captured at click time. Live/feed validation
   // is authoritative on the server and any invalid selection is returned there.
   if(slip.some(x=>!Number.isFinite(Number(x.odd))||Number(x.odd)<=1)){renderSlip();return}
-  const stake=Number($('stake').value);if(!Number.isFinite(stake)||stake<.01){$('betMsg').textContent='Enter a valid stake.';$('betMsg').className='notice error';return}
+  const stake=Number($('stake').value);if(!Number.isFinite(stake)||stake<.01){showSlipMessage('Vendos një shumë të vlefshme.');return}
   if(placeBtn){placeBtn.dataset.busy='1';placeBtn.disabled=true;placeBtn.setAttribute('aria-busy','true');}
   renderOddsAcceptance();
   const requestBody=JSON.stringify({stake,selections:slip.map(p=>({gameId:p.gameId,gameApiId:p.gameApiId||'',league:p.league,home:p.home,away:p.away,market:p.market||'Fulltime Result',marketType:p.marketType||'',marketId:p.marketId||'',specialValue:p.specialValue||'',selection:p.key,coefId:p.coefId,odd:p.odd,eventTime:p.eventTime}))});
   if(!lastBetRequest||lastBetRequest.body!==requestBody)lastBetRequest={body:requestBody,key:crypto.randomUUID()};
-  try{const r=await sessionFetch('/api/bets',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,'Idempotency-Key':lastBetRequest.key},body:requestBody});const d=await SportsbookApi.readJson(r);if(!r.ok){if(d.code==='BET_LIMIT_EXCEEDED'&&Number.isFinite(d.limitAmount)){showSlipLimit(d.limitAmount,d.limitKind);return;}if(Array.isArray(d.invalidSelections)){for(const inv of d.invalidSelections){const p=slip.find(x=>String(x.gameId)===String(inv.gameId)&&(inv.coefId?String(x.coefId)===String(inv.coefId):String(x.key)===String(inv.selection)));if(p){p.invalid=true;p.invalidReason=inv.reason||'Koeficienti nuk është më aktiv.'}}}if(Array.isArray(d.oddsChanged)){for(const ch of d.oddsChanged){const p=slip.find(x=>String(x.gameId)===String(ch.gameId)&&(ch.coefId?String(x.coefId)===String(ch.coefId):String(x.key)===String(ch.selection)));if(p){p.previousOdd=Number(p.odd);p.odd=Number(ch.newOdd);p.currentOdd=Number(ch.newOdd);p.serverQuoted=true;p.oddsChanged=true;p.invalid=false;p.invalidReason=''}}}if(d.oddsChanged?.length&&!d.invalidSelections?.length)oddsConfirmationRequested=true;renderSlip();if(d.oddsChanged?.length&&!d.invalidSelections?.length)return;throw Error(d.error||'Koeficienti u përditësua. Luaje bastin përsëri me vlerën e re.')}lastBetRequest=null;user.balance=d.balance;user.reservedBalance=d.reservedBalance||0;pendingTicket=d.status==='accepted'?null:{id:d.betId,stake,odds:d.totalOdds,selections:slip.map(p=>({...p}))};slip=[];$('stake').value='';setAuthState(user);$('betMsg').textContent=d.status==='accepted'?`Biletë #${d.betId} u pranua automatikisht.`:`Biletë #${d.betId} u dërgua në Qendër dhe është në pritje të pranimit.`;$('betMsg').className='notice ok';renderSlip();if(d.status!=='accepted')pollPendingTicket(d.betId)}catch(e){$('betMsg').textContent=e.message;$('betMsg').className='notice error'}finally{if(placeBtn){placeBtn.dataset.busy='0';placeBtn.disabled=false;placeBtn.removeAttribute('aria-busy');}renderOddsAcceptance();}
+  try{const r=await sessionFetch('/api/bets',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,'Idempotency-Key':lastBetRequest.key},body:requestBody});const d=await SportsbookApi.readJson(r);if(!r.ok){if(d.code==='BET_LIMIT_EXCEEDED'&&Number.isFinite(d.limitAmount)){showSlipLimit(d.limitAmount,d.limitKind);return;}if(Array.isArray(d.invalidSelections)){for(const inv of d.invalidSelections){const p=slip.find(x=>String(x.gameId)===String(inv.gameId)&&(inv.coefId?String(x.coefId)===String(inv.coefId):String(x.key)===String(inv.selection)));if(p){p.invalid=true;p.invalidReason=inv.reason||'Koeficienti nuk është më aktiv.'}}}if(Array.isArray(d.oddsChanged)){for(const ch of d.oddsChanged){const p=slip.find(x=>String(x.gameId)===String(ch.gameId)&&(ch.coefId?String(x.coefId)===String(ch.coefId):String(x.key)===String(ch.selection)));if(p){p.previousOdd=Number(p.odd);p.odd=Number(ch.newOdd);p.currentOdd=Number(ch.newOdd);p.serverQuoted=true;p.oddsChanged=true;p.invalid=false;p.invalidReason=''}}}if(d.oddsChanged?.length&&!d.invalidSelections?.length)oddsConfirmationRequested=true;renderSlip();if(d.oddsChanged?.length&&!d.invalidSelections?.length)return;throw Error(d.error||'Koeficienti u përditësua. Luaje bastin përsëri me vlerën e re.')}lastBetRequest=null;user.balance=d.balance;user.reservedBalance=d.reservedBalance||0;pendingTicket=d.status==='accepted'?null:{id:d.betId,stake,odds:d.totalOdds,selections:slip.map(p=>({...p}))};slip=[];$('stake').value='';setAuthState(user);renderSlip();if(d.status==='accepted')showSlipMessage(`Biletë #${d.betId} u pranua automatikisht.`,'ok');if(d.status!=='accepted')pollPendingTicket(d.betId)}catch(e){showSlipMessage(e.message)}finally{if(placeBtn){placeBtn.dataset.busy='0';placeBtn.disabled=false;placeBtn.removeAttribute('aria-busy');}renderOddsAcceptance();}
 }
 
-let pendingPoll=null;async function pollPendingTicket(id){if(pendingPoll)clearInterval(pendingPoll);const check=async()=>{if(!user||!pendingTicket||pendingTicket.id!==id)return;try{const r=await sessionFetch('/api/my-bets/'+id,{headers:{Authorization:'Bearer '+token}});if(!r.ok)return;const d=await SportsbookApi.readJson(r),st=d.bet.status;if(st==='pending'){pendingTicket.stake=d.bet.stake;pendingTicket.selections=(d.bet.selections||[]).map(s=>({...s,home:s.home_team||s.home,away:s.away_team||s.away,key:s.selection,market:s.market}));const previousOffer=!!pendingTicket.offer;pendingTicket.offer=d.bet.offer||null;if(previousOffer!==!!pendingTicket.offer||pendingTicket.offer)renderSlip();return}pendingTicket=null;if(st==='accepted'||st==='cancelled'){const mr=await fetch('/api/me',{headers:{Authorization:'Bearer '+token}});if(mr.ok)user=(await SportsbookApi.readJson(mr)).user;setAuthState(user)}if(st==='accepted')$('betMsg').textContent=`Biletë #${id} u pranua nga Qendra.`;else if(st==='cancelled')$('betMsg').textContent=`Biletë #${id} u anulua nga Qendra.`;$('betMsg').className='notice '+(st==='accepted'?'ok':'error');renderSlip();clearInterval(pendingPoll);pendingPoll=null}catch(_){}};await check();pendingPoll=setInterval(check,2500)}
+let pendingPoll=null;async function pollPendingTicket(id){if(pendingPoll)clearInterval(pendingPoll);const check=async()=>{if(!user||!pendingTicket||pendingTicket.id!==id)return;try{const r=await sessionFetch('/api/my-bets/'+id,{headers:{Authorization:'Bearer '+token}});if(!r.ok)return;const d=await SportsbookApi.readJson(r),st=d.bet.status;if(st==='pending'){pendingTicket.stake=d.bet.stake;pendingTicket.selections=(d.bet.selections||[]).map(s=>({...s,home:s.home_team||s.home,away:s.away_team||s.away,key:s.selection,market:s.market}));const previousOffer=!!pendingTicket.offer;pendingTicket.offer=d.bet.offer||null;if(previousOffer!==!!pendingTicket.offer||pendingTicket.offer)renderSlip();return}pendingTicket=null;if(st==='accepted'||st==='cancelled'){const mr=await fetch('/api/me',{headers:{Authorization:'Bearer '+token}});if(mr.ok)user=(await SportsbookApi.readJson(mr)).user;setAuthState(user)}renderSlip();showSlipMessage(st==='accepted'?`Biletë #${id} u pranua nga Qendra.`:`Biletë #${id} u anulua nga Qendra.`,st==='accepted'?'ok':'error');clearInterval(pendingPoll);pendingPoll=null}catch(_){}};await check();pendingPoll=setInterval(check,2500)}
 async function restoreUserPendingTicket(){if(!user||user.role!=='user'||pendingTicket)return;try{const r=await sessionFetch('/api/my-bets?status=pending',{headers:{Authorization:'Bearer '+token}});if(!r.ok)return;const d=await SportsbookApi.readJson(r),bet=(d.bets||[]).find(x=>x.status==='pending');if(!bet)return;pendingTicket={id:bet.id,stake:bet.stake,selections:bet.selections||[],offer:null};renderSlip();pollPendingTicket(bet.id)}catch(_){}}
 
 async function controlFetch(url,opt={}){opt.headers={...(opt.headers||{}),Authorization:'Bearer '+token,'Content-Type':'application/json'};if(opt.method==='POST'&&/\/(credit|balance)$/.test(url)&&!opt.headers['Idempotency-Key'])opt.headers['Idempotency-Key']=crypto.randomUUID();const r=await sessionFetch(url,opt);const d=await SportsbookApi.readJson(r);if(!r.ok)throw Error(d.error||'Request failed');return d}

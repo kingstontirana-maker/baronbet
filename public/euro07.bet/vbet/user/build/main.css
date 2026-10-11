@@ -768,3 +768,72 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   .desktopSlip.mobile-open .betfooter{flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
   .desktopSlip.mobile-open .stakeInput{font-size:20px;scroll-margin-block:12px}
 }
+/* Action messages stay visible in the center of the betslip. */
+.desktopSlip.has-message-notice::after{content:'';position:absolute;inset:0;background:#07171180;z-index:7}
+.desktopSlip>#slipMessageAlert,.desktopSlip>#slipLimitAlert.slip-limit-notice,.desktopSlip>#slipPendingNotice,.desktopSlip>#slipOddsNotice{background:#182a23;color:#e8efeb;border:1px solid #365447;border-top:3px solid #00b98f;border-radius:10px;box-shadow:0 10px 30px #0004;font-size:14px;line-height:1.6}
+.desktopSlip>#slipMessageAlert{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:340px;max-height:80%;overflow-y:auto;padding:22px 18px;text-align:center;z-index:8;box-sizing:border-box}
+.desktopSlip>#slipMessageAlert[hidden]{display:none}
+#slipMessageAlert .slip-message-text{margin:0;color:#e8efeb;overflow-wrap:anywhere;font-weight:500}
+#slipMessageAlert button{display:block;width:100%;margin-top:18px;padding:10px 12px;border:0;border-radius:6px;background:#008b6a;color:#fff;font-size:14px;cursor:pointer}
+#slipMessageAlert button:hover{background:#00755a}
+#slipMessageAlert button:focus-visible{outline:2px solid #83efd0;outline-offset:3px}
+.desktopSlip>#slipLimitAlert.slip-limit-notice{color:#e8efeb!important;font-size:14px;font-weight:500}
+.desktopSlip>#slipLimitAlert.slip-limit-notice::before{content:none}
+/* Home cards follow the reference's four-column, compact match strips. */
+.sports-home-section .sports-fixture{flex:0 0 25%;min-width:190px}
+.sports-home-section .sports-section-title{min-height:43px;padding:10px;font-weight:400}
+.sports-home-section .sports-league-title{min-height:34px;padding:8px 10px}
+.sports-home-section .sports-fixture-teams{padding:12px 10px 7px;gap:8px;min-height:64px}
+.sports-home-section .sports-fixture-teams>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sports-home-section .sports-fixture-meta{padding:6px 10px 9px;font-size:10px}
+.sports-home-section .sports-fixture-odds .odd{gap:5px;font-size:11px;height:40px}
+.home-odd-label{color:var(--surface-text);font-weight:400}
+.sports-home-live-head{display:grid;grid-template-columns:minmax(245px,1fr) repeat(3,minmax(60px,1fr));background:var(--surface-raised);color:var(--surface-muted);font-size:12px;padding:5px 0;border-bottom:1px solid var(--surface-line)}
+.sports-home-live-head>span{text-align:center}
+.sports-home-live-head>span:first-child{text-align:left;padding-left:10px}
+.sports-home-section .sports-live-title{font-size:20px;font-weight:700}
+@media(max-width:900px){.sports-home-section .sports-fixture{flex-basis:65%}.sports-home-live-head{grid-template-columns:minmax(100px,1fr) repeat(3,60px)}}
+.home-match-open{display:block;width:100%;padding:0;border:0;background:transparent;color:var(--surface-text);text-align:left;cursor:pointer}
+.home-match-open:hover{background:var(--surface-hover)}
+.home-match-open:focus-visible{outline:2px solid #00b98f;outline-offset:-2px}
+/* Compact prematch match header and category bar, matching the reference. */
+.prematch-detail .prematch-match-header{display:flex;align-items:center;gap:8px;min-height:49px;padding:8px 10px;background:#102d25;color:#e8efeb;border:1px solid #30413b;font-size:13px;box-sizing:border-box}
+.prematch-match-title{flex:1;min-width:0;line-height:1.5;overflow-wrap:anywhere}
+.prematch-match-date{align-self:flex-end;white-space:nowrap;font-size:11px;padding-bottom:1px;color:#adbbb4}
+.prematch-header-back{border:0;background:transparent;color:#83efd0;font-size:21px;padding:0 4px;cursor:pointer}
+.prematch-detail .live-detail-tabs{height:30px;min-height:30px;background:#182220;border:1px solid #30413b;border-top:0;gap:0;padding:0;scrollbar-width:thin;scrollbar-color:#496156 #182220}
+.prematch-detail .live-detail-tab{flex:1 0 auto;min-width:64px;min-height:29px;padding:6px 12px;font-size:11px;color:#adbbb4;background:transparent;border:0;border-radius:0}
+.prematch-detail .live-detail-tab.active{color:#fff;font-weight:700;background:#174b3b;border-bottom:2px solid #00b98f}
+.prematch-detail .live-detail-tab:hover{background:#293c35}
+.prematch-header-back:focus-visible,.prematch-detail .live-detail-tab:focus-visible{outline:2px solid #00b98f;outline-offset:-2px}
+@media(max-width:650px){.prematch-detail .prematch-match-header{flex-wrap:wrap;gap:4px 8px}.prematch-match-date{margin-left:auto}.prematch-match-title{font-size:12px}}
+/* Scrollbars share the sportsbook's dark green surfaces. */
+html{scrollbar-width:thin;scrollbar-color:#496b5b #182220}
+body :where(.sports-card-strip,.sports-live-list,.slipbody,.sideList,.sidebar,.live-detail-tabs,.live-detail-body,.live-detail,.live-markets-empty,.changed-odds-list,.mybetsPage,.mybetsList,.sports-category-body,.desktopSlip,.staffView){scrollbar-width:thin;scrollbar-color:#496b5b #182220}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#182220}
+::-webkit-scrollbar-thumb{background:#496b5b;border:2px solid #182220;border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:#648b76}
+::-webkit-scrollbar-thumb:active{background:#00b98f}
+::-webkit-scrollbar-corner{background:#182220}
+::-webkit-scrollbar-button{display:none;width:0;height:0}
+.sports-card-strip,.sports-live-list,.prematch-detail .live-detail-tabs{scrollbar-color:#496b5b #182220}
+/* Home Live: aligned metadata, stacked teams/scores and equal outcome columns. */
+.sports-home-section .sports-home-live-head,.sports-home-section .sports-live-row{display:grid;grid-template-columns:12% minmax(0,39%) 4% repeat(3,minmax(0,15%));min-width:0}
+.sports-home-section .sports-home-live-head{padding:4px 0;min-height:21px;background:var(--surface-raised);border-bottom:1px solid var(--surface-line)}
+.sports-home-live-head>span:first-child{grid-column:1/4;border-left:3px solid #148765;margin-left:5px;padding-left:4px}
+.sports-home-section .sports-live-row{height:61px;min-height:61px;background:var(--surface-panel);border-bottom:1px solid var(--surface-line)}
+.sports-home-section .sports-live-row>button{height:100%;min-width:0;margin:0;border:0;border-radius:0;background:transparent;box-sizing:border-box}
+.sports-home-section .sports-live-row>.odd{border-left:1px solid var(--surface-line);background:var(--surface-raised);color:#f0dc91;font-size:12px;font-weight:700}
+.sports-home-section .sports-live-row>.odd:hover{background:var(--surface-hover)}
+.sports-home-section .sports-live-row>.odd.selected{background:#174b3b;box-shadow:inset 0 -3px 0 #00b98f}
+.sports-home-section .sports-live-row>.odd.locked{color:#93a39a}
+.sports-home-section :is(.sports-live-teams,.home-live-score,.home-live-meta){display:flex;flex-direction:column;justify-content:center;gap:0;line-height:20px;color:var(--surface-text);font-size:13px;padding:7px 4px;text-align:left}
+.sports-home-section .sports-live-teams span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sports-home-section .home-live-score{color:#f0dc91;text-align:center;align-items:center;font-size:14px;padding-inline:0}
+.sports-home-section .home-live-meta{font-size:10px;align-items:center;padding-inline:2px}
+.home-live-clock{white-space:nowrap}
+.home-live-tv{margin-right:5px;color:var(--surface-muted)}
+.home-live-markets{color:var(--surface-muted);font-size:10px}
+.sports-home-section :is(.sports-live-teams,.home-live-score,.home-live-meta):hover{background:var(--surface-hover)}
+@media(max-width:650px){.sports-home-section .sports-home-live-head,.sports-home-section .sports-live-row{grid-template-columns:15% minmax(0,33%) 7% repeat(3,minmax(0,15%))}.sports-home-section .sports-live-teams{font-size:11px}.home-live-tv{display:none}}

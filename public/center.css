@@ -1,0 +1,75 @@
+/* Center: quiet neutral surfaces with restrained forest-green accents. */
+body.center-workspace{--nav:#064b3b;--muted:#596b64;--line:#dce5e1;--green:#087f60;--accent:#087f60;--shadow:0 3px 15px #143c2d0a;min-height:100dvh;background:#f1f4f6;color:#20352d;color-scheme:light}
+.center-workspace .main-shell{min-height:100dvh;background:#f1f4f6}
+.center-workspace .sidebar{background:var(--nav);color:#d1e5db;border-right:1px solid #064b3b}
+.center-workspace .brand-number,.center-workspace .brand-symbol{color:#83e0bb;border-color:#32836b}
+.center-workspace :is(.brand small,.nav-group,.sidebar-caption,.profile small){color:#a9cec0}
+.center-workspace :is(.workspace-label,.profile){border-color:#26705a;color:#e1f0e8}
+.center-workspace :is(.workspace-tag,.avatar){background:#14624b;border-color:#37866a;color:#d8f0e4}
+.center-workspace .workspace-dot{background:#5bd3a4}
+.center-workspace .nav-item:hover{background:#0b5c45;color:#fff}
+.center-workspace .nav-item.active{background:#127153;color:#fff;box-shadow:inset 3px 0 #64dfac}
+.center-workspace .nav-item.active .icon{color:#a2efcd}
+.center-workspace .nav-count{background:#20835f;color:white}
+.center-workspace .profile strong{color:#f1faf5}
+.center-workspace #navigation{scrollbar-color:#39856c transparent}
+.center-workspace .topbar{background:#ffffff;color:#20352d;border-color:var(--line)}
+.center-workspace :is(.breadcrumb,.connection,.global-search>span,.global-search input){color:#596b64}
+.center-workspace .breadcrumb b{color:#315b48}
+.center-workspace .breadcrumb span{color:#a4b6ad}
+.center-workspace .global-search kbd{color:#6b8075;border-color:var(--line)}
+.center-workspace .connection.online i{background:#0c9b6b;box-shadow:0 0 0 3px #e5f4ed}
+.center-workspace .top-avatar{background:#e5f4ed;color:#127153}
+.center-workspace .page-heading h1{color:#20352d;font-weight:650;letter-spacing:-.6px}
+.center-workspace .eyebrow{color:#087f60;letter-spacing:1.3px}
+.center-workspace :is(.page-heading p,.metric-label,.metric-note,.panel-heading p,.subline,.result-count,.form-note,.details-list dt,.empty-state,.empty-state strong,.loading,.account-banner p,.selection-row p,.event-meta,.event-card .league,.ticket-meta span,.period-meta,.network-count span,.quick-link p,.legend-row,.audit-details,.donut-center small){color:var(--muted)}
+.center-workspace :is(.panel,.metric,.event-card,.quick-link,.permission-group,dialog,.donut-center,.distribution,.queue-title,.queue-ticket-info){background:#ffffff;border-color:var(--line);color:#20352d;box-shadow:var(--shadow)}
+.center-workspace :is(.panel,.metric,.event-card,dialog){border-radius:12px}
+.center-workspace :is(.panel-heading,.dialog-heading){background:#ffffff;border-color:var(--line)}
+.center-workspace :is(.toolbar,.tabs,th,thead){background:#f3f6f1;border-color:var(--line);color:#476657}
+.center-workspace :is(.panel h2,.panel h3,.metric-value,.network-count strong,.quick-link strong,.account-banner h2,.details-list dd,.selection-row h3,.ticket-meta strong,.teams,.score,td,td strong,td a:not(.button),.account-cell strong,.donut-center strong,.legend-row b,.queue-title strong){color:#20352d}
+.center-workspace :is(.form-stack label,.form-grid label){color:#365646}
+.center-workspace :is(.metric-icon,.period-tabs,.tree-node summary,.account-initial,.account-banner,.role-badge){background:#eaf3ee;border-color:var(--line);color:#36624b}
+.center-workspace .metric.highlight{background:#e5f4eb;border-color:#bfdfcd}
+.center-workspace .metric.highlight .metric-value{color:#087f60}
+.center-workspace .accent-line{background:#15976c}
+.center-workspace td{border-color:var(--line)}
+.center-workspace tbody tr:hover{background:#f0f8f4}
+.center-workspace :is(.panel-heading,.network-count,.selection-row,.event-meta,.page-footer,.tree-node,.account-banner,.details-list,.ticket-actionbar){border-color:var(--line)}
+.center-workspace :is(input,select,textarea){background:#fff;color:#20352d;border-color:#cbdcd3;accent-color:#087f60;border-radius:8px}
+.center-workspace input::placeholder,.center-workspace textarea::placeholder{color:#748a7e}
+.center-workspace :is(input,select,textarea):focus{outline:2px solid #36ab81;outline-offset:1px}
+.center-workspace :is(button,a,summary):focus-visible{outline-color:#36ab81}
+.center-workspace .button{background:#ffffff;color:#315b48;border-color:#cbdcd3;border-radius:8px;transition:background .15s,border-color .15s}
+.center-workspace .button:hover{background:#e5f4eb;border-color:#87b59f}
+.center-workspace .button.primary{background:#087f60;border-color:#087f60;color:#fff}
+.center-workspace .button.primary:hover{background:#05654b;border-color:#05654b}
+.center-workspace .button.success{background:#e5f4eb;border-color:#b9dec9;color:#18704b}
+.center-workspace .button.danger{background:#fff1ef;border-color:#efc8c1;color:#b34236}
+.center-workspace :is(.text-link,.tree-node summary a,.audit-details summary){color:#087f60}
+.center-workspace :is(.text-link:hover,.tree-node summary a:hover){color:#05654b}
+.center-workspace .period-tabs button{color:#596b64}
+.center-workspace .period-tabs button.active{background:#ffffff;color:#18704b;box-shadow:0 1px 4px #24392e08}
+.center-workspace .tabs .tab{color:#596b64}
+.center-workspace .tabs .tab.active{color:#18704b;border-color:#15976c}
+.center-workspace .notice,.center-workspace .live-indicator{background:#e5f4eb;color:#18704b;border-color:#bfdfcd}
+.center-workspace .notice.error,.center-workspace #dialogMessage{background:#fff1ef;color:#b34236;border-color:#efc8c1}
+.center-workspace .info-note{background:#edf5f1;color:#476657;border-color:var(--line)}
+.center-workspace .badge{background:#edf3ef;color:#476657;border-color:var(--line)}
+.center-workspace :is(.badge.active,.badge.accepted,.badge.won){background:#e2f4e9;color:#18704b}
+.center-workspace .badge.pending{background:#fff4d8;color:#8c6416}
+.center-workspace :is(.badge.lost,.badge.blocked,.badge.rejected,.badge.disabled,.badge.suspended){background:#ffefeb;color:#b34236}
+.center-workspace .spinner{border-color:#dce5e1;border-top-color:#15976c}
+.center-workspace .page-footer,.center-workspace .page-footer b{color:#627c6e;border-color:var(--line)}
+.center-workspace dialog::backdrop{background:#10362966}
+.center-workspace .skip-link{background:#087f60;color:white}
+.center-workspace .topbar .global-search input{background:transparent;color:#365646}
+
+.center-workspace .panel-heading{background:#f8fbf9}
+.center-workspace .toolbar{background:#f0f6f3}
+.center-workspace .panel-heading h2{font-size:16px;color:#184a35}
+.center-workspace .metric{border-top:3px solid #d2e8db}
+.center-workspace .metric.highlight{border-top-color:#087f60}
+.center-workspace .topbar{box-shadow:0 1px 6px #143c2d05}
+.center-workspace .nav-item.active{font-weight:600}
+.center-workspace .empty-state .icon{color:#80a793}

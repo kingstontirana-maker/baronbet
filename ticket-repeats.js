@@ -6,11 +6,12 @@ function countTicketRepeats(rows){
     tickets.get(Number(row.bet_id)).selections.push(row);
   }
   for(const ticket of tickets.values()){
-    ticket.keys=new Set(ticket.selections.map(s=>JSON.stringify([ticket.userId,String(s.game_id),String(s.market_id||s.market||'').trim()])));
-    for(const key of ticket.keys)counts.set(key,(counts.get(key)||0)+1);
+    const pairs=ticket.selections.map(s=>JSON.stringify([String(s.game_id),String(s.market_id||s.market||'').trim()]));
+    ticket.key=JSON.stringify([ticket.userId,pairs.sort()]);
+    counts.set(ticket.key,(counts.get(ticket.key)||0)+1);
   }
-  // A multi ticket shows the highest repetition count among its event/market pairs.
-  for(const [id,ticket] of tickets)result.set(id,Math.max(...[...ticket.keys].map(key=>counts.get(key)),1));
+  // Adding or removing an event/market changes the full ticket combination.
+  for(const [id,ticket] of tickets)result.set(id,counts.get(ticket.key)||1);
   return result;
 }
 function loadTicketRepeats(tickets,all){

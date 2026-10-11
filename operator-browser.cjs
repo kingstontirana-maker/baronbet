@@ -26,7 +26,7 @@ async function main(){
     const pre=await place([200],20),preBulk=await place([200],15),live=await place([100],30),mixed=await place([100,200],10);
     const queued=(await api('/api/operator/tickets?status=pending','GET',undefined,operatorToken)).tickets;
     assert.equal(queued.find(t=>t.id===pre).selections[0].acceptanceType,'prematch');
-    assert.equal(queued.find(t=>t.id===pre).repeatCount,3);assert.equal(queued.find(t=>t.id===preBulk).repeatCount,3);
+    assert.equal(queued.find(t=>t.id===pre).repeatCount,2);assert.equal(queued.find(t=>t.id===preBulk).repeatCount,2);
     assert.equal(queued.find(t=>t.id===live).selections[0].acceptanceType,'live');
     assert.deepEqual(queued.find(t=>t.id===mixed).selections.map(s=>s.acceptanceType),['live','prematch']);
     chrome=spawn(process.env.CHROME_PATH||'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',['--headless=new','--no-first-run','--no-default-browser-check','--disable-gpu','--remote-debugging-port='+debugPort,'--user-data-dir='+path.join(temp,'chrome'),'about:blank'],{windowsHide:true,stdio:'ignore'});
@@ -41,7 +41,7 @@ async function main(){
     await until(()=>evaluate("location.pathname==='/backoffice.html' && !!document.querySelector('.operator-columns')"),'operator redirect');
     await until(()=>evaluate("document.querySelectorAll('#prematchTickets .operator-ticket').length===2 && document.querySelectorAll('#liveTickets .operator-ticket').length===2"),'separate queues');
     assert.equal(await evaluate("document.querySelectorAll('[data-nav]').length"),3);
-    assert(await evaluate(`document.querySelector('[data-operator-ticket="${pre}"] .operator-repeat').classList.contains('repeat-normal')`),'three plays of the same event/market are green');
+    assert(await evaluate(`document.querySelector('[data-operator-ticket="${pre}"] .operator-repeat').classList.contains('repeat-normal')`),'two identical ticket combinations are green');
     assert(await evaluate("Math.abs(document.querySelector('[data-lane=prematch]').getBoundingClientRect().width-document.querySelector('[data-lane=live]').getBoundingClientRect().width)<2"),'equal columns');
     assert(await evaluate("[...document.querySelectorAll('.operator-lane')].every(lane=>lane.getBoundingClientRect().height>=innerHeight-32)"),'both lanes fill the screen');
     assert(await evaluate("Math.abs(document.querySelector('[data-lane=prematch]').getBoundingClientRect().bottom-document.querySelector('[data-lane=live]').getBoundingClientRect().bottom)<2"),'both lanes extend equally');
@@ -62,8 +62,8 @@ async function main(){
     await until(()=>evaluate("!document.getElementById('dialog').open && !document.querySelector('#prematchTickets .operator-ticket')"),'bulk accepted');assert.equal((await api('/api/admin/bets/'+preBulk)).bet.status,'accepted');
     const arrival=await place([100],5);await until(()=>evaluate(`!!document.querySelector('[data-operator-ticket="${arrival}"]')`),'new arrival updates automatically');
     const third=await place([200],2),fourth=await place([200],3);
-    await until(()=>evaluate(`document.querySelector('[data-operator-ticket="${fourth}"] .operator-repeat')?.textContent==='5'`),'repetition counter');
-    assert.equal(await evaluate(`document.querySelector('[data-operator-ticket="${third}"] .operator-repeat').textContent`),'5','all matching tickets show the updated total');
+    await until(()=>evaluate(`document.querySelector('[data-operator-ticket="${fourth}"] .operator-repeat')?.textContent==='4'`),'repetition counter');
+    assert.equal(await evaluate(`document.querySelector('[data-operator-ticket="${third}"] .operator-repeat').textContent`),'4','all matching tickets show the updated total');
     assert(await evaluate(`document.querySelector('[data-operator-ticket="${fourth}"] .operator-repeat').classList.contains('repeat-high')`),'fourth repeat is red');
     await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
     assert(await evaluate("document.documentElement.scrollWidth<=window.innerWidth"),'mobile viewport fits');

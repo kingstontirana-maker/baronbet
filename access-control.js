@@ -1,7 +1,7 @@
 'use strict';
 
 // Scope is independent of permissions. Never accept ownership from the browser.
-module.exports = function accessControl({get, all, run, tx, now, hashPassword, validateCredentials, publicUser, auth, hasPermission, permissionsFor, jsonError, feedGames}) {
+module.exports = function accessControl({get, all, run, tx, now, hashPassword, validateCredentials, publicUser, auth, hasPermission, permissionsFor, jsonError, feedGames, checkCompetitions}) {
   const children = {center:['partner','operator'], partner:['admin'], admin:['senior'], senior:['manager'], supermanager:['manager'], manager:['agent'], agent:['user']};
   const fail = (message, status=403) => { throw Object.assign(new Error(message), {status}); };
   function lineage(id) {
@@ -47,6 +47,7 @@ module.exports = function accessControl({get, all, run, tx, now, hashPassword, v
   function betLimit(amount,kind,message){throw Object.assign(new Error(message),{status:403,code:'BET_LIMIT_EXCEEDED',limitAmount:Number(amount),limitKind:kind});}
   function checkBet(userId,stake,payout,excludeBet=null,selections=[]) {
     if(!active(userId)) fail('Account or ancestor is not active.');
+    if(checkCompetitions)checkCompetitions(excludeBet?all('SELECT game_id,league_id FROM bet_selections WHERE bet_id=?',[excludeBet]):selections,stake,payout,userId,excludeBet);
     const effective=limits(userId);
     if(stake>effective.max_bet)betLimit(effective.max_bet,'stake','Bet exceeds inherited limits.');
     if(payout>effective.max_payout)betLimit(effective.max_payout,'payout','Bet exceeds inherited limits.');

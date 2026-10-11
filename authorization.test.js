@@ -206,7 +206,11 @@ test('direct API: RBAC, hierarchy, limits, ledger, revocation and legacy isolati
     await api('/api/operator/tickets/'+bet.betId+'/accept',root,'POST',{});
     await api('/api/operator/tickets/'+bet.betId+'/accept',root,'POST',{},400);
     await api('/api/operator/tickets/'+bet.betId+'/settle',root,'POST',{status:'won'});
-    await api('/api/operator/tickets/'+bet.betId+'/settle',root,'POST',{status:'won'},400);
+    await api('/api/operator/tickets/'+bet.betId+'/settle',root,'POST',{status:'won'});
+    assert.equal((await api('/api/me',a.user.token)).user.balance,210,'same status must not pay twice');
+    await api('/api/operator/tickets/'+bet.betId+'/settle',root,'POST',{status:'lost'});
+    assert.equal((await api('/api/me',a.user.token)).user.balance,190,'correction reverses the previous payout');
+    await api('/api/operator/tickets/'+bet.betId+'/settle',root,'POST',{status:'won'});
     assert.equal((await api('/api/me',a.user.token)).user.balance,210);
     assert.equal((await api('/api/dashboard',a.admin.token)).ggr,-10);
     assert.equal((await api('/api/dashboard?from=2099-01-01',a.admin.token)).totalBets,0);
