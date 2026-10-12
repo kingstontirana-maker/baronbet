@@ -16,7 +16,7 @@ const LIVE_SOCKET_URL = process.env.LIVE_SOCKET_URL || 'https://xbet.socketi355.
 const DB_FILE = process.env.DB_FILE || path.join(__dirname, 'sportsbook.db');
 const SESSION_DAYS = 30;
 const STAFF_SESSION_MS = 30 * 60 * 1000;
-let db, access;
+let db, access, databaseStorage;
 const prematchLeagueByGame=new Map();
 let competitions;
 const exposureSubscribers=new Set();
@@ -48,7 +48,7 @@ async function verifyLoginPassword(password,stored){
   }catch(_){return false;}finally{loginChecks--;}
 }
 function makeToken(prefix='') { return prefix + crypto.randomBytes(32).toString('hex'); }
-function saveDb() { const temporary=DB_FILE+'.tmp';const fd=fs.openSync(temporary,'w');try{fs.writeFileSync(fd,Buffer.from(db.export()));fs.fsyncSync(fd);}finally{fs.closeSync(fd);}fs.renameSync(temporary,DB_FILE); }
+function saveDb() { databaseStorage.save(Buffer.from(db.export())); }
 function run(sql, params=[]) {
   const req=requestContext.getStore();
   const insert=sql.match(/^INSERT INTO (audit_log|wallet_transactions)\(([^)]+)\) VALUES\(([^)]+)\)$/i);
@@ -763,7 +763,8 @@ function scheduleUpstreamReconnect(){if(upstreamReconnectTimer)return;const dela
 function connectUpstream(){if(upstreamSocket){try{upstreamSocket.close()}catch(_){}upstreamSocket=null}broadcastLiveStatus('connecting');try{const browserHeaders={Origin:BASE,Referer:BASE+'/vbet/user/src/','User-Agent':'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Chrome/153.0.0.0 Mobile Safari/537.36',Accept:'*/*','Accept-Language':'en-US,en;q=0.9'};upstreamSocket=ioClient(LIVE_SOCKET_URL,{path:'/socket.io',transports:['websocket'],upgrade:false,rememberUpgrade:false,reconnection:false,timeout:15000,forceNew:true,autoConnect:true,perMessageDeflate:false,transportOptions:{polling:{extraHeaders:browserHeaders},websocket:{extraHeaders:browserHeaders}},extraHeaders:browserHeaders});upstreamSocket.on('connect',()=>{upstreamConnected=true;upstreamReconnectDelay=1000;broadcastLiveStatus('connected');upstreamSocket.emit('connectToRoom',{room:'inplay'})});upstreamSocket.on('new-coefs',data=>broadcastLive('coefs',data));upstreamSocket.on('new-live-game',data=>broadcastLive('game',data));upstreamSocket.on('delete-live-game',data=>broadcastLive('delete-game',data));upstreamSocket.on('disconnect',()=>{upstreamConnected=false;broadcastLiveStatus('reconnecting');scheduleUpstreamReconnect()});upstreamSocket.on('connect_error',err=>{upstreamConnected=false;console.error('Live socket:',err&&err.message||err);broadcastLiveStatus('reconnecting');scheduleUpstreamReconnect()});upstreamSocket.on('error',err=>{upstreamConnected=false;console.error('Live socket error:',err&&err.message||err);broadcastLiveStatus('reconnecting')});}catch(_){upstreamConnected=false;broadcastLiveStatus('reconnecting');scheduleUpstreamReconnect()}}
 
 async function start(){
-  const SQL=await initSqlJs({locateFile:file=>require.resolve('sql.js/dist/'+file)}); db=fs.existsSync(DB_FILE)?new SQL.Database(fs.readFileSync(DB_FILE)):new SQL.Database(); run('PRAGMA foreign_keys=ON');
+  databaseStorage=require('./database-storage').acquire(DB_FILE);
+  const SQL=await initSqlJs({locateFile:file=>require.resolve('sql.js/dist/'+file)}); const stored=databaseStorage.read();db=stored?new SQL.Database(stored):new SQL.Database(); run('PRAGMA foreign_keys=ON');
   run(`CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT NOT NULL UNIQUE,password_hash TEXT NOT NULL,balance REAL NOT NULL DEFAULT 0,reserved_balance REAL NOT NULL DEFAULT 0,role TEXT NOT NULL DEFAULT 'user',status TEXT NOT NULL DEFAULT 'active',parent_id INTEGER,created_by INTEGER,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,last_login TEXT,FOREIGN KEY(parent_id) REFERENCES users(id) ON DELETE SET NULL,FOREIGN KEY(created_by) REFERENCES users(id) ON DELETE SET NULL)`);
   run(`CREATE TABLE IF NOT EXISTS event_identities(game_id TEXT PRIMARY KEY,api_id TEXT NOT NULL,sport_id TEXT)`);
   run(`CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY,user_id INTEGER NOT NULL,role TEXT NOT NULL,expires_at TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`);

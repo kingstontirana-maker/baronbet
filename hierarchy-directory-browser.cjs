@@ -57,7 +57,10 @@ async function main(){
       assert(await evaluate('Array.from(document.querySelectorAll(".finance-table-wrap")).every(e=>e.scrollWidth<=e.clientWidth+1)'),'finance tables fit '+width);
     }
     await evaluate('openControl(user.role,"password")');await until(()=>evaluate('!!document.querySelector("#passwordForm")'),'static password');assert.equal(await evaluate('document.querySelector("#controlModal").classList.contains("show")'),false);await evaluate('document.querySelector("#passwordPageBack").click()');await until(()=>evaluate('!!document.querySelector(".home-match-open")'),'home after finances');
-    await evaluate('sportsHomeTab="today";selectedSport="all";render([{...cache.find(g=>String(g.id)==="200"),game_date:new Date().toLocaleDateString("sv-SE",{timeZone:"Europe/Berlin"}),game_time:"23:59:59"}])');
+    await evaluate('renderSportsHome([{id:"200",home_team:"Home 200",away_team:"Away 200",league:"Fixture League",league_id:700,odd:"2001|2|1|6575|Rezultat Final",game_date:new Date().toLocaleDateString("sv-SE",{timeZone:"Europe/Berlin"}),game_time:"23:59:59"}])');
+    assert(await evaluate('document.querySelector("#content>section:last-child").classList.contains("home-upcoming-section")'));
+    assert.equal(await evaluate('document.querySelectorAll(".home-upcoming-section .today-match-row").length'),1);
+    await evaluate('sportsHomeTab="today";selectedSport="all";render([{id:"200",home_team:"Home 200",away_team:"Away 200",league:"Fixture League",league_id:700,odd:"2001|2|1|6575|Rezultat Final",game_date:new Date().toLocaleDateString("sv-SE",{timeZone:"Europe/Berlin"}),game_time:"23:59:59"}])');
     assert.equal(await evaluate('document.querySelectorAll(".today-match-row .odd").length'),3);
     await evaluate('document.querySelector(".today-match-teams").click()');await until(()=>evaluate('!!document.querySelector("[data-live-market-option]")'),'today match markets');
     await evaluate('document.querySelector("[data-live-detail-back]").click()');await until(()=>evaluate('!!document.querySelector(".home-match-open")'),'home after today');
