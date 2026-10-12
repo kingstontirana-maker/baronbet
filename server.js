@@ -892,6 +892,14 @@ async function start(){
     tx(()=>{run('DELETE FROM user_permissions WHERE user_id=?',[target.id]);for(const p of PERMISSIONS)run('INSERT INTO user_permissions(user_id,permission_key,allowed,granted_by) VALUES(?,?,?,?)',[target.id,p,grants.includes(p)?1:0,req.user.id]);run('INSERT INTO audit_log(actor_id,action,target_type,target_id,details) VALUES(?,?,?,?,?)',[req.user.id,'permissions_updated','user',target.id,JSON.stringify({permissions:grants})]);});
     res.json({ok:true,permissions:grants});
   }catch(e){jsonError(res,400,e.message)}});
+  app.get('/api/account-finance',auth,(req,res)=>{try{
+    if(req.user.role!=='user')return jsonError(res,403,'Player account required.');
+    const from=req.query.from?new Date(String(req.query.from)):null,to=req.query.to?new Date(String(req.query.to)):null;
+    if((from&&!Number.isFinite(from.getTime()))||(to&&!Number.isFinite(to.getTime()))||(from&&to&&from>to))return jsonError(res,400,'Interval kohor i pavlefshëm.');
+    const args=[req.user.id];let where='user_id=?';if(from){where+=' AND datetime(created_at)>=datetime(?)';args.push(from.toISOString());}if(to){where+=' AND datetime(created_at)<datetime(?)';args.push(to.toISOString());}
+    const summary=get("SELECT COUNT(*) tickets,COALESCE(SUM(CASE WHEN status IN ('accepted','won','lost','void') THEN stake ELSE 0 END),0) turnover,COALESCE(SUM(CASE WHEN status IN ('won','lost','void') THEN payout ELSE 0 END),0) payout,COALESCE(SUM(CASE WHEN status='pending' THEN stake ELSE 0 END),0) pendingStake,COALESCE(SUM(CASE WHEN status='accepted' THEN stake ELSE 0 END),0) unsettledStake FROM bets WHERE "+where,args);
+    const u=get('SELECT * FROM users WHERE id=?',[req.user.id]);res.json({username:u.username,balance:Number(u.balance),reservedBalance:Number(u.reserved_balance||0),summary:{...summary,difference:money(Number(summary.turnover)-Number(summary.payout))},transactions:all('SELECT id,type,amount,balance_after AS balanceAfter,bet_id AS betId,created_at AS createdAt FROM wallet_transactions WHERE '+where+' ORDER BY id DESC LIMIT 200',args)});
+  }catch(e){jsonError(res,500,'Financat nuk mund të ngarkohen.');}});
   app.get('/api/wallet',auth,(req,res)=>{const rows=all(`SELECT id,type,amount,balance_after AS balanceAfter,bet_id AS betId,note,created_at AS createdAt FROM wallet_transactions WHERE user_id=? ORDER BY datetime(created_at) DESC,id DESC LIMIT 300`,[req.user.id]);res.json({transactions:rows.map(x=>({...x,id:Number(x.id),amount:Number(x.amount),balanceAfter:Number(x.balanceAfter),betId:x.betId?Number(x.betId):null}))})});
   app.get('/api/my-bets',auth,(req,res)=>{
     const allowed=['pending','accepted','won','lost','cancelled','void','rejected'];
@@ -906,6 +914,7 @@ async function start(){
     const placeholders=ids.map(()=>'?').join(',');
     let sql=`SELECT b.*,u.username FROM bets b JOIN users u ON u.id=b.user_id WHERE b.user_id IN (${placeholders})`;
     const args=[...ids];
+    if(req.query.userId!==undefined){const selectedId=Number(req.query.userId);if(!Number.isInteger(selectedId)||!ids.includes(selectedId))return jsonError(res,403,'User outside your scope.');sql+=' AND b.user_id=?';args.push(selectedId);}
     if(req.query.status==='unsettled'){sql+=" AND b.status IN ('pending','accepted')";}else if(allowed.includes(req.query.status)){sql+=' AND b.status=?';args.push(req.query.status)}
     for(const key of ['fromTime','toTime']){
       if(req.query[key]!==undefined&&(typeof req.query[key]!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(req.query[key])||!Number.isFinite(Date.parse(req.query[key]))))return jsonError(res,400,'Invalid date range.');

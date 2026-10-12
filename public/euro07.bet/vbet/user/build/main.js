@@ -1,3 +1,4 @@
+let playerFinancePeriod='today',playerFinanceSequence=0;
 function brandLoading(extra=''){return '<div class="brand-loading '+extra+'" role="status" aria-label="Duke ngarkuar" aria-busy="true"><span class="brand-loading-mark"><img src="/assets/brand/bb.png" width="64" height="64" alt=""></span></div>';}
 localStorage.removeItem('sportsbook_token'); // Discard legacy persistent credentials.
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -63,7 +64,7 @@ function findLiveGame(id){const key=String(id??'');return cache.find(x=>String(x
 function setHashForMode(m){const target=m==='live'?'#/InPlay':m==='mybets'?'#/MyBets':'#/';if(location.hash!==target)history.pushState({mode:m},'',target)}
 function setHashForLiveMatch(game){const id=liveGameId(game);if(!/^\d+$/.test(id))return;const target=`#/livematch/${id}?sportId=${sportIdForGame(game)}`;if(location.hash!==target)history.pushState({mode:'livematch',gameId:id},'',target)}
 function parseLiveMatchHash(){const m=String(location.hash||'').match(/^#\/livematch\/(\d+)(?:\?sportId=(\d+))?\/?$/i);return m?{gameId:m[1],sportId:m[2]||'1'}:null}
-function modeFromHash(){if(parseLiveMatchHash())return'livematch';if(/^#\/MyBets\/?$/i.test(location.hash))return'mybets';return /^#\/InPlay\/?$/i.test(location.hash)?'live':'home'}
+function modeFromHash(){if(/^#\/AccountBalance\/?$/i.test(location.hash))return'finance';if(parseLiveMatchHash())return'livematch';if(/^#\/MyBets\/?$/i.test(location.hash))return'mybets';return /^#\/InPlay\/?$/i.test(location.hash)?'live':'home'}
 function sportIcon(sport,fallback){
   const icon=({soccer:['Soccer','⚽'],1:['Soccer','⚽'],basketball:['Basketball','🏀'],2:['Basketball','🏀']})[String(sport)];
   return icon?`<img class="sport-category-icon" src="https://www.bet365.com/home/images/Home/imgs/LeagueLogo/zClass_26_${icon[0]}.svg" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('${icon[1]}'))">`:fallback;
@@ -138,6 +139,7 @@ function sportOf(g){const s=((g.sport_name||g.sport||g.category||'')+'').toLower
 function visible(g){const t=searchText((g.name||'')+' '+(g.home_team||'')+' '+(g.away_team||'')+' '+(g.league||''));return(!query||t.includes(query))&&(!activeLeague||String(g.league||'')===activeLeague)&&(selectedSport==='all'||selectedSport==='popular'||sportOf(g)===selectedSport)}
 function updateLeagues(data){const ls=[...new Set((data||[]).map(g=>g.league||'Competition'))].sort();$('leagueFilter').innerHTML='<option value="">All competitions</option>'+ls.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');$('leagueFilter').value=activeLeague}
 function addPick(g,key,val){
+  if(user&&user.role!=='user')return;
   const info=parseOdds(g.odd)[key];
   const odd=info?Number(info.odd):Number(val);
   if(lock(odd))return;
@@ -159,6 +161,7 @@ function addPick(g,key,val){
 }
 
 function addMarketPick(g, option){
+  if(user&&user.role!=='user')return;
   const odd=Number(option.odd);
   if(lock(odd))return;
   const coefId=String(option.market_option_id??option.id??'');
@@ -687,20 +690,31 @@ function renderSportsHome(today){
   $('content').innerHTML='<section class="sports-home-section"><button class="sports-section-title" id="sportsToday">Ndeshjet Sot <span>Te Gjitha Ndeshjet ›</span></button>'+(featured.length?'<div class="sports-league-title">'+esc(first)+'</div>'+cards(featured):'<p>Nuk ka ndeshje.</p>')+'</section><section class="sports-home-section"><div class="sports-section-title">Ndeshjet Kryesore</div>'+cards(main)+'</section><section class="sports-home-section"><button class="sports-section-title sports-live-title" id="sportsAllLive">NË KOHË REALE <span>Te Gjitha Ndeshjet ›</span></button><div class="sports-home-live-head"><span>Futboll</span><span>1</span><span>X</span><span>2</span></div><div class="sports-live-list">'+homeExtras.live.map(homeLiveRow).join('')+'</div></section>';
   $('content').onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-home-match]')){e.preventDefault();openHomeMatch(e.target.dataset.homeMatch);}};
   cache=[...today,...homeExtras.featured,...homeExtras.main,...homeExtras.live].filter((g,i,all)=>all.findIndex(x=>String(x.id)===String(g.id))===i);bindOdds();
-  $('sportsToday').onclick=()=>{sportsHomeTab='today';selectedPrematchLeague='';selectedSport='all';load();};$('sportsAllLive').onclick=()=>setMode('live');
+  $('sportsToday').onclick=()=>{sportsHomeTab='today';selectedPrematchLeague='';selectedSport='all';query='';activeLeague='';$('search').value='';$('leagueFilter').value='';load();};$('sportsAllLive').onclick=()=>setMode('live');
   document.querySelectorAll('[data-home-live]').forEach(b=>b.onclick=()=>{location.hash='/livematch/'+b.dataset.homeLive+'?sportId=1';});
 }
+function isUpcomingToday(game,now=new Date()){
+ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(now);const values=Object.fromEntries(parts.map(p=>[p.type,p.value]));
+ const today=values.year+'-'+values.month+'-'+values.day,current=values.hour+':'+values.minute+':'+values.second;
+ const date=String(game.game_date||'').slice(0,10),time=String(game.game_time||'');
+ if(/\bspecials?\b/i.test(String(game.league||''))||!game.home_team||!game.away_team)return false;
+ if(date!==today||!/^\d{2}:\d{2}(?::\d{2})?$/.test(time)||game.current_minute!=null&&String(game.current_minute).trim()!=='')return false;
+ return (time.length===5?time+':00':time)>current;
+}
 function render(data,reset=true){
-  if(mode==='mybets'||mode==='livematch')return;
-  if(mode==='home'&&sportsHomeTab==='category')return;
+  if(mode==='finance'||mode==='mybets'||mode==='livematch')return;
+  if(mode==='home'&&['category','management'].includes(sportsHomeTab))return;
   if(reset){cache=data||[];if(mode!=='live')updateLeagues(cache)}
   if(mode==='live') return renderLive(data);
   ensureSportsCatalog();
   if(mode==='home'&&sportsHomeTab==='home'&&!selectedPrematchLeague&&!query&&!activeLeague){renderSportsHome(data||[]);return;}
-  const arr=(data||[]).filter(g=>selectedPrematchLeague?(!query||searchText(JSON.stringify(g)).includes(query)):visible(g)).slice().sort((a,b)=>Number(a.order??0)-Number(b.order??0));
-  if(!arr.length){$('content').innerHTML='<div class="emptySlip">No events found for this filter.</div>';return}
+  const arr=(data||[]).filter(g=>sportsHomeTab!=='today'||isUpcomingToday(g)).filter(g=>selectedPrematchLeague?(!query||searchText(JSON.stringify(g)).includes(query)):visible(g)).slice().sort((a,b)=>Number(a.order??0)-Number(b.order??0));
+  if(!arr.length){$('content').innerHTML='<div class="emptySlip">'+(sportsHomeTab==='today'?'Nuk ka ndeshje të tjera që ende nuk kanë filluar sot.':'Nuk ka ndeshje për këtë filtër.')+'</div>';return}
   const groups={};arr.forEach(g=>(groups[g.league||'Competition']??=[]).push(g));
-  let html='<div class="dayhead">'+(selectedPrematchLeague?'Ndeshjet e ligës':'Ndeshjet · 24 orët e ardhshme')+'</div>';
+  if(sportsHomeTab==='today'){
+    $('content').innerHTML='<div class="dayhead">Ndeshjet Sot</div>'+Object.entries(groups).map(([league,items])=>'<section class="today-match-list"><div class="today-league-header"><span>'+esc(league)+'</span><span>1</span><span>X</span><span>2</span></div>'+items.map(g=>{const o=parseOdds(g.odd);return '<div class="today-match-row"><button type="button" class="today-match-time" data-home-match="'+esc(g.id)+'"><span>'+esc(String(g.game_time||'').slice(0,5))+'</span><small>'+esc(g.count_options??'')+' ›</small></button><button type="button" class="today-match-teams" data-home-match="'+esc(g.id)+'"><span>'+esc(g.home_team||g.name)+'</span><span>'+esc(g.away_team||'')+'</span></button>'+oddHtml(g,'1',o['1'])+oddHtml(g,'X',o.X)+oddHtml(g,'2',o['2'])+'</div>';}).join('')+'</section>').join('');bindOdds();return;
+  }
+  let html='<div class="dayhead">'+(selectedPrematchLeague?'Ndeshjet e ligës':sportsHomeTab==='today'?'Ndeshjet Sot':'Ndeshjet · 24 orët e ardhshme')+'</div>';
   for(const [league,items] of Object.entries(groups)){
     html+=`<section class="league"><div class="leaguehead"><div class="name">${esc(league)}</div></div><div class="matchgrid">`;
     for(const g of items){
@@ -805,7 +819,7 @@ function queueLivePaint(){
     renderSlip();
   },250);
 }
-async function loadOnce(signal){if(mode==='mybets')return;const sequence=++liveLoadSequence,revisions=new Map(liveClockRevision);try{const liveMode=mode==='live'||mode==='livematch';const pageKey=selectedPrematchLeague||'today';const extras=!liveMode&&!selectedPrematchLeague&&sportsHomeTab==='home'?Promise.allSettled([sportsList('main-matches'),sportsList('home-live'),sportsList('featured')]):null;const r=await fetch(liveMode?'/api/livegames?ts='+Date.now():(selectedPrematchLeague?'/api/sports-catalog/league-games/'+selectedPrematchLeague:'/api/prematch')+'?ts='+Date.now(),{signal});if(!r.ok)throw Error('HTTP '+r.status);const d=await SportsbookApi.readJson(r);const rows=Array.isArray(d)?d:[];if(sequence!==liveLoadSequence)return;if(liveMode){for(const row of rows){const id=String(row.id),latest=findLiveGame(id);if(latest&&(liveClockRevision.get(id)||0)!==(revisions.get(id)||0)){row.current_minute=latest.current_minute??latest.game_time;row.result=latest.result;}}rows.forEach(g=>syncLiveClock(g,true));cache=rows;rememberLiveSnapshot(rows);pruneLiveCaches();updateLeagues(cache);if(mode==='livematch'){const g=findLiveGame(openLiveGameId);if(g){const existing=liveMarketsCache.get(String(openLiveGameId));if(existing?.length)renderLiveMarketPanel(g,existing,false);refreshLiveMarkets(g,true);}}else{renderLive(cache,false)}}else{sportsPageCache.set(pageKey,rows);render(rows);warmLiveSnapshot();if(extras)extras.then(extra=>{if(sequence!==liveLoadSequence||mode!=='home'||sportsHomeTab!=='home')return;homeExtras={featured:extra[2].status==='fulfilled'?extra[2].value:homeExtras.featured,main:extra[0].status==='fulfilled'?extra[0].value:homeExtras.main,live:extra[1].status==='fulfilled'?extra[1].value:homeExtras.live};render(rows);renderSlip();})}renderSlip();if(!liveMode)$('status').textContent='PREMATCH • '+new Date().toLocaleTimeString('sq-AL');else if(mode==='livematch')$('status').textContent='LIVE MATCH • Real-time'}catch(e){if(sequence!==liveLoadSequence)return;if($('content').querySelector('.sports-loading')){$('content').innerHTML='<div class="emptySlip" role="status">Lidhja me furnizimin po vonon. <button id="retryFeed" type="button">Provo përsëri</button></div>';$('retryFeed').onclick=()=>load();}$('status').textContent=(mode==='live'||mode==='livematch')?'LIVE • Feed offline':'Feed error'}}
+async function loadOnce(signal){if(mode==='finance'||mode==='mybets')return;const sequence=++liveLoadSequence,revisions=new Map(liveClockRevision);try{const liveMode=mode==='live'||mode==='livematch';const pageKey=selectedPrematchLeague||'today';const extras=!liveMode&&!selectedPrematchLeague&&sportsHomeTab==='home'?Promise.allSettled([sportsList('main-matches'),sportsList('home-live'),sportsList('featured')]):null;const r=await fetch(liveMode?'/api/livegames?ts='+Date.now():(selectedPrematchLeague?'/api/sports-catalog/league-games/'+selectedPrematchLeague:'/api/prematch')+'?ts='+Date.now(),{signal});if(!r.ok)throw Error('HTTP '+r.status);const d=await SportsbookApi.readJson(r);const rows=Array.isArray(d)?d:[];if(sequence!==liveLoadSequence)return;if(liveMode){for(const row of rows){const id=String(row.id),latest=findLiveGame(id);if(latest&&(liveClockRevision.get(id)||0)!==(revisions.get(id)||0)){row.current_minute=latest.current_minute??latest.game_time;row.result=latest.result;}}rows.forEach(g=>syncLiveClock(g,true));cache=rows;rememberLiveSnapshot(rows);pruneLiveCaches();updateLeagues(cache);if(mode==='livematch'){const g=findLiveGame(openLiveGameId);if(g){const existing=liveMarketsCache.get(String(openLiveGameId));if(existing?.length)renderLiveMarketPanel(g,existing,false);refreshLiveMarkets(g,true);}}else{renderLive(cache,false)}}else{sportsPageCache.set(pageKey,rows);render(rows);warmLiveSnapshot();if(extras)extras.then(extra=>{if(sequence!==liveLoadSequence||mode!=='home'||sportsHomeTab!=='home')return;homeExtras={featured:extra[2].status==='fulfilled'?extra[2].value:homeExtras.featured,main:extra[0].status==='fulfilled'?extra[0].value:homeExtras.main,live:extra[1].status==='fulfilled'?extra[1].value:homeExtras.live};render(rows);renderSlip();})}renderSlip();if(!liveMode)$('status').textContent='PREMATCH • '+new Date().toLocaleTimeString('sq-AL');else if(mode==='livematch')$('status').textContent='LIVE MATCH • Real-time'}catch(e){if(sequence!==liveLoadSequence)return;if($('content').querySelector('.sports-loading')){$('content').innerHTML='<div class="emptySlip" role="status">Lidhja me furnizimin po vonon. <button id="retryFeed" type="button">Provo përsëri</button></div>';$('retryFeed').onclick=()=>load();}$('status').textContent=(mode==='live'||mode==='livematch')?'LIVE • Feed offline':'Feed error'}}
 function applyLiveCoefs(payload){if(mode!=='live'&&mode!=='livematch')return;if(!payload||payload.game_id==null)return;const g=findLiveGame(payload.game_id);if(!g)return;const map={};(payload.coefs||[]).forEach(c=>{map[String(c.coef_id)]=String(c.odd)});if(typeof g.odd==='string'){g.odd=g.odd.split(',').map(part=>{const p=part.split('|');if(p.length>=4&&map[String(p[0])]!==undefined)p[1]=map[String(p[0])];return p.join('|')}).join(',')}if(payload.current_result!=null)g.result=payload.current_result;if(payload.current_minute!=null){g.current_minute=payload.current_minute;syncLiveClock(g);liveClockRevision.set(String(g.id),(liveClockRevision.get(String(g.id))||0)+1);}queueLivePaint()}
 function applyLiveGame(payload){
   if(mode!=='live'&&mode!=='livematch')return;
@@ -868,6 +882,8 @@ function startTicketNotifications(){
   ticketNotificationStream.onerror=()=>{};
 }
 function setMode(m,{fromHash=false}={}){
+  if(m==='finance'){openPlayerFinance({fromHash});return;}
+  restoreInlineControl();
   if(m==='mybets'){showMyBets(true,{fromHash});return;}
   cancelPageLoad();++sportsCategorySequence;++liveLoadSequence;
   const content=$('content');content.onclick=null;content.onpointerdown=null;
@@ -917,39 +933,32 @@ function formatCredit(value){
 }
 function setAuthState(u){
   user=u;
+  document.body.classList.toggle('player-account',u?.role==='user');
+  if(u?.role!=='user'){slip=[];pendingTicket=null;hideUserMenu();}
   if(u||!token)document.documentElement.classList.remove('session-restoring');
   document.body.classList.toggle('auth-required',!u);
   $('authModal').classList.toggle('show',!u);
   let managementLink=document.getElementById('hierarchyManagementLink');
   if(managementLink)managementLink.remove();
-  if(u&&u.role!=='user'&&u.role!=='center'){
-    managementLink=document.createElement('a');managementLink.id='hierarchyManagementLink';managementLink.href='/backoffice.html';managementLink.textContent='Administrimi · '+staffRoleLabel(u.role);
-    managementLink.style.cssText='position:fixed;right:18px;bottom:32px;z-index:100001;padding:12px 18px;background:#163952;color:white;border-radius:8px;text-decoration:none;box-shadow:0 2px 12px #0003';document.body.appendChild(managementLink);
-  }
   const myTop=$('myTopBtn');
   if(myTop)myTop.hidden=!u;
   if(token)sessionStorage.setItem('sportsbook_token',token);else sessionStorage.removeItem('sportsbook_token');
   if(user){
-    if(user.role==='operator'){location.replace('/backoffice.html#/ticket-accept');return;}if(['partner','admin'].includes(user.role)){location.replace('/backoffice.html#/dashboard');return;}
+    if(user.role==='operator'){location.replace('/backoffice.html#/ticket-accept');return;}
     if(user.role!=='user')stopTicketNotifications();
     if(!['partner','admin'].includes(user.role))hideAdminWorkspace();
     if(user.role==='center'){
       hideUserMenu();$('actions').innerHTML='<div class="account"><button id="panelB" class="staffAccountButton">Control Center</button></div>';
       $('panelB').onclick=showCenterDashboard;$('slipHead').style.display='none';$('slipView').style.display='none';$('staffView').style.display='none';showCenterDashboard();renderSlip();return;
     }
-    const staff=user.role!=='user';
-    if(staff){
-      $('actions').innerHTML='<div class="account"><button id="panelB" class="staffAccountButton">Partner</button></div>';
-      $('panelB').onclick=()=>toggleStaffMenu(true);
-      $('slipHead').style.display='none';$('slipView').style.display='none';$('staffView').style.display='block';toggleStaffMenu(true);
-      if(['partner','admin'].includes(user.role))setTimeout(()=>openControl(user.role,'directory'),0);
-    }else{
+
       $('actions').innerHTML=`<div class="account userAccount"><div class="balance"><b>${formatCredit(user.balance)} €</b></div><button id="userAvatar" class="userAvatar" aria-label="Hap menunë e llogarisë"></button></div>`;
       $('slipHead').style.display='flex';$('slipView').style.display='block';$('staffView').style.display='none';
       $('userAvatar').onclick=e=>{e.stopPropagation();toggleUserMenu()};
-      startTicketNotifications();
-      restoreUserPendingTicket();
-    }
+      if(user.role==='user')startTicketNotifications();
+      if(user.role==='user')restoreUserPendingTicket();
+      if(mode==='finance')openPlayerFinance({fromHash:true});
+
   }else{
     stopTicketNotifications();
     hideUserMenu();
@@ -962,12 +971,17 @@ function setAuthState(u){
 }
 function hideUserMenu(){const menu=$('userMenu');if(menu)menu.remove()}
 function toggleUserMenu(){
-  if(!user||user.role!=='user')return;
+  if(!user)return;
   let menu=$('userMenu');if(menu){hideUserMenu();return}
   menu=document.createElement('div');menu.id='userMenu';menu.className='userMenu';
   menu.innerHTML=`<div class="userMenuHead"><b>${esc(user.username)}</b><strong>${formatCredit(user.balance)}</strong><em>EUR</em></div><button data-user-menu="chat">Chat</button><button data-user-menu="rules">Rregullore</button><button data-user-menu="bets">My Bets</button><button data-user-menu="finance">Financa</button><button data-user-menu="password">Ndrysho Fjalëkalimin</button><button data-user-menu="logout">Largohu</button>`;
+
+  if(user.role!=='user'){
+    const last=menu.querySelector('[data-user-menu="logout"]');
+    for(const [role,label] of [...staffCreateRoles(user.role),['directory','Lista e Përdoruesve']]){const button=document.createElement('button');button.dataset.userMenu=role==='directory'?role:'create:'+role;button.textContent=role==='directory'?label:'Krijo '+label;menu.insertBefore(button,last);}
+  }
   document.body.appendChild(menu);menu.classList.add('show');
-  menu.querySelectorAll('[data-user-menu]').forEach(b=>b.onclick=()=>{const action=b.dataset.userMenu;hideUserMenu();if(action==='bets'||action==='finance'){showMyBets(true);return}if(action==='logout'){logout();return}if(action==='chat')alert('Chat do të lidhet me modulin e komunikimit.');else if(action==='rules')alert('Rregullorja e platformës.');else alert('Ndryshimi i fjalëkalimit do të jetë i disponueshëm së shpejti.');});
+  menu.querySelectorAll('[data-user-menu]').forEach(b=>b.onclick=()=>{const action=b.dataset.userMenu;hideUserMenu();if(user.role!=='user'&&(action==='directory'||action.startsWith('create:')||action==='finance'||action==='password')){handleStaffAction(action);return;}if(action==='password'){openControl(user.role,'password');return;}if(action==='finance'){openPlayerFinance();return;}if(action==='bets'){showMyBets(true);return}if(action==='logout'){logout();return}if(action==='chat')alert('Chat do të lidhet me modulin e komunikimit.');else if(action==='rules')alert('Rregullorja e platformës.');else alert('Ndryshimi i fjalëkalimit do të jetë i disponueshëm së shpejti.');});
 }
 async function renderStaffMenu(){
   if(!user||user.role==='user')return;
@@ -1074,7 +1088,7 @@ function formatBetTime(v){
 function betStatusLabel(status){
   return ({pending:'',accepted:'',won:'Fituese',lost:'Humbese',cancelled:'Te anuluara',void:'Te anuluara',rejected:'Te anuluara'})[status]??status;
 }
-let myBetsStatus='all';
+let myBetsStatus='all',myBetsSelectedUser=null;
 function myBetsShell(){
   return `<div class="mybetsPage">
     <div class="mybetsFilters">
@@ -1126,7 +1140,7 @@ function showMyBets(on,{fromHash=false}={}){
     document.body.classList.remove('live-page');document.body.classList.add('mybets-page');
     $('sportsbar').style.display='none';$('staffView').style.display='none';$('slipHead').style.display='flex';$('slipView').style.display='block';renderSlip();
     $('content').innerHTML=myBetsShell();
-    myBetsStatus='all';
+    myBetsStatus='all';myBetsSelectedUser=null;
     // Start with the current day only when it actually has bets; otherwise load all.
     setMyBetsDates('','');
     document.querySelectorAll('[data-year]').forEach(b=>b.onclick=()=>{
@@ -1217,6 +1231,7 @@ async function loadMyBets({silent=false,more=false}={}){
   if(!user)return;
   const from=$('fromDate')?.value||'',to=$('toDate')?.value||'';
   const p=myBetsDateParams(from,to);
+  if(user.role==='agent'&&myBetsSelectedUser)p.set('userId',myBetsSelectedUser.id);
   if(myBetsStatus==='pending')p.set('status','unsettled');
   else if(['won','lost','cancelled'].includes(myBetsStatus))p.set('status',myBetsStatus);
   const list=$('betsList');if(!list)return;
@@ -1235,7 +1250,17 @@ async function loadMyBets({silent=false,more=false}={}){
     const uniqueBets=new Map();
     for(const response of responses)for(const bet of response.bets||[])if(myBetInDateRange(bet,p)&&!uniqueBets.has(String(bet.id)))uniqueBets.set(String(bet.id),bet);
     const data={...responses[0],bets:[...uniqueBets.values()].sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at))||Number(b.id)-Number(a.id))};
-    if(user.role!=='user'&&Array.isArray(data.accounts))$('myBetsSummary').innerHTML=data.accounts.map(a=>`<div class="mybetAccountRow"><span>${esc(a.username)} <small>(${a.bet_count})</small></span><strong>${Number(a.turnover||0).toFixed(2)}</strong></div>`).join('');
+    if(user.role==='agent'){
+      const summary=$('myBetsSummary');
+      if(!myBetsSelectedUser){
+        const accounts=(data.accounts||[]).filter(a=>a.role==='user'&&Number(a.bet_count)>0);
+        summary.innerHTML=accounts.map(a=>'<button type="button" class="mybetAccountRow agent-bets-user" data-agent-bets-user="'+Number(a.id)+'"><span>'+esc(a.username)+' <small>('+Number(a.bet_count)+' bileta)</small></span><strong>'+Number(a.turnover||0).toFixed(2)+' € ›</strong></button>').join('');
+        summary.querySelectorAll('[data-agent-bets-user]').forEach(button=>button.onclick=()=>{myBetsSelectedUser=accounts.find(a=>String(a.id)===button.dataset.agentBetsUser);$('fromDate').value='';$('toDate').value='';myBetsStatus='all';document.querySelectorAll('[data-status]').forEach(b=>b.classList.toggle('active',b.dataset.status==='all'));loadMyBets();});
+        list.innerHTML=accounts.length?'':'<div class="mybetsEmpty">Asnjë përdorues nuk ka luajtur bileta.</div>';return;
+      }
+      summary.innerHTML='<div class="agent-user-ticket-header"><button type="button" id="agentBetsBack">‹ Përdoruesit</button><strong>'+esc(myBetsSelectedUser.username)+'</strong></div>';
+      $('agentBetsBack').onclick=()=>{myBetsSelectedUser=null;loadMyBets();};
+    }else if(user.role!=='user'&&Array.isArray(data.accounts))$('myBetsSummary').innerHTML=data.accounts.map(a=>'<div class="mybetAccountRow"><span>'+esc(a.username)+' <small>('+Number(a.bet_count)+')</small></span><strong>'+Number(a.turnover||0).toFixed(2)+'</strong></div>').join('');
     const bets=Array.isArray(data.bets)?data.bets:[];
     if(!bets.length){
       list.innerHTML='<div class="mybetsEmpty">Nuk ka bileta për filtrin e zgjedhur.</div>';
@@ -1249,6 +1274,7 @@ async function loadMyBets({silent=false,more=false}={}){
         const card=document.querySelector(`[data-bet-card="${btn.dataset.betOpen}"]`);if(card)card.classList.toggle('open');
       });
       document.querySelectorAll('[data-repeat]').forEach(btn=>btn.onclick=()=>{
+        if(user.role!=='user')return;
         const b=bets.find(x=>String(x.id)===String(btn.dataset.repeat));if(!b)return;
         (b.selections||[]).forEach(s=>{
           const odd=Number(s.odd);if(!Number.isFinite(odd)||odd<=1)return;
@@ -1269,6 +1295,7 @@ async function loadWallet(){
 
 let lastBetRequest=null;
 async function placeBet(){
+  if(user&&user.role!=='user')return;
   if(slipLimitNotice||pendingTicket)return;
   if(!slip.length)return;if(!user){openAuth('login');return}
   const placeBtn=$('place');if(placeBtn?.dataset.busy==='1')return;
@@ -1299,22 +1326,23 @@ async function handleStaffAction(action){
   if(action==='chat'){alert('Chat do të lidhet me modulin e komunikimit.');return}
   if(action==='rules'){alert('Rregullorja e platformës.');return}
   if(action==='directory'){openControl(user.role,'directory');return}
-  if(action==='finance'){if(user.role==='center')return;openControl(user.role,'finance');return}
+  if(action==='finance'){if(user.role==='center')return;openPlayerFinance();return}
   if(action==='tickets'){openControl(user.role,'tickets');return}
   if(action==='password'){openControl(user.role,'password');return}
   if(action.startsWith('create:')){openControl(user.role,'create',action.split(':')[1]);return}
 }
+function restoreInlineControl(){const app=$('controlApp'),box=document.querySelector('#controlModal .controlbox');if(app&&box&&app.parentElement!==box)box.appendChild(app);document.body.classList.remove('inline-account-create');}
 async function openControl(role,view='directory',createRole=''){
   if(!user)return;
-  if(view==='password'){
-    closeControlPoll();
-    $('controlModal').classList.add('show');
-    $('controlTitle').textContent='Ndrysho Fjalëkalimin';
-    renderOwnPasswordForm();
-    return;
+  restoreInlineControl();
+  if(view==='password'||(['create','directory'].includes(view)&&user.role!=='user')){
+    clearInterval(timer);timer=null;++liveLoadSequence;closeControlPoll();closeLiveMarkets();sportsHomeTab='management';
+    $('controlModal').classList.remove('show');$('sportsbar').style.display='none';
+    const app=$('controlApp');$('content').replaceChildren(app);$('content').onclick=null;$('content').onkeydown=null;document.body.classList.add('inline-account-create');
+    if(view==='password')renderOwnPasswordForm();else await renderManagementView(view,createRole);return;
   }
   if(user.role==='user')return;
-  if(['partner','admin'].includes(user?.role)){location.replace('/backoffice.html#/'+({directory:'accounts',password:'security/password',tickets:'bets',transactions:'finance'}[view]||'accounts'));return;}
+
   $('controlModal').classList.add('show');
   $('controlTitle').textContent=staffRoleLabel(role);
   closeControlPoll();
@@ -1322,7 +1350,8 @@ async function openControl(role,view='directory',createRole=''){
   await renderManagementView(view,createRole);
 }
 function renderOwnPasswordForm(){
-  $('controlApp').innerHTML=`<div class="controlSection"><h3>Ndrysho Fjalëkalimin</h3><form id="passwordForm" class="controlForm"><label>Fjalëkalimi i vjetër<input id="oldPass" type="password" autocomplete="current-password" required></label><label>Fjalëkalimi i ri<input id="newPass" type="password" autocomplete="new-password" minlength="6" required></label><label>Përsërit fjalëkalimin e ri<input id="newPass2" type="password" autocomplete="new-password" minlength="6" required></label><button id="saveOwnPassword" type="submit">Ruaj</button></form><div id="controlMsg" class="controlMsg" role="status" aria-live="polite"></div></div>`;
+  $('controlApp').innerHTML=`<div class="create-account-page password-account-page"><header class="create-account-header"><button type="button" id="passwordPageBack" aria-label="Kthehu">‹</button><strong>Ndrysho Fjalëkalimin</strong></header><form id="passwordForm" class="controlForm create-account-form"><label>Fjalëkalimi i vjetër<input id="oldPass" type="password" autocomplete="current-password" required></label><label>Fjalëkalimi i ri<input id="newPass" type="password" autocomplete="new-password" minlength="6" required></label><label>Përsërit fjalëkalimin e ri<input id="newPass2" type="password" autocomplete="new-password" minlength="6" required></label><button id="saveOwnPassword" class="create-account-submit" type="submit">Ruaj</button><div id="controlMsg" class="controlMsg" role="status" aria-live="polite"></div></form></div>`;
+  $('passwordPageBack').onclick=openSportsHome;
   const form=$('passwordForm'),button=$('saveOwnPassword'),message=$('controlMsg');
   form.onsubmit=async e=>{
     e.preventDefault();if(button.disabled)return;
@@ -1345,24 +1374,15 @@ async function renderManagementView(view,createRole=''){
   if(view==='password'){renderOwnPasswordForm();return;}
   try{
     const d=await controlFetch('/api/staff/overview');
-    if(view==='directory'){
-      if(user.role==='admin'){
-        const all=await controlFetch('/api/admin/users');
-        $('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Users</button></div><div class="controlSection"><h3>Users në hierarkinë tënde</h3><div class="cc-table-wrap"><table class="controlTable"><thead><tr><th>User</th><th>Roli</th><th>Kredi</th><th>Status</th><th>Veprime</th></tr></thead><tbody>${all.users.map(x=>`<tr><td><b>${esc(x.username)}</b><br><small>#${x.id}</small></td><td>${esc(x.role)}</td><td>€${Number(x.balance).toFixed(2)}<div class="rowCredit"><input data-admin-amount="${x.id}" type="number" min="0.01" step="0.01" placeholder="Shuma"></div></td><td>${esc(x.status)}</td><td><div class="ticketActions"><button data-admin-action="credit" data-id="${x.id}">+ Kredit</button><button class="lost" data-admin-action="debit" data-id="${x.id}">− Tërhiq</button><button class="cancel" data-admin-action="status" data-id="${x.id}" data-status="${x.status}">${x.status==='active'?'Blloko':'Aktivizo'}</button><button data-admin-action="password" data-id="${x.id}">Password</button><button data-admin-action="bets" data-id="${x.id}" data-name="${esc(x.username)}">Biletat</button></div></td></tr>`).join('')}</tbody></table></div><div id="adminUsersMsg" class="controlMsg"></div></div>`;
-        document.querySelectorAll('[data-admin-action]').forEach(b=>b.onclick=async()=>{const id=b.dataset.id,action=b.dataset.adminAction,msg=$('adminUsersMsg');try{if(action==='bets'){const r=await controlFetch('/api/admin/users/'+id+'/bets');msg.innerHTML=`<b>Biletat e ${esc(b.dataset.name)}:</b><br>${r.bets.length?r.bets.map(x=>`#${x.id} · €${Number(x.stake).toFixed(2)} · ${esc(x.status)} · ${Number(x.total_odds).toFixed(2)}`).join('<br>'):'Nuk ka bileta.'}`;return}if(action==='password'){const password=prompt('Password i ri (minimum 6 karaktere):');if(!password)return;await controlFetch('/api/admin/users/'+id+'/password',{method:'POST',body:JSON.stringify({password})})}else if(action==='status')await controlFetch('/api/admin/users/'+id+'/status',{method:'POST',body:JSON.stringify({status:b.dataset.status==='active'?'blocked':'active'})});else{const amount=document.querySelector(`[data-admin-amount="${id}"]`).value;await controlFetch('/api/admin/users/'+id+'/balance',{method:'POST',body:JSON.stringify({amount,direction:action})})}await renderManagementView('directory')}catch(e){msg.textContent=e.message;msg.className='controlMsg error'}});return;
-      }
-      const title=({center:'Operatorët, Partnerët dhe Seniorët',operator:'Hierarkia e platformës',partner:'Administratorët e mi',admin:'Aktiviteti i administratorit',senior:'Managerët e mi',supermanager:'Managerët e mi',manager:'Agjentët e mi',agent:'User-at e mi'}[user.role]||'Llogaritë e mia');
-      const creditCard=user.role==='center'?['Status','UNLIMITED']:['Credit','€'+formatCredit(user.balance)];
-      const canFundRow = x => x.status==='active' && ((user.role==='center') || (user.role==='partner' && x.role==='admin') || ((user.role==='senior'||user.role==='supermanager') && x.role==='manager') || (user.role==='manager' && x.role==='agent') || (user.role==='agent' && x.role==='user'));
-      $('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Lista e Përdoruesve</button></div><div class="controlGrid">${[['Roli',roleVisibleLabel(user.role)],creditCard,['Llogari',d.accounts.length],['Bileta në pritje',d.pendingTickets]].map(x=>`<div class="controlCard"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div><div class="controlSection"><h3>${title}</h3>${d.accounts.length?`<table class="controlTable"><thead><tr><th>ID</th><th>Username</th><th>Role</th><th>Credit</th><th>Status</th><th>Veprimi</th></tr></thead><tbody>${d.accounts.map(x=>`<tr><td>${x.id}</td><td>${esc(x.username)}</td><td><span class="roleBadge">${esc(x.role)}</span></td><td class="listBalance">€${Number(x.balance).toFixed(2)}</td><td>${esc(x.status)}</td><td>${canFundRow(x)?`<div class="rowCredit"><input data-list-credit-amount="${x.id}" type="number" min="0.01" step="0.01" placeholder="Shuma"><button class="controlBtn" data-list-credit="${x.id}">Shto kredit</button></div>`:'<span style="color:#888;font-size:11px">—</span>'}</td></tr>`).join('')}</tbody></table>`:'<div class="noBets">Nuk ka llogari.</div>'}<div id="directoryMsg" class="controlMsg"></div></div>`;
-      document.querySelectorAll('[data-list-credit]').forEach(b=>b.onclick=async()=>{const id=b.dataset.listCredit,field=document.querySelector(`[data-list-credit-amount="${id}"]`),amount=field?field.value:'';try{await controlFetch('/api/staff/'+id+'/credit',{method:'POST',body:JSON.stringify({amount,direction:'credit'})});$('directoryMsg').textContent='Krediti u shtua me sukses.';$('directoryMsg').className='controlMsg ok';if(field)field.value='';const nd=await controlFetch('/api/staff/overview');const target=nd.accounts.find(a=>Number(a.id)===Number(id));const me=(await fetch('/api/me',{headers:{Authorization:'Bearer '+token}}).then(r=>SportsbookApi.readJson(r))).user;setAuthState(me);await renderManagementView('directory');}catch(e){$('directoryMsg').textContent=e.message;$('directoryMsg').className='controlMsg error';}});
-      return;
-    }
+    if(view==='directory'){await renderHierarchyDirectory(d);return;}
     if(view==='create'){
       const valid=staffCreateRoles(user.role).find(x=>x[0]===createRole);
       if(!valid){$('controlApp').innerHTML='<div class="controlSection">Kjo llogari nuk mund të krijohet nga ky rol.</div>';return}
-      $('controlApp').innerHTML=`<div class="controlTabs"><button class="active">Krijo ${esc(valid[1])}</button></div><div class="controlSection"><h3>Krijo ${esc(valid[1])}</h3><form id="createChild" class="controlForm"><input id="childUser" placeholder="Username" required><input id="childPass" type="password" placeholder="Password" required><input value="${esc(valid[1])}" disabled><button>Krijo</button></form><div id="controlMsg" class="controlMsg"></div></div>`;
-      $('createChild').onsubmit=async e=>{e.preventDefault();try{const endpoint=({partner:'/api/partner/admins',admin:'/api/admin/seniors',senior:'/api/senior/managers',supermanager:'/api/senior/managers',manager:'/api/manager/agents',agent:'/api/agent/users'})[user.role];if(!endpoint)throw Error('Ky rol nuk krijon llogari të reja.');await controlFetch(endpoint,{method:'POST',body:JSON.stringify({username:$('childUser').value,password:$('childPass').value})});$('controlMsg').textContent='Account u krijua me sukses.';$('controlMsg').className='controlMsg ok';await renderManagementView('directory')}catch(e){$('controlMsg').textContent=e.message;$('controlMsg').className='controlMsg error'}};
+      $('controlApp').innerHTML=`<div class="create-account-page"><header class="create-account-header"><button type="button" id="createAccountBack" aria-label="Kthehu">‹</button><strong>Krijo ${esc(valid[1])} të ri</strong></header><form id="createChild" class="create-account-form"><div class="create-account-fields"><input id="childUser" aria-label="Përdoruesi" placeholder="Përdoruesi" autocomplete="off" required><input id="childPass" aria-label="Fjalëkalimi" type="password" minlength="6" placeholder="Fjalëkalimi" autocomplete="new-password" required></div><div class="create-account-fields"><input id="childFirstName" aria-label="Emri" placeholder="Emri" maxlength="100"><input id="childLastName" aria-label="Mbiemri" placeholder="Mbiemri" maxlength="100"></div><label class="create-credit-label">Kredi fillestare (€)<input id="childInitialCredit" type="number" min="0" max="100000000" step="0.01" value="0" required></label><label class="create-currency-label">Monedha<select id="childCurrency"><option value="EUR">€ · EUR</option></select></label><button type="submit" class="create-account-submit">Regjistrohu</button><div id="controlMsg" class="controlMsg" role="status" aria-live="polite"></div></form></div>`;
+      $('createAccountBack').onclick=()=>renderManagementView('directory');
+      let creationKey=crypto.randomUUID();
+      $('createChild').onsubmit=async e=>{e.preventDefault();const button=e.currentTarget.querySelector('button[type="submit"]');if(button.disabled)return;button.disabled=true;try{const endpoint=({partner:'/api/partner/admins',admin:'/api/admin/seniors',senior:'/api/senior/managers',supermanager:'/api/senior/managers',manager:'/api/manager/agents',agent:'/api/agent/users'})[user.role];if(!endpoint)throw Error('Ky rol nuk krijon llogari të reja.');await controlFetch(endpoint,{method:'POST',headers:{'Idempotency-Key':creationKey},body:JSON.stringify({username:$('childUser').value,password:$('childPass').value,firstName:$('childFirstName').value,lastName:$('childLastName').value,currency:$('childCurrency').value,initialCredit:Number($('childInitialCredit').value)})});const me=await controlFetch('/api/me');setAuthState(me.user);await renderManagementView('directory');}catch(error){$('controlMsg').textContent=error.message;$('controlMsg').className='controlMsg error';}finally{button.disabled=false;}};
+      $('createChild').oninput=()=>{creationKey=crypto.randomUUID();};
       return;
     }
     if(view==='finance'){
@@ -1408,3 +1428,33 @@ setAuthState(user);window.addEventListener('hashchange',()=>{const target=modeFr
 document.querySelector('[data-sidebar-live]').addEventListener('click',()=>setMode('live'));
 
 document.querySelector("[data-sidebar-sport]").addEventListener("click",openSportsHome);
+
+
+function playerFinanceRange(period){const now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),now.getDate()),end=new Date(start);end.setDate(end.getDate()+1);if(period==='yesterday'){start.setDate(start.getDate()-1);end.setDate(end.getDate()-1);}if(period==='month'||period==='lastmonth'){start.setDate(1);end.setFullYear(start.getFullYear(),start.getMonth()+1,1);if(period==='lastmonth'){start.setMonth(start.getMonth()-1);end.setMonth(end.getMonth()-1);}}return {start,end};}
+async function openPlayerFinance({fromHash=false,custom=null}={}){
+ if(user&&!['user','partner','admin','senior','supermanager','manager','agent'].includes(user.role))return;
+ restoreInlineControl();clearInterval(timer);timer=null;++liveLoadSequence;closeLiveMarkets();mode='finance';hideUserMenu();$('sportsbar').style.display='none';
+ if(!fromHash&&location.hash!=='#/AccountBalance')history.pushState({mode:'finance'},'','#/AccountBalance');
+ if(!user){$('content').innerHTML='<div class="emptySlip">Kyçu për të parë financat.</div>';return;}
+ const sequence=++playerFinanceSequence,range=custom||playerFinanceRange(playerFinancePeriod),toDate=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');const last=new Date(range.end);last.setDate(last.getDate()-1);
+ $('content').innerHTML='<div class="sports-loading">Duke ngarkuar financat…</div>';
+ try{const d=await controlFetch((user.role==='user'?'/api/account-finance?':'/api/hierarchy-finance?')+new URLSearchParams({from:range.start.toISOString(),to:range.end.toISOString()}));if(sequence!==playerFinanceSequence||mode!=='finance')return;
+ const amount=n=>formatCredit(Number(n)||0),months=[new Date().toLocaleString('sq-AL',{month:'long'}),new Date(new Date().getFullYear(),new Date().getMonth()-1,1).toLocaleString('sq-AL',{month:'long'})];
+ $('content').innerHTML=`<section class="player-finance"><header class="create-account-header"><button type="button" id="financeBack" aria-label="Kthehu">‹</button><strong>Financa</strong></header><form id="financeDates" class="finance-date-filter"><label>Nga<input id="financeFrom" type="date" value="${toDate(range.start)}" required></label><label>Deri<input id="financeTo" type="date" value="${toDate(last)}" required></label><button>Filtro</button></form><nav class="finance-periods">${[['today','Sot'],['yesterday','Dje'],['month',months[0]],['lastmonth',months[1]]].map(([k,l])=>`<button data-finance-period="${k}" class="${!custom&&k===playerFinancePeriod?'active':''}">${esc(l)}</button>`).join('')}</nav><h2>BASTE</h2><div class="finance-table-wrap"><table><thead><tr><th>Info</th><th>Xhiro</th><th>Fitimi</th><th>%</th><th>Diferenca</th></tr></thead><tbody>${(d.rows||[{username:d.username,...d.summary}]).map(row=>`<tr><td>${esc(row.username)}${row.role?`<small class="finance-row-role">${esc(staffRoleLabel(row.role))}</small>`:''}</td><td>${amount(row.turnover)}</td><td>${amount(row.payout)}</td><td>${d.rows?amount(row.commission):'—'}</td><td>${amount(row.difference)} EUR</td></tr>`).join('')}${d.rows&&!d.rows.length?'<tr><td colspan="5">Nuk ka llogari pasardhëse.</td></tr>':''}<tr class="finance-total"><td>Total EURO</td><td>${amount(d.summary.turnover)}</td><td>${amount(d.summary.payout)}</td><td>${d.rows?amount(d.summary.commission):'—'}</td><td>${amount(d.summary.difference)} EUR</td></tr></tbody></table></div><p class="finance-explanation">${d.rows?'Çdo rresht përmbledh biletat e të gjithë përdoruesve brenda degës së llogarisë pasardhëse. Nuk është konfiguruar komision; kolona % është 0. ':''}Sipas datës së vendosjes së biletave. Xhiroja përfshin biletat e pranuara; pagesat përfshijnë kthimet e biletave të përfunduara. Në pritje të pranimit: ${amount(d.summary.pendingStake)} €. Pa rezultat final: ${amount(d.summary.unsettledStake)} €.</p><h2>HISTORIKU FINANCIAR${d.rows?' I LLOGARISË SËNDE':''}</h2><div class="finance-table-wrap"><table><thead><tr><th>Data</th><th>Veprimi</th><th>Bileta</th><th>Shuma</th><th>Balanca pas veprimit</th></tr></thead><tbody>${d.transactions.map(t=>`<tr><td>${esc(new Date(String(t.createdAt).replace(' ','T')+(String(t.createdAt).includes('T')?'':'Z')).toLocaleString('sq-AL'))}</td><td>${esc(({bet:'Bast',payout:'Pagesë fitimi',refund:'Rimbursim',transfer_in:'Kredit i marrë',transfer_out:'Kredit i transferuar',adjustment:'Korrigjim'})[t.type]||t.type)}</td><td>${t.betId?'#'+Number(t.betId):'—'}</td><td>${amount(t.amount)} €</td><td>${amount(t.balanceAfter)} €</td></tr>`).join('')||'<tr><td colspan="5">Nuk ka transaksione për këtë periudhë.</td></tr>'}</tbody></table></div><p class="finance-explanation">Deri në 200 transaksionet më të fundit të periudhës. Përmbledhja përfshin të gjitha biletat e periudhës.</p></section>`;
+ $('financeBack').onclick=openSportsHome;document.querySelectorAll('[data-finance-period]').forEach(b=>b.onclick=()=>{playerFinancePeriod=b.dataset.financePeriod;openPlayerFinance();});$('financeDates').onsubmit=e=>{e.preventDefault();const start=new Date($('financeFrom').value+'T00:00:00'),end=new Date($('financeTo').value+'T00:00:00');end.setDate(end.getDate()+1);if(start>=end){showSlipMessage('Interval kohor i pavlefshëm.');return;}openPlayerFinance({custom:{start,end}});};
+ }catch(e){if(sequence===playerFinanceSequence&&mode==='finance')$('content').innerHTML='<div class="emptySlip">'+esc(e.message)+' <button id="retryFinance">Provo përsëri</button></div>';if($('retryFinance'))$('retryFinance').onclick=()=>openPlayerFinance({custom});}
+}
+
+async function renderHierarchyDirectory(data){
+ const access=await controlFetch('/api/access/me'),permissions=new Set(access.permissions||[]),accounts=data.accounts||[],fundable=new Set((data.fundTargets||[]).map(a=>Number(a.id)));
+ $('controlApp').innerHTML=`<section class="hierarchy-directory"><header class="create-account-header"><button id="directoryBack" type="button" aria-label="Kthehu">‹</button><strong>Lista e Përdoruesve</strong></header><div class="directory-search"><label for="directorySearch">Kërko përdoruesin</label><input id="directorySearch" type="search" placeholder="Emri i përdoruesit ose ID…"><span id="directoryCount"></span></div><div class="directory-heading"><span>Përdoruesi</span><span>Balanca EUR</span><span>Statusi</span></div><div id="directoryAccounts"></div><div id="directoryMsg" class="controlMsg" role="status"></div></section>`;
+ $('directoryBack').onclick=openSportsHome;
+ const expanded=new Set();
+ const draw=()=>{const q=$('directorySearch').value.trim().toLowerCase(),rows=accounts.filter(a=>!q||String(a.username).toLowerCase().includes(q)||String(a.id).includes(q));$('directoryCount').textContent=rows.length+' llogari';
+ $('directoryAccounts').innerHTML=rows.map(a=>`<article class="directory-account"><div class="directory-account-row"><button type="button" data-directory-expand="${a.id}" aria-expanded="${expanded.has(a.id)}"><span>${expanded.has(a.id)?'⌃':'⌄'}</span><strong>${esc(a.username)}</strong><small>${esc(staffRoleLabel(a.role))}</small></button><strong>${a.balance===undefined?'—':formatCredit(a.balance)}</strong>${permissions.has('users.block')?`<button type="button" class="directory-status ${a.status==='active'?'':'blocked'}" data-directory-status="${a.id}" aria-label="${a.status==='active'?'Blloko':'Aktivizo'} ${esc(a.username)}">${a.status==='active'?'Blloko':'Aktivizo'}</button>`:`<span>${a.status==='active'?'Aktiv':'I kufizuar'}</span>`}</div>${expanded.has(a.id)?`<div class="directory-account-details"><p>ID: ${a.id} · ${esc(staffRoleLabel(a.role))} · ${a.status==='active'?'Aktiv':'I kufizuar'}</p>${fundable.has(Number(a.id))?`<form data-directory-credit="${a.id}"><label>Shuma (€)<input type="number" name="amount" min="0.01" max="100000000" step="0.01" required></label><button type="submit">Shto kredit</button>${permissions.has('wallet.debit')?'<button type="submit" name="direction" value="debit">Tërhiq kredit</button>':''}</form>`:''}</div>`:''}</article>`).join('')||'<div class="emptySlip">Nuk ka përdorues për këtë kërkim.</div>';
+ $('directoryAccounts').querySelectorAll('[data-directory-expand]').forEach(b=>b.onclick=()=>{const id=Number(b.dataset.directoryExpand);if(expanded.has(id))expanded.delete(id);else expanded.add(id);draw();});
+ $('directoryAccounts').querySelectorAll('[data-directory-status]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{const account=accounts.find(a=>Number(a.id)===Number(b.dataset.directoryStatus)),status=account.status==='active'?'blocked':'active';await controlFetch('/api/accounts/'+account.id+'/status',{method:'POST',body:JSON.stringify({status})});account.status=status;draw();}catch(e){$('directoryMsg').textContent=e.message;b.disabled=false;}});
+ $('directoryAccounts').querySelectorAll('[data-directory-credit]').forEach(form=>form.onsubmit=async e=>{e.preventDefault();const buttons=[...form.querySelectorAll('button')];if(buttons.some(b=>b.disabled))return;buttons.forEach(b=>b.disabled=true);try{const amount=Number(new FormData(form).get('amount'));await controlFetch('/api/staff/'+form.dataset.directoryCredit+'/credit',{method:'POST',body:JSON.stringify({amount,direction:e.submitter?.value==='debit'?'debit':'credit'})});const fresh=await controlFetch('/api/staff/overview');await renderHierarchyDirectory(fresh);const me=await controlFetch('/api/me');setAuthState(me.user);}catch(error){$('directoryMsg').textContent=error.message;buttons.forEach(b=>b.disabled=false);}});
+ };
+ $('directorySearch').oninput=draw;draw();
+}

@@ -46,6 +46,51 @@ async function main(){
     await evaluate('homeExtras.main=cache.filter(g=>g.home_team);document.querySelector("[data-category]").click()');
     await until(()=>evaluate('!!document.querySelector("#categoryBody .sports-fixture")'),'football category fixtures');
     assert(!(await evaluate('document.querySelector("#categoryBody").textContent')).includes('not defined'));
+    await api('/api/staff/'+account.id+'/credit','POST',{amount:100});
+    const financeBet=await api('/api/bets','POST',{stake:10,selections:[{gameId:'200',coefId:'2001',marketId:'6575',selection:'1',odd:2}]},player);
+    await api('/api/operator/tickets/'+financeBet.betId+'/accept','POST',{});await api('/api/operator/tickets/'+financeBet.betId+'/settle','POST',{status:'won'});
+    const fin=await api('/api/account-finance','GET',undefined,player);assert.equal(fin.summary.turnover,10);assert.equal(fin.summary.payout,20);assert.equal(fin.summary.difference,-10);
+    await evaluate('openPlayerFinance()');await until(()=>evaluate('!!document.querySelector("#financeDates")'),'static finances');assert.equal(await evaluate('document.querySelector("#controlModal").classList.contains("show")'),false);
+    assert(await evaluate('document.querySelector(".player-finance").textContent.includes("user_homeclick")'));
+    for(const width of [390,1440]){
+      await send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:width===390});
+      assert(await evaluate('Array.from(document.querySelectorAll(".finance-table-wrap")).every(e=>e.scrollWidth<=e.clientWidth+1)'),'finance tables fit '+width);
+    }
+    await evaluate('openSportsHome()');await until(()=>evaluate('!!document.querySelector(".home-match-open")'),'home after finances');
+    for(const [role,child] of [['partner','admin'],['admin','senior'],['senior','manager'],['manager','agent'],['agent','user']]){
+      const staffToken=await login(role+'_homeclick');
+      await evaluate('token='+JSON.stringify(staffToken)+';fetch("/api/me",{headers:{Authorization:"Bearer "+token}}).then(r=>r.json()).then(d=>setAuthState(d.user))');
+      assert.equal(await evaluate('getComputedStyle(document.querySelector("#betslip")).display'),'none',role+' has no betslip');
+      if(role==='agent'){
+        await evaluate('showMyBets(true)');await until(()=>evaluate('!!document.querySelector("[data-agent-bets-user]")'),'agent users with bets');
+        assert.equal(await evaluate('document.querySelectorAll("[data-bet-card]").length'),0);
+        await evaluate('document.querySelector("[data-agent-bets-user]").click()');await until(()=>evaluate('!!document.querySelector("[data-bet-card]")'),'selected user tickets');
+        assert(await evaluate('document.querySelector(".agent-user-ticket-header").textContent.includes("user_homeclick")'));
+        await evaluate('showMyBets(false)');
+      }
+      await evaluate('handleStaffAction("directory")');await until(()=>evaluate('!!document.querySelector("#directorySearch")'),'static directory '+role);
+      assert.equal(await evaluate('document.querySelector("#controlModal").classList.contains("show")'),false);
+      await evaluate('document.querySelector("#directorySearch").value="zz-not-found";document.querySelector("#directorySearch").dispatchEvent(new Event("input"))');assert.equal(await evaluate('document.querySelectorAll(".directory-account").length'),0);
+      await evaluate('document.querySelector("#directorySearch").value="";document.querySelector("#directorySearch").dispatchEvent(new Event("input"))');assert(await evaluate('document.querySelectorAll(".directory-account").length>0'));
+      await evaluate('openSportsHome()');
+      const report=await api('/api/hierarchy-finance','GET',undefined,staffToken);assert.equal(report.summary.turnover,10);assert.equal(report.summary.payout,20);assert.equal(report.summary.difference,-10);assert(report.rows.some(r=>r.role===child && r.turnover===10));
+      await evaluate('openPlayerFinance()');await until(()=>evaluate('!!document.querySelector(".finance-total")'),'hierarchy finance '+role);assert.equal(await evaluate('document.querySelector("#controlModal").classList.contains("show")'),false);
+      for(const width of [390,1440]){await send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:width===390});assert(await evaluate('Array.from(document.querySelectorAll(".finance-table-wrap")).every(e=>e.scrollWidth<=e.clientWidth+1)'),'staff finances fit');}
+      await evaluate('openSportsHome()');await until(()=>evaluate('!!document.querySelector("#userAvatar")'),'account navbar');
+      await evaluate('document.querySelector("#userAvatar").click()');
+      assert.equal(await evaluate('Array.from(document.querySelectorAll("[data-user-menu]")).filter(b=>b.dataset.userMenu.startsWith("create:")).length'),1);
+      assert(await evaluate('Array.from(document.querySelectorAll("[data-user-menu]")).some(b=>b.dataset.userMenu==="create:'+child+'")'));
+      await evaluate('Array.from(document.querySelectorAll("[data-user-menu]")).find(b=>b.dataset.userMenu==="create:'+child+'").click()');
+      await until(()=>evaluate('!!document.querySelector("#createChild")'),'create '+child);
+      if(role==='agent'){
+        await api('/api/staff/'+account.id+'/credit','POST',{amount:10});
+        const staffMe=await api('/api/me','GET',undefined,staffToken);await api('/api/staff/'+staffMe.user.id+'/credit','POST',{amount:10});
+        await evaluate('document.querySelector("#childUser").value="initial_credit_player";document.querySelector("#childPass").value="Fixture-password!";document.querySelector("#childFirstName").value="Test";document.querySelector("#childLastName").value="Player";document.querySelector("#childInitialCredit").value="5";document.querySelector("#createChild").requestSubmit()');
+        await until(async()=>{return (await api('/api/accounts')).users.some(u=>u.username==='initial_credit_player');},'initial credit account');
+        const created=(await api('/api/accounts')).users.find(u=>u.username==='initial_credit_player');assert.equal(created.balance,5);assert.equal((await api('/api/me','GET',undefined,staffToken)).user.balance,5);
+      }
+      await evaluate('document.querySelector("#controlModal").classList.remove("show");hideUserMenu()');
+    }
     assert.deepEqual(errors,[]);console.log('Home match button and market selection: PASS');
   }finally{
     ws?.close();for(const proc of [chrome,server])if(proc&&proc.exitCode===null){proc.kill();await Promise.race([new Promise(r=>proc.once('exit',r)),delay(2000)]);}

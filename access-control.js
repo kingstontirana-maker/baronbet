@@ -109,6 +109,7 @@ module.exports = function accessControl({get, all, run, tx, now, hashPassword, v
     for(const col of ['partner_id','administrator_id','senior_id','manager_id']) add('bets',col,'INTEGER');
     add('bets','ticket_code','TEXT');
     add('bet_selections','original_odd','REAL');
+    add('users','first_name',"TEXT NOT NULL DEFAULT ''");add('users','last_name',"TEXT NOT NULL DEFAULT ''");add('users','currency',"TEXT NOT NULL DEFAULT 'EUR'");
     add('bet_selections','league_id','TEXT');
     run('CREATE TABLE IF NOT EXISTS risk_leagues(league_id TEXT PRIMARY KEY,name TEXT NOT NULL)');
     run('CREATE TABLE IF NOT EXISTS risk_event_leagues(event_id TEXT PRIMARY KEY,league_id TEXT NOT NULL)');
@@ -200,10 +201,22 @@ module.exports = function accessControl({get, all, run, tx, now, hashPassword, v
         const key={user:'max_users',agent:'max_agents',manager:'max_managers'}[role];
         if(key&&all('SELECT id FROM users WHERE role=?',[role]).filter(u=>inside(ancestor,u.id)).length>=limits(ancestor.id)[key])fail('Account limit exceeded.');
       }
+      const firstName=String(req.body.firstName||'').trim(),lastName=String(req.body.lastName||'').trim(),currency=req.body.currency||'EUR';
+      if(firstName.length>100||lastName.length>100||currency!=='EUR')fail('Invalid profile or currency.',400);
+      const credit=Number(req.body.initialCredit??0),cents=Math.round(credit*100),key=String(req.headers['idempotency-key']||'');
+      if(!Number.isFinite(credit)||credit<0||credit>100000000||Math.abs(credit*100-cents)>0.00001)fail('Invalid initial credit.',400);
+      if(credit>0){requirePermission(req.user,'wallet.credit');if(!/^[a-zA-Z0-9_-]{8,128}$/.test(key))fail('Idempotency-Key required.',400);}
+      const fingerprint=JSON.stringify({operation:'account_create',username,role,parentId,firstName,lastName,currency,cents,passwordHash:require('crypto').createHash('sha256').update(password).digest('hex')});
       const id=tx(()=>{
+        if(credit>0){const replay=get('SELECT * FROM idempotency WHERE actor_id=? AND key=?',[req.user.id,key]);if(replay){if(replay.fingerprint!==fingerprint)fail('Idempotency conflict.',409);return JSON.parse(replay.response).id;}}
         run('INSERT INTO users(username,password_hash,role,status,parent_id,business_parent_id,control_parent_id,partner_id,created_by) VALUES(?,?,?,\'active\',?,?,?,?,?)',[username,hashPassword(password),role,parentId,role==='operator'?null:parentId,role==='operator'?parentId:null,parent.partner_id,req.user.id]);
         const id=Number(get('SELECT last_insert_rowid() id').id);
         if(role==='partner')run('UPDATE users SET partner_id=? WHERE id=?',[id,id]);
+        run('UPDATE users SET first_name=?,last_name=?,currency=? WHERE id=?',[firstName,lastName,currency,id]);
+        if(credit>0){const actor=get('SELECT * FROM users WHERE id=?',[req.user.id]);if(actor.role!=='center'&&Math.round((Number(actor.balance)-Number(actor.reserved_balance||0))*100)<cents)fail('Kredi e pamjaftueshme për krijimin e llogarisë.',400);
+          if(actor.role!=='center'){const remaining=(Math.round(Number(actor.balance)*100)-cents)/100;run('UPDATE users SET balance=? WHERE id=?',[remaining,actor.id]);run('INSERT INTO wallet_transactions(user_id,type,amount,balance_before,balance_after,created_by,currency,reference,note) VALUES(?,?,?,?,?,?,?,?,?)',[actor.id,'transfer_out',-credit,actor.balance,remaining,actor.id,'EUR',key,'Initial account credit']);}
+          run('UPDATE users SET balance=? WHERE id=?',[credit,id]);run('INSERT INTO wallet_transactions(user_id,type,amount,balance_before,balance_after,created_by,currency,reference,note) VALUES(?,?,?,?,?,?,?,?,?)',[id,'transfer_in',credit,0,credit,actor.id,'EUR',key,'Initial account credit']);audit(req,'wallet_transfer',id,null,{amount:credit,reference:key,initialCredit:true});run('INSERT INTO idempotency(actor_id,key,fingerprint,response) VALUES(?,?,?,?)',[actor.id,key,fingerprint,JSON.stringify({id})]);
+        }
         audit(req,'account_created',id,null,{username,role,parentId});return id;
       });res.status(201).json({user:publicUser(get('SELECT * FROM users WHERE id=?',[id]))});
     }));
@@ -287,6 +300,20 @@ module.exports = function accessControl({get, all, run, tx, now, hashPassword, v
       const settled=get(`SELECT COALESCE(SUM(stake-payout),0) ggr FROM bets b WHERE ${where} AND status IN ('won','lost')`,params);
       res.json({...summary,ggr:settled.ggr,totalBalances:users.reduce((n,u)=>n+u.balance,0),counts:Object.fromEntries(Object.keys({...children,operator:[],user:[]}).map(r=>[r,users.filter(u=>u.role===r).length])),activeUsers:users.filter(u=>u.role==='user'&&u.status==='active').length});
     };
+    app.get('/api/hierarchy-finance',...guard('reports.view',(req,res)=>{
+      if(!['partner','admin','senior','supermanager','manager','agent'].includes(req.user.role))fail('Business account required.');
+      const from=req.query.from?new Date(String(req.query.from)):null,to=req.query.to?new Date(String(req.query.to)):null;
+      if((from&&!Number.isFinite(from.getTime()))||(to&&!Number.isFinite(to.getTime()))||(from&&to&&from>to))fail('Interval kohor i pavlefshëm.',400);
+      const accounts=all('SELECT id,username,role,business_parent_id,parent_id FROM users'),direct=accounts.filter(u=>Number(u.business_parent_id??u.parent_id)===Number(req.user.id)&&children[req.user.role]?.includes(u.role));
+      const rows=direct.map(u=>({id:Number(u.id),username:u.username,role:u.role,currency:'EUR',turnover:0,payout:0,commission:0,difference:0,pendingStake:0,unsettledStake:0,tickets:0})),byChild=new Map(rows.map(r=>[r.id,r])),owners=new Map();
+      for(const account of accounts.filter(u=>u.role==='user')){const chain=lineage(account.id);const index=chain.findIndex(u=>Number(u.id)===Number(req.user.id));if(index>0&&byChild.has(Number(chain[index-1].id)))owners.set(Number(account.id),Number(chain[index-1].id));}
+      const owned=[...owners.keys()],args=[...owned];let filter='';if(from){filter+=' AND datetime(created_at)>=datetime(?)';args.push(from.toISOString());}if(to){filter+=' AND datetime(created_at)<datetime(?)';args.push(to.toISOString());}
+      const stats=owned.length?all("SELECT user_id,COUNT(*) tickets,COALESCE(SUM(CASE WHEN status IN ('accepted','won','lost','void') THEN stake ELSE 0 END),0) turnover,COALESCE(SUM(CASE WHEN status IN ('won','lost','void') THEN payout ELSE 0 END),0) payout,COALESCE(SUM(CASE WHEN status='pending' THEN stake ELSE 0 END),0) pendingStake,COALESCE(SUM(CASE WHEN status='accepted' THEN stake ELSE 0 END),0) unsettledStake FROM bets WHERE user_id IN ("+owned.map(()=>'?').join(',')+")"+filter+" GROUP BY user_id",args):[];
+      for(const stat of stats){const row=byChild.get(owners.get(Number(stat.user_id)));for(const k of ['turnover','payout','pendingStake','unsettledStake','tickets'])row[k]+=Number(stat[k]);}
+      const summary={turnover:0,payout:0,commission:0,difference:0,pendingStake:0,unsettledStake:0,tickets:0};for(const row of rows){for(const k of Object.keys(summary)){if(k==='difference')row[k]=Number((row.turnover-row.payout-row.commission).toFixed(2));else if(k!=='tickets')row[k]=Number(row[k].toFixed(2));summary[k]+=row[k];}}for(const k of Object.keys(summary))summary[k]=Number(summary[k].toFixed(2));
+      const walletArgs=[req.user.id],walletFilter=filter;if(from)walletArgs.push(from.toISOString());if(to)walletArgs.push(to.toISOString());const me=get('SELECT * FROM users WHERE id=?',[req.user.id]);
+      res.json({username:me.username,balance:Number(me.balance),reservedBalance:Number(me.reserved_balance||0),rows,summary,commissionConfigured:false,transactions:hasPermission(req.user,'wallet.view')?all('SELECT id,type,amount,balance_after AS balanceAfter,bet_id AS betId,created_at AS createdAt FROM wallet_transactions WHERE user_id=?'+walletFilter+' ORDER BY id DESC LIMIT 200',walletArgs):[]});
+    }));
     app.get('/api/dashboard',...guard('reports.view',dashboard));app.get('/api/reports',...guard('reports.view',dashboard));
     app.get('/api/live-exposure',...guard('risk.view',(req,res)=>res.json({events:liveExposure(req.user)})));
     app.get('/api/risk',...guard('risk.view',(req,res)=>{const s=scope(req.user,'b.user_id');res.json({largestBets:all(`SELECT b.*,u.username FROM bets b JOIN users u ON u.id=b.user_id WHERE ${s.sql} AND b.status IN ('pending','accepted') ORDER BY b.potential_win DESC LIMIT 100`,s.params),markets:all(`SELECT bs.game_id,bs.market_id,bs.selection,MAX(NULLIF(TRIM(bs.home_team),'')) home_team,MAX(NULLIF(TRIM(bs.away_team),'')) away_team,MAX(NULLIF(TRIM(bs.league),'')) league,SUM(b.potential_win) liability FROM bet_selections bs JOIN bets b ON b.id=bs.bet_id WHERE ${s.sql} AND b.status IN ('pending','accepted') GROUP BY bs.game_id,bs.market_id,bs.selection ORDER BY liability DESC LIMIT 100`,s.params)});}));

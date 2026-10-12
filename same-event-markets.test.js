@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const ui=fs.readFileSync('public/euro07.bet/vbet/user/build/main.js','utf8');
-function setup(){const ctx={slip:[],mode:'prematch',cache:[],renderSlip(){},render(){},renderLive(){},lock:v=>!Number.isFinite(Number(v))||Number(v)<=1,parseOdds:()=>({'1':{odd:2,coefId:'10',marketId:'1'},'2':{odd:3,coefId:'11',marketId:'1'}})};vm.createContext(ctx);vm.runInContext(ui.slice(ui.indexOf('function addPick('),ui.indexOf('function normalizeLiveMarkets(')),ctx);return ctx;}
+function setup(){const ctx={user:{role:'user'},slip:[],mode:'prematch',cache:[],renderSlip(){},render(){},renderLive(){},lock:v=>!Number.isFinite(Number(v))||Number(v)<=1,parseOdds:()=>({'1':{odd:2,coefId:'10',marketId:'1'},'2':{odd:3,coefId:'11',marketId:'1'}})};vm.createContext(ctx);vm.runInContext(ui.slice(ui.indexOf('function addPick('),ui.indexOf('function normalizeLiveMarkets(')),ctx);return ctx;}
 test('same-event markets coexist, individual picks toggle, and same-market outcomes replace',()=>{
  const c=setup(),g={id:77},pick=(id,market_id,special_value='')=>c.addMarketPick(g,{market_option_id:id,market_id,special_value,market_option:'Over',odd:2});
  c.addPick(g,'1',2);pick('20','2','2.5');assert.equal(c.slip.length,2);
