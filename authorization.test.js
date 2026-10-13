@@ -33,6 +33,8 @@ test('direct API: RBAC, hierarchy, limits, ledger, revocation and legacy isolati
     assert(current);assert(Date.parse(current.expires_at)<=Date.now()+30*60*1000);
     const oldToken=root;
     const stopped=new Promise(resolve=>child.once('exit',resolve));child.kill();await stopped;
+    // A forced Windows termination cannot run exit handlers. Simulate the lease expiry only after the owner has exited.
+    const staleLease=path.join(dir,'test.db.writer-lock');if(fs.existsSync(staleLease)){const expired=new Date(Date.now()-60000);fs.utimesSync(staleLease,expired,expired);}
     child=startServer();child.stdout.on('data',b=>output+=b);child.stderr.on('data',b=>output+=b);
     let ready=false;
     for(let i=0;i<100;i++){if(child.exitCode!==null)throw Error(output);try{if((await fetch(base+'/api/health')).ok){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,100));}

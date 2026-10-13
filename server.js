@@ -763,8 +763,10 @@ function scheduleUpstreamReconnect(){if(upstreamReconnectTimer)return;const dela
 function connectUpstream(){if(upstreamSocket){try{upstreamSocket.close()}catch(_){}upstreamSocket=null}broadcastLiveStatus('connecting');try{const browserHeaders={Origin:BASE,Referer:BASE+'/vbet/user/src/','User-Agent':'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Chrome/153.0.0.0 Mobile Safari/537.36',Accept:'*/*','Accept-Language':'en-US,en;q=0.9'};upstreamSocket=ioClient(LIVE_SOCKET_URL,{path:'/socket.io',transports:['websocket'],upgrade:false,rememberUpgrade:false,reconnection:false,timeout:15000,forceNew:true,autoConnect:true,perMessageDeflate:false,transportOptions:{polling:{extraHeaders:browserHeaders},websocket:{extraHeaders:browserHeaders}},extraHeaders:browserHeaders});upstreamSocket.on('connect',()=>{upstreamConnected=true;upstreamReconnectDelay=1000;broadcastLiveStatus('connected');upstreamSocket.emit('connectToRoom',{room:'inplay'})});upstreamSocket.on('new-coefs',data=>broadcastLive('coefs',data));upstreamSocket.on('new-live-game',data=>broadcastLive('game',data));upstreamSocket.on('delete-live-game',data=>broadcastLive('delete-game',data));upstreamSocket.on('disconnect',()=>{upstreamConnected=false;broadcastLiveStatus('reconnecting');scheduleUpstreamReconnect()});upstreamSocket.on('connect_error',err=>{upstreamConnected=false;console.error('Live socket:',err&&err.message||err);broadcastLiveStatus('reconnecting');scheduleUpstreamReconnect()});upstreamSocket.on('error',err=>{upstreamConnected=false;console.error('Live socket error:',err&&err.message||err);broadcastLiveStatus('reconnecting')});}catch(_){upstreamConnected=false;broadcastLiveStatus('reconnecting');scheduleUpstreamReconnect()}}
 
 async function start(){
+  if(process.env.NODE_ENV==='production'){const databasePath=path.resolve(DB_FILE),codePath=path.resolve(__dirname);if(databasePath===codePath||databasePath.startsWith(codePath+path.sep))throw Error('Production database must be outside the repository/deployment directory. Set DB_FILE to persistent storage.');if(!fs.existsSync(databasePath)&&process.env.ALLOW_DATABASE_CREATE!=='true')throw Error('Production database missing. Refusing to create an empty replacement.');}
   databaseStorage=require('./database-storage').acquire(DB_FILE);
-  const SQL=await initSqlJs({locateFile:file=>require.resolve('sql.js/dist/'+file)}); const stored=databaseStorage.read();db=stored?new SQL.Database(stored):new SQL.Database(); run('PRAGMA foreign_keys=ON');
+  const SQL=await initSqlJs({locateFile:file=>require.resolve('sql.js/dist/'+file)}); const stored=databaseStorage.read();if(!stored&&!process.env.DB_FILE&&process.env.ALLOW_DATABASE_CREATE!=='true')throw Error('Primary database missing. Refusing to create an empty replacement. Restore a verified backup.');db=stored?new SQL.Database(stored):new SQL.Database(); run('PRAGMA foreign_keys=ON');
+  if(get('PRAGMA integrity_check')?.integrity_check!=='ok')throw Error('Database integrity check failed. Original file preserved; restore a verified backup before starting.');
   run(`CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT NOT NULL UNIQUE,password_hash TEXT NOT NULL,balance REAL NOT NULL DEFAULT 0,reserved_balance REAL NOT NULL DEFAULT 0,role TEXT NOT NULL DEFAULT 'user',status TEXT NOT NULL DEFAULT 'active',parent_id INTEGER,created_by INTEGER,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,last_login TEXT,FOREIGN KEY(parent_id) REFERENCES users(id) ON DELETE SET NULL,FOREIGN KEY(created_by) REFERENCES users(id) ON DELETE SET NULL)`);
   run(`CREATE TABLE IF NOT EXISTS event_identities(game_id TEXT PRIMARY KEY,api_id TEXT NOT NULL,sport_id TEXT)`);
   run(`CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY,user_id INTEGER NOT NULL,role TEXT NOT NULL,expires_at TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`);
@@ -790,6 +792,7 @@ async function start(){
   run(`CREATE INDEX IF NOT EXISTS idx_users_parent ON users(parent_id)`);run(`CREATE INDEX IF NOT EXISTS idx_users_business_parent ON users(business_parent_id)`);run(`CREATE INDEX IF NOT EXISTS idx_users_control_parent ON users(control_parent_id)`);run(`CREATE INDEX IF NOT EXISTS idx_bets_status ON bets(status,created_at DESC)`);run(`CREATE INDEX IF NOT EXISTS idx_bets_user ON bets(user_id,created_at DESC)`);run(`DELETE FROM sessions WHERE expires_at<=?`,[now()]);
   // A server restart requires staff to authenticate again, including legacy sessions.
   run("DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE role <> 'user')");
+  if(process.env.REVOKE_ALL_SESSIONS_ON_START==='true')run('DELETE FROM sessions');
   // Never reparent, reactivate or create demo accounts during normal startup.
   if(!get("SELECT id FROM users WHERE role='center'")) {
     const username=normalizeUsername(process.env.CENTER_USER||'center');
@@ -800,7 +803,7 @@ async function start(){
   access=require('./access-control')({get,all,run,tx,now,hashPassword,validateCredentials,publicUser,auth,hasPermission,permissionsFor,jsonError,feedGames,checkCompetitions:(picks,stake,payout,userId,excludeBet)=>competitions?.check(picks,stake,payout,userId,excludeBet)});
   tx(()=>access.migrate());
 
-  const app=express(); app.use(apiMonitor.middleware); app.disable('x-powered-by'); app.use((req,res,next)=>{res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','SAMEORIGIN');res.setHeader('Referrer-Policy','same-origin');res.setHeader('Content-Security-Policy-Report-Only',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: wss:; frame-src https:; frame-ancestors 'self'; object-src 'none'; base-uri 'self'");next();}); app.use(express.json({limit:'256kb'})); app.use((req,res,next)=>{res.setHeader('Cache-Control','no-store');next()}); app.use(express.static(path.join(__dirname,'public'))); app.use((req,res,next)=>requestContext.run(req,next));
+  const app=express(); app.use(apiMonitor.middleware); app.disable('x-powered-by'); app.use((req,res,next)=>{res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','SAMEORIGIN');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: wss:; frame-src https:; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'");next();}); app.use(express.json({limit:'256kb'})); app.use((req,res,next)=>{res.setHeader('Cache-Control','no-store');next()}); app.use(express.static(path.join(__dirname,'public'))); app.use((req,res,next)=>requestContext.run(req,next));
   app.get('/api/monitor',centerAuth,(req,res)=>res.json({...apiMonitor.snapshot(),upstreamConnected}));
   app.get('/api/monitor/stream',centerAuth,(req,res)=>{
     res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache, no-transform','X-Accel-Buffering':'no'});
@@ -813,7 +816,7 @@ async function start(){
   access.mount(app);
   const ticketAcceptance=require('./ticket-acceptance').createAcceptance({run,get,tx,now,money});
   ticketAcceptance.mount(app,centerAuth);
-  app.get('/api/health',(req,res)=>res.json({ok:true,database:'sqlite/sql.js',apiVersion:'ticket-details-json-v1',settlementVersion:SETTLEMENT_VERSION,startedAt:STARTED_AT,time:now()}));
+  app.get('/api/health',(req,res)=>res.json({ok:true,database:'sqlite/sql.js',apiVersion:'ticket-details-json-v1',storageVersion:'filesystem-lease-v2',settlementVersion:SETTLEMENT_VERSION,startedAt:STARTED_AT,time:now()}));
   for(const [route,upstream] of [['featured','prematchgamesmainleague'],['main-matches','toptenprematchgames'],['home-live','toptenlivegames'],['sports','sports'],['countries/:id','countries'],['leagues/:id','leagues'],['league-games/:id','gamesByLeague']])app.get('/api/sports-catalog/'+route,async(req,res)=>{
     const id=req.params.id;if(id&&!/^\d{1,12}$/.test(id))return jsonError(res,400,'Invalid identifier.');
     try{const r=await proxy('/ajax/'+upstream+(id?'/'+id:''));if(['gamesByLeague','toptenprematchgames','prematchgamesmainleague','toptenlivegames'].includes(upstream)&&r.status===200){const rows=JSON.parse(r.text);if(Array.isArray(rows)){rememberEventIdentities(rows);for(const g of rows){if(prematchLeagueByGame.size>=20000)prematchLeagueByGame.delete(prematchLeagueByGame.keys().next().value);if(g.league_id||id)prematchLeagueByGame.set(String(g.id),String(g.league_id||id));}access.rememberLeagues(rows);}}sendFeedResponse(res,r);}catch(_){jsonError(res,502,'Lista nuk mund të merret nga furnizuesi.');}
@@ -878,8 +881,18 @@ async function start(){
   app.get('/api/live-stream',(req,res)=>{res.writeHead(200,{'Content-Type':'text/event-stream; charset=utf-8','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no'});liveClients.add(res);res.write(`event: status\ndata: ${JSON.stringify({status:upstreamConnected?'connected':'connecting'})}\n\n`);const ping=setInterval(()=>{try{res.write(': ping\n\n')}catch(_){clearInterval(ping);liveClients.delete(res)}},15000);req.on('close',()=>{clearInterval(ping);liveClients.delete(res)})});
 
   app.post('/api/auth/register',(req,res)=>jsonError(res,403,'Accounts must be created by an agent.'));
-  app.post('/api/auth/login',require('./login-guard')(),asyncHandler(async(req,res)=>{const username=normalizeUsername(req.body.username),password=String(req.body.password||'');const u=get('SELECT * FROM users WHERE username=?',[username]);if(!u||u.status!=='active'||!access.active(u.id)||!await verifyLoginPassword(password,u.password_hash)){access.recordLogin(req,u,false);return jsonError(res,401,'Invalid username or password.');}access.recordLogin(req,u,true);try{if(!u.password_hash.startsWith('scrypt$'))run('UPDATE users SET password_hash=? WHERE id=?',[hashPassword(password),u.id]);run('UPDATE users SET last_login=? WHERE id=?',[now(),u.id]);const token=makeToken();run('INSERT INTO sessions(token,user_id,role,expires_at) VALUES(?,?,?,?)',[token,u.id,u.role,new Date(Date.now()+(u.role==='user'?SESSION_DAYS*86400000:STAFF_SESSION_MS)).toISOString()]);saveDb();res.json({token,user:publicUser(get('SELECT * FROM users WHERE id=?',[u.id]))})}catch(e){jsonError(res,500,'Login failed.')}}));
-  app.post('/api/auth/logout',auth,(req,res)=>{run('DELETE FROM sessions WHERE token=?',[req.user.token]);saveDb();res.json({ok:true})});
+  app.post('/api/auth/login',require('./login-guard')(),asyncHandler(async(req,res)=>{
+    const username=normalizeUsername(req.body.username),password=String(req.body.password||'');
+    const u=get('SELECT * FROM users WHERE username=?',[username]);
+    if(!u||u.status!=='active'||!access.active(u.id)||!await verifyLoginPassword(password,u.password_hash)){access.recordLogin(req,u,false);return jsonError(res,401,'Invalid username or password.');}
+    access.recordLogin(req,u,true);
+    try{const token=makeToken();tx(()=>{
+      if(!u.password_hash.startsWith('scrypt$'))run('UPDATE users SET password_hash=? WHERE id=?',[hashPassword(password),u.id]);
+      run('UPDATE users SET last_login=? WHERE id=?',[now(),u.id]);
+      run('INSERT INTO sessions(token,user_id,role,expires_at) VALUES(?,?,?,?)',[token,u.id,u.role,new Date(Date.now()+(u.role==='user'?SESSION_DAYS*86400000:STAFF_SESSION_MS)).toISOString()]);
+    });res.json({token,user:publicUser(get('SELECT * FROM users WHERE id=?',[u.id]))});}catch(e){jsonError(res,503,'Login could not be saved. Retry.');}
+  }));
+  app.post('/api/auth/logout',auth,(req,res)=>{try{tx(()=>run('DELETE FROM sessions WHERE token=?',[req.user.token]));res.json({ok:true});}catch(e){jsonError(res,503,'Logout could not be saved. Retry.');}});
   app.get('/api/me',auth,(req,res)=>{const u=get('SELECT id,username,balance,reserved_balance,role,status,parent_id,business_parent_id,control_parent_id,credit_limit,created_at,last_login FROM users WHERE id=?',[req.user.id]);res.json({user:publicUser(u)})});
   app.get('/api/access/me',auth,(req,res)=>res.json({user:publicUser(get('SELECT * FROM users WHERE id=?',[req.user.id])),permissions:[...permissionsFor(req.user.id,req.user.role)].sort()}));
   app.get('/api/center/governance',centerAuth,(req,res)=>{
@@ -1000,4 +1013,7 @@ async function start(){
   });
   app.listen(PORT,()=>{console.log(`SPORTSBOOK PRO: http://localhost:${PORT}`);if(process.env.DISABLE_UPSTREAM!=='true'){connectUpstream();startSettlementEngine()}});
 }
+// All acknowledged mutations are already saved synchronously; release the writer lease on graceful container shutdown.
+process.once('SIGTERM',()=>process.exit(0));
+process.once('SIGINT',()=>process.exit(0));
 start().catch(e=>{console.error(e);process.exit(1)});

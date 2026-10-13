@@ -1,0 +1,4 @@
+# This directory contains private application code and database files.
+# Node serves browser assets exclusively from public/.
+RewriteEngine On
+RewriteRule ^(?!public(?:/|$)).* - [F,L]

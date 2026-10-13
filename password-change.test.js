@@ -4,7 +4,7 @@ const source=fs.readFileSync('public/euro07.bet/vbet/user/build/main.js','utf8')
 function fixture(role='user'){
   const nodes={},calls=[];
   const node=id=>nodes[id]??= {value:'',classList:{add(){},remove(){}},style:{},replaceChildren(){},reset(){for(const id of ['oldPass','newPass','newPass2'])node(id).value='';}};
-  const ctx=vm.createContext({user:{role},$:node,JSON,document:{body:{classList:{add(){}}}},timer:null,liveLoadSequence:0,clearInterval(){},closeLiveMarkets(){},openSportsHome(){},restoreInlineControl(){},closeControlPoll(){},controlFetch:async(url,opt)=>{calls.push({url,body:JSON.parse(opt.body)});if(ctx.failure)throw Error(ctx.failure);}});
+  const ctx=vm.createContext({user:{role},$:node,JSON,brandLoading(){return '';},document:{body:{classList:{add(){}}}},timer:null,liveLoadSequence:0,clearInterval(){},closeLiveMarkets(){},openSportsHome(){},restoreInlineControl(){},closeControlPoll(){},controlFetch:async(url,opt)=>{calls.push({url,body:JSON.parse(opt.body)});if(ctx.failure)throw Error(ctx.failure);}});
   vm.runInContext(source.slice(source.indexOf('async function openControl('),source.indexOf('function roleVisibleLabel(')),ctx);
   return {ctx,node,calls,submit:()=>node('passwordForm').onsubmit({preventDefault(){}})};
 }
