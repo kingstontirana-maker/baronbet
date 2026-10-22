@@ -1,6 +1,6 @@
 'use strict';
 module.exports=function createMonitor(){
-  const requests=[],apis=new Map(),listeners=new Set();let sequence=0,timer;
+  const requests=[],apis=new Map(),listeners=new Set();let sequence=0,timer,issueHandler=()=>{};
   const slowMs=1500,capacity=500;
   function publish(){if(timer)return;timer=setTimeout(()=>{timer=null;for(const fn of listeners)fn();},250);timer.unref?.();}
   function begin(direction,method,address){
@@ -11,7 +11,7 @@ module.exports=function createMonitor(){
     let api=apis.get(key);if(!api){if(apis.size>=300)apis.delete(apis.keys().next().value);api={key,direction,method,host,endpoint,total:0,errors:0,inFlight:0,totalMs:0};apis.set(key,api);}
     const row={id:++sequence,key,direction,method,host,endpoint,startedAt:Date.now(),status:null,durationMs:null,error:'',state:'Pending'};
     requests.unshift(row);if(requests.length>capacity)requests.pop();api.inFlight++;publish();let done=false;
-    const finish=(status,error='')=>{if(done)return;done=true;row.status=status;row.durationMs=row.streaming?row.durationMs:Date.now()-row.startedAt;row.error=error;row.state=error||status>=400?'Issue':row.durationMs>=slowMs?'Slow':'Real-time';api.inFlight--;api.total++;api.totalMs+=row.durationMs;if(row.state==='Issue')api.errors++;Object.assign(api,{lastStatus:status,lastDurationMs:row.durationMs,lastSeen:Date.now(),state:row.state,lastError:error});publish();};
+    const finish=(status,error='')=>{if(done)return;done=true;row.status=status;row.durationMs=row.streaming?row.durationMs:Date.now()-row.startedAt;row.error=error;row.state=error||status>=400?'Issue':row.durationMs>=slowMs?'Slow':'Real-time';api.inFlight--;api.total++;api.totalMs+=row.durationMs;if(row.state==='Issue'){api.errors++;if(direction==='Outgoing'||status>=500){try{issueHandler({direction,method,host,endpoint,status,error});}catch(_){}}}Object.assign(api,{lastStatus:status,lastDurationMs:row.durationMs,lastSeen:Date.now(),state:row.state,lastError:error});publish();};
     finish.openStream=status=>{if(done||row.streaming)return;row.streaming=true;row.status=status;row.durationMs=Date.now()-row.startedAt;row.state='Streaming';Object.assign(api,{lastStatus:status,lastDurationMs:row.durationMs,lastSeen:Date.now(),state:row.durationMs>=slowMs?'Slow':'Real-time',lastError:''});publish();};
     return finish;
   }
@@ -26,5 +26,5 @@ module.exports=function createMonitor(){
     res.once('close',()=>{if(!res.writableFinished)end(streaming?res.statusCode:0,streaming?'':'Connection closed before response completed');});next();
   }
 
-  return {begin,snapshot,middleware,subscribe(fn){listeners.add(fn);return()=>listeners.delete(fn);}};
+  return {begin,snapshot,middleware,onIssue(fn){issueHandler=fn;},subscribe(fn){listeners.add(fn);return()=>listeners.delete(fn);}};
 };

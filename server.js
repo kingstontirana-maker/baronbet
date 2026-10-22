@@ -7,6 +7,8 @@ const ioClient = require('socket.io-client');
 const {AsyncLocalStorage}=require('async_hooks');
 const requestContext=new AsyncLocalStorage();
 const apiMonitor=require('./api-monitor')();
+// Local secrets (casino provider keys etc.); real environment variables take precedence.
+try{process.loadEnvFile(path.join(__dirname,'.env'));}catch(e){if(e.code!=='ENOENT')throw e;}
 
 const STARTED_AT = new Date().toISOString();
 const SETTLEMENT_VERSION = 'first-half-confirmed-v2';
@@ -16,7 +18,7 @@ const LIVE_SOCKET_URL = process.env.LIVE_SOCKET_URL || 'https://xbet.socketi355.
 const DB_FILE = process.env.DB_FILE || path.join(__dirname, 'sportsbook.db');
 const SESSION_DAYS = 30;
 const STAFF_SESSION_MS = 30 * 60 * 1000;
-let db, access, databaseStorage;
+let db, access, databaseStorage, platformAlerts;
 const prematchLeagueByGame=new Map();
 let competitions;
 const exposureSubscribers=new Set();
@@ -122,12 +124,13 @@ function sendFeedResponse(res,upstream){
 function rememberFeedIdentities(response){
   if(response.status<200||response.status>=300)return;
   let rows;try{rows=JSON.parse(response.text)}catch(_){return;}
-  if(Array.isArray(rows))rememberEventIdentities(rows);
+  if(rows&&typeof rows==='object')rememberEventIdentities(rows);
 }
 function rememberEventIdentities(games){
   let changed=false;
-  for(const g of games){
-    const id=String(g.id??g.game_id??''),apiId=String(g.game_api_id??g.api_id??'');
+  const rows=[];const collect=value=>{if(Array.isArray(value))value.forEach(collect);else if(value&&typeof value==='object')rows.push(value);};collect(games);
+  for(const g of rows){
+    const id=String(g.game_id??g.id??''),apiId=String(g.game_api_id??(g.game_id==null?g.api_id:'')??'');
     if(!/^\d+$/.test(id)||!/^\d+$/.test(apiId))continue;
     if(!get('SELECT game_id FROM event_identities WHERE game_id=?',[id])){
       run('INSERT INTO event_identities(game_id,api_id,sport_id) VALUES(?,?,?)',[id,apiId,g.sport_id==null?null:String(g.sport_id)]);changed=true;
@@ -205,6 +208,7 @@ async function validateSelections(selections){
       const r=await proxy((prematchLeagueByGame.has(key)?'/ajax/prematchgame/':'/ajax/livegame/')+encodeURIComponent(key));
       if(r.status>=200&&r.status<300){
         const data=JSON.parse(r.text);
+        rememberEventIdentities(data);
         detailCache.set(key,data);
         return data;
       }
@@ -260,6 +264,7 @@ async function validateSelections(selections){
       specialValue:found.specialValue??sel.specialValue??sel.special_value??'',
       gameApiId:String(authoritativeGame?.game_api_id??authoritativeGame?.api_id??''),
     };
+    if(!normalized.gameApiId&&typeof get==='function')normalized.gameApiId=String(get('SELECT api_id FROM event_identities WHERE game_id=?',[gameId])?.api_id||'');
     if(!normalized.gameApiId){
       try{
         const games=await getFeed();
@@ -287,6 +292,7 @@ const TIMELINE_TTL_MS = 2500;
 const timelineCache = new Map();
 
 function norm(v){ return String(v??'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' '); }
+function reportAnomaly(key,code,title,details){try{if(typeof platformAlerts!=="undefined")platformAlerts?.report(key,code,title,details);}catch(e){console.error("Alert persistence:",e.message);}}
 function num(v){ if(v==null||String(v).trim()==='')return null;const n=Number(String(v??'').replace(',','.')); return Number.isFinite(n)?n:null; }
 function normalizeFinalScore(value){
   const m=String(value??'').trim().match(/^(\d+)\s*[-:]\s*(\d+)$/);
@@ -302,7 +308,7 @@ function extractGameRecord(data,gameId){
   const candidates=[];
   const add=v=>{ if(Array.isArray(v))v.forEach(add); else if(v&&typeof v==='object')candidates.push(v); };
   add(data);
-  const found=candidates.find(x=>String(x.id??x.game_id??'')===String(gameId));
+  const found=candidates.find(x=>String(x.game_id??x.id??'')===String(gameId));
   if(!found)return null;
   const score=normalizeFinalScore(found.game_result??found.final_result??found.result_score??found.current_result??found.result);
   return {record:found,score,finished:finishedGame(found)};
@@ -324,24 +330,33 @@ async function fetchTimeline(apiGameId){
   return cached?.data||null;
 }
 
+const missingIdentityRetry=new Map();
 async function fetchFinalGame(gameId,cache){
-  const key=String(gameId);
-  if(cache.has(key))return cache.get(key);
+  const key=String(gameId);if(cache.has(key))return cache.get(key);
   let result=null;
   try{
     if(!cache.has('feed'))cache.set('feed',feedGames());
     const games=await cache.get('feed');
-    const g=games.find(x=>String(x.id??x.game_id??'')===key || String(x.game_id??'')===key);
+    const g=games.find(x=>String(x.game_id??x.id??'')===key);
     if(g)result=extractGameRecord(g,key);
   }catch(_){}
-  if(!result||!result.finished||!result.score){
-    try{
-      const r=await proxy('/ajax/livegame/'+encodeURIComponent(key));
-      if(r.status>=200&&r.status<300)result=extractGameRecord(JSON.parse(r.text),key)||result;
-    }catch(_){}
+  const known=typeof get==='function'?get('SELECT api_id FROM event_identities WHERE game_id=?',[key]):null;
+  const needsIdentity=!known?.api_id&&!result?.record?.game_api_id&&!result?.record?.api_id;
+  const retry=missingIdentityRetry.get(key)||0;
+  if((!result||!result.finished||!result.score||needsIdentity)&&(!needsIdentity||Date.now()>=retry)){
+    for(const route of ['/ajax/livegame/','/ajax/prematchgame/']){
+      try{
+        const r=await proxy(route+encodeURIComponent(key));
+        if(r.status<200||r.status>=300)continue;
+        const data=JSON.parse(r.text);
+        if(typeof rememberEventIdentities==='function')rememberEventIdentities(data);
+        const found=extractGameRecord(data,key);result=found||result;
+        if(found?.record?.game_api_id||found?.finished&&found?.score)break;
+      }catch(_){}
+    }
+    if(needsIdentity){if(missingIdentityRetry.size>=20000)missingIdentityRetry.delete(missingIdentityRetry.keys().next().value);missingIdentityRetry.set(key,Date.now()+60000);}
   }
-  cache.set(key,result||null);
-  return result||null;
+  cache.set(key,result||null);return result||null;
 }
 function eventTimeSeconds(v){
   const m=String(v??'').match(/(\d+)\s*:\s*(\d+)/);
@@ -700,21 +715,27 @@ async function settleSelectionBatch(){
       if(!selections.length)continue;
       const evaluated=[];
       for(const sel of selections){
+        if(sel.manual_result==='pending'){evaluated.push(null);continue;}
         if(['won','lost','void','half_won','half_lost'].includes(sel.result_status)){evaluated.push({status:sel.result_status,factor:sel.result_status==='won'?Number(sel.odd):sel.result_status==='void'?1:sel.result_status==='half_won'?(Number(sel.odd)+1)/2:sel.result_status==='half_lost'?0.5:0});continue;}
+        if(marketFamily(sel)==='unknown')reportAnomaly('unknown-market:'+sel.market_id,'unknown_market','Market pa rregull zbardhjeje',{betId:Number(row.id),selectionId:Number(sel.id),marketId:sel.market_id,market:sel.market});
+        if(sel.sport_id!=null&&String(sel.sport_id)!=='1')reportAnomaly('sport:'+sel.sport_id,'unsupported_sport','Sport pa zbardhje automatike',{betId:Number(row.id),sportId:sel.sport_id});
         const game=await fetchFinalGame(sel.game_id,gameCache);
         const identity=get('SELECT api_id,sport_id FROM event_identities WHERE game_id=?',[String(sel.game_id)]);
         if(identity?.sport_id&&String(identity.sport_id)!=='1'){evaluated.push(null);continue;}
         const apiId=String(identity?.api_id||game?.record?.game_api_id||game?.record?.api_id||sel.game_api_id||'');
+        if(apiId&&typeof platformAlerts!=='undefined')platformAlerts?.resolve('identity:'+sel.id);
         const timeline=await fetchTimeline(apiId);
         const halfScore=isFirstHalfSelection(sel)?confirmedFirstHalf(timeline):null;
-        if(!halfScore&&!finalishTimeline(timeline,game)){evaluated.push(null);continue;}
+        if(!halfScore&&!finalishTimeline(timeline,game)){if(!apiId)reportAnomaly('identity:'+sel.id,'missing_timeline_identity','Mungon identiteti i timeline-it',{betId:Number(row.id),selectionId:Number(sel.id),gameId:sel.game_id});evaluated.push(null);continue;}
         const endEvents=(timeline||[]).filter(e=>String(e.type_id)==='6'||norm(e.type)==='end of the match');
         const timelineScore=endEvents.length?normalizeFinalScore(endEvents[endEvents.length-1]?.minute):null;
         const score=halfScore||(game?.score&&timelineScore ? (game.score.home===timelineScore.home&&game.score.away===timelineScore.away?game.score:null) : (timelineScore||game?.score));
-        if(!score){evaluated.push(null);continue;}
+        if(!score){reportAnomaly('score:'+sel.id,'invalid_final_score','Rezultat final i munguar ose kontradiktor',{betId:Number(row.id),gameId:sel.game_id,feedScore:game?.score,timelineScore});evaluated.push(null);continue;}
         const stats=buildStats(timeline,score);
+        const latest=get('SELECT * FROM bet_selections WHERE id=?',[sel.id]);
+        if(latest?.manual_result){evaluated.push(null);continue;}
         const outcome=evaluateSelection(sel,stats,game,timeline);
-        if(!outcome){evaluated.push(null);continue;}
+        if(!outcome){reportAnomaly('selection:'+sel.id,'settlement_unresolved','Market që nuk mund të zbardhet',{betId:Number(row.id),selectionId:Number(sel.id),gameId:sel.game_id,marketId:sel.market_id,market:sel.market,selection:sel.selection,family:marketFamily(sel),reason:marketFamily(sel)==='unknown'?'Market pa rregull zbardhjeje':'Të dhëna ose semantikë të pamjaftueshme',score});evaluated.push(null);continue;}
         tx(()=>{
           run("UPDATE bet_selections SET result_status=? WHERE id=? AND result_status='pending' AND EXISTS (SELECT 1 FROM bets WHERE bets.id=bet_selections.bet_id AND bets.status IN ('accepted','lost'))",[outcome.status,sel.id]);
           if(!Number(get('SELECT changes() n').n))return;
@@ -722,6 +743,8 @@ async function settleSelectionBatch(){
         });
         evaluated.push(outcome);
       }
+      // Use persisted results: a manual correction may occur while provider requests are in flight.
+      evaluated.splice(0,evaluated.length,...all('SELECT odd,result_status FROM bet_selections WHERE bet_id=?',[row.id]).map(s=>{const status=s.result_status,odd=Number(s.odd);return ['won','lost','void','half_won','half_lost'].includes(status)?{status,factor:status==='won'?odd:status==='void'?1:status==='half_won'?(odd+1)/2:status==='half_lost'?0.5:0}:null;}));
       // Continue resolving remaining legs of lost tickets without changing their payout.
       if(row.status!=='accepted')continue;
       if(evaluated.some(x=>x?.status==='lost')){
@@ -731,7 +754,7 @@ async function settleSelectionBatch(){
         const allVoid=evaluated.every(x=>x.status==='void');
         tx(()=>settleTicket(row.id,allVoid?'void':(payout>0?'won':'lost'),payout,evaluated));
       }
-    }catch(e){console.error('Automatic settlement:',e.message||e)}
+    }catch(e){reportAnomaly('settlement:'+row.id,'settlement_error','Dështim gjatë zbardhjes së biletës',{betId:Number(row.id),error:e.message});console.error('Automatic settlement:',e.message||e)}
   }
 }
 function settleTicket(betId,status,payout,evaluated){
@@ -747,7 +770,7 @@ function settleTicket(betId,status,payout,evaluated){
 let settlementTimer=null;
 function startSettlementEngine(){
   if(settlementTimer)clearInterval(settlementTimer);
-  const tick=()=>settleAcceptedBets().catch(e=>console.error('Settlement engine:',e.message||e));
+  const tick=()=>settleAcceptedBets().catch(e=>{reportAnomaly('settlement-worker','settlement_worker_error','Procesi i zbardhjes dështoi',{error:e.message});console.error('Settlement engine:',e.message||e);});
   tick(); settlementTimer=setInterval(tick,10000);
 }
 
@@ -760,7 +783,7 @@ function broadcastLiveStatus(status,extra={}){broadcastLive('status',{status,...
 const notificationClients=new Map();
 function notifyUser(userId,type,payload){const clients=notificationClients.get(Number(userId));if(!clients)return;const message=`event: ${type}\ndata: ${JSON.stringify(payload)}\n\n`;for(const res of clients){try{res.write(message)}catch(_){clients.delete(res)}}if(!clients.size)notificationClients.delete(Number(userId));}
 function scheduleUpstreamReconnect(){if(upstreamReconnectTimer)return;const delay=upstreamReconnectDelay;upstreamReconnectDelay=Math.min(upstreamReconnectDelay*2,15000);upstreamReconnectTimer=setTimeout(()=>{upstreamReconnectTimer=null;connectUpstream()},delay)}
-function connectUpstream(){if(upstreamSocket){try{upstreamSocket.close()}catch(_){}upstreamSocket=null}broadcastLiveStatus('connecting');try{const browserHeaders={Origin:BASE,Referer:BASE+'/vbet/user/src/','User-Agent':'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Chrome/153.0.0.0 Mobile Safari/537.36',Accept:'*/*','Accept-Language':'en-US,en;q=0.9'};upstreamSocket=ioClient(LIVE_SOCKET_URL,{path:'/socket.io',transports:['websocket'],upgrade:false,rememberUpgrade:false,reconnection:false,timeout:15000,forceNew:true,autoConnect:true,perMessageDeflate:false,transportOptions:{polling:{extraHeaders:browserHeaders},websocket:{extraHeaders:browserHeaders}},extraHeaders:browserHeaders});upstreamSocket.on('connect',()=>{upstreamConnected=true;upstreamReconnectDelay=1000;broadcastLiveStatus('connected');upstreamSocket.emit('connectToRoom',{room:'inplay'})});upstreamSocket.on('new-coefs',data=>broadcastLive('coefs',data));upstreamSocket.on('new-live-game',data=>broadcastLive('game',data));upstreamSocket.on('delete-live-game',data=>broadcastLive('delete-game',data));upstreamSocket.on('disconnect',()=>{upstreamConnected=false;broadcastLiveStatus('reconnecting');scheduleUpstreamReconnect()});upstreamSocket.on('connect_error',err=>{upstreamConnected=false;console.error('Live socket:',err&&err.message||err);broadcastLiveStatus('reconnecting');scheduleUpstreamReconnect()});upstreamSocket.on('error',err=>{upstreamConnected=false;console.error('Live socket error:',err&&err.message||err);broadcastLiveStatus('reconnecting')});}catch(_){upstreamConnected=false;broadcastLiveStatus('reconnecting');scheduleUpstreamReconnect()}}
+function connectUpstream(){if(upstreamSocket){try{upstreamSocket.close()}catch(_){}upstreamSocket=null}broadcastLiveStatus('connecting');try{const browserHeaders={Origin:BASE,Referer:BASE+'/vbet/user/src/','User-Agent':'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Chrome/153.0.0.0 Mobile Safari/537.36',Accept:'*/*','Accept-Language':'en-US,en;q=0.9'};upstreamSocket=ioClient(LIVE_SOCKET_URL,{path:'/socket.io',transports:['websocket'],upgrade:false,rememberUpgrade:false,reconnection:false,timeout:15000,forceNew:true,autoConnect:true,perMessageDeflate:false,transportOptions:{polling:{extraHeaders:browserHeaders},websocket:{extraHeaders:browserHeaders}},extraHeaders:browserHeaders});upstreamSocket.on('connect',()=>{upstreamConnected=true;upstreamReconnectDelay=1000;broadcastLiveStatus('connected');upstreamSocket.emit('connectToRoom',{room:'inplay'})});upstreamSocket.on('new-coefs',data=>broadcastLive('coefs',data));upstreamSocket.on('new-live-game',data=>broadcastLive('game',data));upstreamSocket.on('delete-live-game',data=>broadcastLive('delete-game',data));upstreamSocket.on('disconnect',()=>{reportAnomaly('live-socket','live_disconnected','Lidhja live me furnizuesin u ndërpre',{});upstreamConnected=false;broadcastLiveStatus('reconnecting');scheduleUpstreamReconnect()});upstreamSocket.on('connect_error',err=>{reportAnomaly('live-socket','live_connection_error','Lidhja live me furnizuesin dështoi',{error:String(err.message||err)});upstreamConnected=false;console.error('Live socket:',err&&err.message||err);broadcastLiveStatus('reconnecting');scheduleUpstreamReconnect()});upstreamSocket.on('error',err=>{upstreamConnected=false;console.error('Live socket error:',err&&err.message||err);broadcastLiveStatus('reconnecting')});}catch(_){upstreamConnected=false;broadcastLiveStatus('reconnecting');scheduleUpstreamReconnect()}}
 
 async function start(){
   if(process.env.NODE_ENV==='production'){const databasePath=path.resolve(DB_FILE),codePath=path.resolve(__dirname);if(databasePath===codePath||databasePath.startsWith(codePath+path.sep))throw Error('Production database must be outside the repository/deployment directory. Set DB_FILE to persistent storage.');if(!fs.existsSync(databasePath)&&process.env.ALLOW_DATABASE_CREATE!=='true')throw Error('Production database missing. Refusing to create an empty replacement.');}
@@ -803,7 +826,9 @@ async function start(){
   access=require('./access-control')({get,all,run,tx,now,hashPassword,validateCredentials,publicUser,auth,hasPermission,permissionsFor,jsonError,feedGames,checkCompetitions:(picks,stake,payout,userId,excludeBet)=>competitions?.check(picks,stake,payout,userId,excludeBet)});
   tx(()=>access.migrate());
 
-  const app=express(); app.use(apiMonitor.middleware); app.disable('x-powered-by'); app.use((req,res,next)=>{res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','SAMEORIGIN');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: wss:; frame-src https:; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'");next();}); app.use(express.json({limit:'256kb'})); app.use((req,res,next)=>{res.setHeader('Cache-Control','no-store');next()}); app.use(express.static(path.join(__dirname,'public'))); app.use((req,res,next)=>requestContext.run(req,next));
+  platformAlerts=require('./platform-alerts')({run,get,all,tx,now});
+  apiMonitor.onIssue(issue=>reportAnomaly('api:'+issue.direction+':'+issue.method+':'+issue.host+issue.endpoint,'api_failure','Problem me API-në',issue));
+  const app=express(); app.use(apiMonitor.middleware); app.disable('x-powered-by'); app.use((req,res,next)=>{res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','SAMEORIGIN');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https: wss:; frame-src 'self' https:; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'");next();}); app.use(express.json({limit:'256kb'})); app.use((req,res,next)=>{res.setHeader('Cache-Control','no-store');next()}); app.use(express.static(path.join(__dirname,'public'))); app.use((req,res,next)=>requestContext.run(req,next));
   app.get('/api/monitor',centerAuth,(req,res)=>res.json({...apiMonitor.snapshot(),upstreamConnected}));
   app.get('/api/monitor/stream',centerAuth,(req,res)=>{
     res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache, no-transform','X-Accel-Buffering':'no'});
@@ -814,8 +839,22 @@ async function start(){
   competitions=require("./competition-control").create({run,get,all,tx,now,proxy});
   competitions.mount(app,centerAuth);
   access.mount(app);
-  const ticketAcceptance=require('./ticket-acceptance').createAcceptance({run,get,tx,now,money});
-  ticketAcceptance.mount(app,centerAuth);
+  const selectionStatus=require('./selection-status')({all,get,run,tx,now,money});
+  selectionStatus.mount(app,(req,res,next)=>auth(req,res,()=>['center','operator'].includes(req.user.role)&&hasPermission(req.user,'bets.settle')?next():jsonError(res,403,'Permission denied.')));
+  const ticketAcceptance=require('./ticket-acceptance').createAcceptance({run,get,all,tx,now,money});
+  ticketAcceptance.mount(app,(req,res,next)=>auth(req,res,()=>req.user.role==='operator'&&hasPermission(req.user,'bets.accept')?next():jsonError(res,403,'Permission denied.')));
+  platformAlerts.mount(app,centerAuth,user=>{const current=get('SELECT * FROM users WHERE id=?',[user.id]);return current?.role==='center'&&access.active(user.id)&&!!get('SELECT token FROM sessions WHERE token=? AND expires_at>?',[user.token,now()]);});
+  const gsd=require('./casino-gsdeluxe'),env=process.env;
+  // Seamless (GSDeluxe calls our balance/changebalance URLs) is the default; GSD_MODE=transfer
+  // uses balance_operation instead. Seamless also needs the callback secret and caller IPs.
+  const casinoMode=env.GSD_MODE==='transfer'?'transfer':'seamless';
+  const casinoConfigured=['GSD_TOKEN_NAME','GSD_TOKEN_VALUE','GSD_API_HASH_KEY','GSD_CLUB_ID',...(casinoMode==='seamless'?['GSD_CALLBACK_SECRET','GSD_CALLBACK_IPS']:[])].every(k=>env[k]);
+  const casino=gsd.createCasino({run,get,all,tx,now,alert:reportAnomaly,
+    client:gsd.createClient({url:env.GSD_API_URL||'https://api.gsdeluxe.com/api.php',tokenName:env.GSD_TOKEN_NAME,tokenValue:env.GSD_TOKEN_VALUE,hashKey:env.GSD_API_HASH_KEY,monitor:(d,m,a)=>apiMonitor.begin(d,m,a)}),
+    config:{mode:casinoMode,clubId:env.GSD_CLUB_ID,loginPrefix:env.GSD_LOGIN_PREFIX,balanceDenomination:env.GSD_BALANCE_DENOMINATION,gameDenomination:env.GSD_GAME_DENOMINATION,currency:'EUR',
+      callbackSecret:env.GSD_CALLBACK_SECRET,callbackIps:env.GSD_CALLBACK_IPS,isActive:id=>access.active(id),persist:saveDb,journalFile:path.resolve(DB_FILE)+'.casino-journal'}});
+  gsd.mount(app,{casino,auth,centerAuth,jsonError,configured:casinoConfigured,enabled:env.GSD_ENABLED!=='false',trustProxy:env.GSD_TRUST_PROXY==='true'});
+  if(casinoConfigured){let sweeping=false;setInterval(()=>{if(sweeping)return;sweeping=true;casino.tick().finally(()=>{sweeping=false;});},30000).unref();}
   app.get('/api/health',(req,res)=>res.json({ok:true,database:'sqlite/sql.js',apiVersion:'ticket-details-json-v1',storageVersion:'filesystem-lease-v2',settlementVersion:SETTLEMENT_VERSION,startedAt:STARTED_AT,time:now()}));
   for(const [route,upstream] of [['featured','prematchgamesmainleague'],['main-matches','toptenprematchgames'],['home-live','toptenlivegames'],['sports','sports'],['countries/:id','countries'],['leagues/:id','leagues'],['league-games/:id','gamesByLeague']])app.get('/api/sports-catalog/'+route,async(req,res)=>{
     const id=req.params.id;if(id&&!/^\d{1,12}$/.test(id))return jsonError(res,400,'Invalid identifier.');
@@ -823,8 +862,8 @@ async function start(){
   });
   app.get('/api/prematch',async(req,res)=>{try{const r=await proxy('/ajax/prematchgames24hour');rememberFeedIdentities(r);sendFeedResponse(res,r)}catch(e){jsonError(res,502,'Prematch feed unavailable.')}});
   app.get('/api/livegames',async(req,res)=>{try{const r=await proxy('/ajax/livegames?market_type=1');rememberFeedIdentities(r);sendFeedResponse(res,r)}catch(e){jsonError(res,502,'Live feed unavailable.')}});
-  app.get('/api/prematchgame/:gameId',async(req,res)=>{try{if(!/^\d+$/.test(String(req.params.gameId)))return jsonError(res,400,'Invalid game id.');const r=await proxy('/ajax/prematchgame/'+encodeURIComponent(req.params.gameId));sendFeedResponse(res,r)}catch(e){jsonError(res,502,'Prematch markets unavailable.')}});
-  app.get('/api/livegame/:gameId',async(req,res)=>{try{if(!/^\d+$/.test(String(req.params.gameId)))return jsonError(res,400,'Invalid game id.');const r=await proxy('/ajax/livegame/'+encodeURIComponent(req.params.gameId));sendFeedResponse(res,r)}catch(e){jsonError(res,502,'Live match markets unavailable.')}});
+  app.get('/api/prematchgame/:gameId',async(req,res)=>{try{if(!/^\d+$/.test(String(req.params.gameId)))return jsonError(res,400,'Invalid game id.');const r=await proxy('/ajax/prematchgame/'+encodeURIComponent(req.params.gameId));rememberFeedIdentities(r);sendFeedResponse(res,r)}catch(e){jsonError(res,502,'Prematch markets unavailable.')}});
+  app.get('/api/livegame/:gameId',async(req,res)=>{try{if(!/^\d+$/.test(String(req.params.gameId)))return jsonError(res,400,'Invalid game id.');const r=await proxy('/ajax/livegame/'+encodeURIComponent(req.params.gameId));rememberFeedIdentities(r);sendFeedResponse(res,r)}catch(e){jsonError(res,502,'Live match markets unavailable.')}});
   app.get('/api/live-status',(req,res)=>res.json({upstreamConnected,clients:liveClients.size,reconnectDelay:upstreamReconnectDelay}));
   app.get('/api/livegame/:gameId/timeline',async(req,res)=>{
     if(!/^\d+$/.test(String(req.params.gameId)))return jsonError(res,400,'Invalid game id.');
@@ -835,6 +874,7 @@ async function start(){
         rememberFeedIdentities(feed);
         identity=get('SELECT api_id FROM event_identities WHERE game_id=?',[String(req.params.gameId)]);
       }
+      if(!identity){await fetchFinalGame(String(req.params.gameId),new Map());identity=get('SELECT api_id FROM event_identities WHERE game_id=?',[String(req.params.gameId)]);}
       if(!/^\d+$/.test(String(identity?.api_id??'')))return jsonError(res,502,'Live match timeline identity unavailable.');
       const r=await proxy('/games-timeline/'+encodeURIComponent(identity.api_id)+'.json');
       res.set('Cache-Control','no-store');
@@ -915,7 +955,17 @@ async function start(){
     const u=get('SELECT * FROM users WHERE id=?',[req.user.id]);res.json({username:u.username,balance:Number(u.balance),reservedBalance:Number(u.reserved_balance||0),summary:{...summary,difference:money(Number(summary.turnover)-Number(summary.payout))},transactions:all('SELECT id,type,amount,balance_after AS balanceAfter,bet_id AS betId,created_at AS createdAt FROM wallet_transactions WHERE '+where+' ORDER BY id DESC LIMIT 200',args)});
   }catch(e){jsonError(res,500,'Financat nuk mund të ngarkohen.');}});
   app.get('/api/wallet',auth,(req,res)=>{const rows=all(`SELECT id,type,amount,balance_after AS balanceAfter,bet_id AS betId,note,created_at AS createdAt FROM wallet_transactions WHERE user_id=? ORDER BY datetime(created_at) DESC,id DESC LIMIT 300`,[req.user.id]);res.json({transactions:rows.map(x=>({...x,id:Number(x.id),amount:Number(x.amount),balanceAfter:Number(x.balanceAfter),betId:x.betId?Number(x.betId):null}))})});
-  app.get('/api/my-bets',auth,(req,res)=>{
+  const pendingQuotes=require('./pending-quotes')({all,get,run,tx,validateSelections,money});
+  function refreshPendingQuotes(req,res,next){
+    const staff=req.user.role!=='user';
+    if(staff&&!hasPermission(req.user,'bets.view'))return next();
+    const id=req.params.id?Number(req.params.id):null;
+    pendingQuotes.refresh({userId:staff?null:req.user.id,id,force:req.method==='POST'}).then(result=>{
+      if(req.method==='POST'&&result.invalid)return jsonError(res,409,'Koeficientët nuk janë më aktivë. Bileta nuk mund të pranohet.');
+      next();
+    }).catch(()=>jsonError(res,502,'Koeficientët nuk mund të verifikohen tani. Provoni përsëri.'));
+  }
+  app.get('/api/my-bets',auth,refreshPendingQuotes,(req,res)=>{
     const allowed=['pending','accepted','won','lost','cancelled','void','rejected'];
     let ids=[req.user.id];
     if(req.user.role!=='user'){
@@ -945,8 +995,8 @@ async function start(){
     const hasMore=paginated&&bets.length>100;if(hasMore)bets.pop();
     res.json({bets,accounts,hasMore,nextCursor:hasMore?bets[bets.length-1].id:null});
   });
-  app.get('/api/my-bets/:id',auth,(req,res)=>{const b=get('SELECT * FROM bets WHERE id=? AND user_id=?',[Number(req.params.id),req.user.id]);if(!b)return jsonError(res,404,'Bet not found.');b.id=Number(b.id);b.stake=Number(b.stake);b.total_odds=Number(b.total_odds);b.potential_win=Number(b.potential_win);b.payout=Number(b.payout);b.selections=all('SELECT * FROM bet_selections WHERE bet_id=? ORDER BY id',[b.id]).map(s=>({...s,id:Number(s.id),odd:Number(s.odd)}));const offer=get("SELECT * FROM bet_offers WHERE bet_id=? AND status='pending'",[b.id]);b.offer=offer?{id:Number(offer.id),offers:JSON.parse(offer.offers_json||'[]'),totalOdds:Number(offer.total_odds),potentialWin:Number(offer.potential_win),createdAt:offer.created_at}:null;res.json({bet:b})});
-  app.post('/api/my-bets/:id/offer-response',auth,(req,res)=>{const accept=req.body.accept===true;try{const out=tx(()=>{const bet=get('SELECT * FROM bets WHERE id=? AND user_id=?',[Number(req.params.id),req.user.id]);if(!bet||bet.status!=='pending')throw Error('Bileta nuk është më në pritje.');const offer=get("SELECT * FROM bet_offers WHERE bet_id=? AND status='pending'",[bet.id]);if(!offer)throw Error('Nuk ka ofertë aktive.');const items=JSON.parse(offer.offers_json||'[]');if(accept){for(const item of items)run('UPDATE bet_selections SET odd=? WHERE id=? AND bet_id=?',[Number(item.odd),Number(item.id),bet.id]);run('UPDATE bets SET total_odds=?,potential_win=? WHERE id=?',[Number(offer.total_odds),Number(offer.potential_win),bet.id])}run("UPDATE bet_offers SET status=?,responded_at=? WHERE id=?",[accept?'accepted':'rejected',now(),offer.id]);run('INSERT INTO audit_log(actor_id,action,target_type,target_id,details) VALUES(?,?,?,?,?)',[req.user.id,accept?'ticket_offer_accepted':'ticket_offer_rejected','bet',bet.id,JSON.stringify({offerId:offer.id})]);return{accepted:accept}});res.json({ok:true,...out})}catch(e){jsonError(res,400,e.message)}});
+  app.get('/api/my-bets/:id',auth,refreshPendingQuotes,(req,res)=>{const b=get('SELECT * FROM bets WHERE id=? AND user_id=?',[Number(req.params.id),req.user.id]);if(!b)return jsonError(res,404,'Bet not found.');b.id=Number(b.id);b.stake=Number(b.stake);b.total_odds=Number(b.total_odds);b.potential_win=Number(b.potential_win);b.payout=Number(b.payout);b.selections=all('SELECT * FROM bet_selections WHERE bet_id=? ORDER BY id',[b.id]).map(s=>({...s,id:Number(s.id),odd:Number(s.odd)}));const offer=get("SELECT * FROM bet_offers WHERE bet_id=? AND status='pending'",[b.id]);b.offer=offer?{id:Number(offer.id),offers:JSON.parse(offer.offers_json||'[]'),totalOdds:Number(offer.total_odds),potentialWin:Number(offer.potential_win),createdAt:offer.created_at}:null;res.json({bet:b})});
+  app.post('/api/my-bets/:id/offer-response',auth,refreshPendingQuotes,(req,res)=>{const accept=req.body.accept===true;try{const out=tx(()=>{const bet=get('SELECT * FROM bets WHERE id=? AND user_id=?',[Number(req.params.id),req.user.id]);if(!bet||bet.status!=='pending')throw Error('Bileta nuk është më në pritje.');const offer=get("SELECT * FROM bet_offers WHERE bet_id=? AND status='pending'",[bet.id]);if(!offer)throw Error('Nuk ka ofertë aktive.');const items=JSON.parse(offer.offers_json||'[]');if(accept){for(const item of items)run('UPDATE bet_selections SET odd=? WHERE id=? AND bet_id=?',[Number(item.odd),Number(item.id),bet.id]);run('UPDATE bets SET total_odds=?,potential_win=? WHERE id=?',[Number(offer.total_odds),Number(offer.potential_win),bet.id])}run("UPDATE bet_offers SET status=?,responded_at=? WHERE id=?",[accept?'accepted':'rejected',now(),offer.id]);run('INSERT INTO audit_log(actor_id,action,target_type,target_id,details) VALUES(?,?,?,?,?)',[req.user.id,accept?'ticket_offer_accepted':'ticket_offer_rejected','bet',bet.id,JSON.stringify({offerId:offer.id})]);return{accepted:accept}});res.json({ok:true,...out})}catch(e){jsonError(res,400,e.message)}});
 
   app.post('/api/bets',auth,(req,res)=>{
     const requestKey=String(req.headers['idempotency-key']||'');
@@ -963,7 +1013,7 @@ async function start(){
       if(!get('SELECT token FROM sessions WHERE token=? AND expires_at>?',[req.user.token,now()]))throw Error('Session revoked or expired.');
       const existing=get('SELECT * FROM idempotency WHERE actor_id=? AND key=?',[req.user.id,requestKey]);
       if(existing){if(existing.fingerprint!==fingerprint)throw Error('Idempotency key already used.');return JSON.parse(existing.response);}
-      const u=get('SELECT id,balance,reserved_balance,status,parent_id FROM users WHERE id=?',[req.user.id]);if(!u||u.status!=='active')throw Error('Account is not active.');const available=money(Number(u.balance)-Number(u.reserved_balance||0));if(available<stake)throw Error('Kredi e pamjaftueshme. Krediti i disponueshëm: '+available.toFixed(2)+' €.');const totalOdds=check.current.reduce((a,s)=>a*Number(s.odd),1);if(!Number.isFinite(totalOdds)||totalOdds<=1||totalOdds>1000000)throw Error('Invalid combined odds.');const odds=money(totalOdds),potential=money(stake*odds);access.checkBet(u.id,stake,potential,null,check.current);let agentId=null,superId=null;if(u.parent_id){const ag=get('SELECT id,parent_id,role FROM users WHERE id=?',[u.parent_id]);if(ag&&ag.role==='agent'){agentId=Number(ag.id);const sm=get('SELECT id,parent_id,role FROM users WHERE id=?',[ag.parent_id]);if(sm&&sm.role==='supermanager')superId=Number(sm.id)}}run('INSERT INTO bets(user_id,agent_id,supermanager_id,stake,total_odds,potential_win,status,payout,reserved) VALUES(?,?,?,?,?,?,?,?,?)',[req.user.id,agentId,superId,stake,odds,potential,'pending',0,stake]);const createdBetId=lastId();for(const ancestor of access.lineage(u.id)){const col={partner:'partner_id',admin:'administrator_id',senior:'senior_id',supermanager:'senior_id',manager:'manager_id'}[ancestor.role];if(col)run('UPDATE bets SET '+col+'=? WHERE id=?',[ancestor.id,createdBetId]);}for(const sel of check.current)run('INSERT INTO bet_selections(bet_id,game_id,coef_id,market_id,league,home_team,away_team,market,selection,odd,event_time,result_status,special_value,game_api_id,league_id,sport_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',[createdBetId,String(sel.gameId),sel.coefId,sel.marketId,sel.league||sel.game?.league||'',sel.home||sel.game?.home_team||'',sel.away||sel.game?.away_team||'',sel.market||'Fulltime Result',String(sel.selection),Number(sel.odd),sel.eventTime||sel.game?.game_time||sel.game?.game_date||'','pending',sel.specialValue||sel.special_value||'',sel.gameApiId||sel.game?.game_api_id||sel.game?.api_id||'',sel.league_id,sel.sport_id??null]);run('UPDATE users SET reserved_balance=reserved_balance+? WHERE id=?',[stake,req.user.id]);run('INSERT INTO audit_log(actor_id,action,target_type,target_id,details) VALUES(?,?,?,?,?)',[req.user.id,'ticket_created','bet',createdBetId,JSON.stringify({stake,odds})]);for(const sel of check.current)run('UPDATE bet_selections SET acceptance_type=? WHERE bet_id=? AND game_id=? AND coef_id=?',[sel.acceptanceType||'unknown',createdBetId,String(sel.gameId),sel.coefId]);const automatic=ticketAcceptance.apply(createdBetId,check.current);const result={betId:createdBetId,odds,potential,status:'pending',balance:Number(u.balance),reservedBalance:money(Number(u.reserved_balance)+stake),...automatic};run('INSERT INTO idempotency(actor_id,key,fingerprint,response) VALUES(?,?,?,?)',[req.user.id,requestKey,fingerprint,JSON.stringify(result)]);return result;});res.json({ok:true,betId:out.betId,totalOdds:out.odds,potentialWin:out.potential,status:out.status||'pending',balance:out.balance,reservedBalance:out.reservedBalance,availableBalance:money(out.balance-out.reservedBalance)})}catch(e){jsonError(res,400,e.message,e.code==='BET_LIMIT_EXCEEDED'?{code:e.code,limitAmount:e.limitAmount,limitKind:e.limitKind}:{})}}).catch(e=>jsonError(res,502,'Could not validate live odds right now.'));});
+      const u=get('SELECT id,balance,reserved_balance,status,parent_id FROM users WHERE id=?',[req.user.id]);if(!u||u.status!=='active')throw Error('Account is not active.');const available=money(Number(u.balance)-Number(u.reserved_balance||0));if(available<stake)throw Error('Kredi e pamjaftueshme. Krediti i disponueshëm: '+available.toFixed(2)+' €.');const totalOdds=check.current.reduce((a,s)=>a*Number(s.odd),1);if(!Number.isFinite(totalOdds)||totalOdds<=1||totalOdds>1000000)throw Error('Invalid combined odds.');const odds=money(totalOdds),potential=money(stake*odds);access.checkBet(u.id,stake,potential,null,check.current);let agentId=null,superId=null;if(u.parent_id){const ag=get('SELECT id,parent_id,role FROM users WHERE id=?',[u.parent_id]);if(ag&&ag.role==='agent'){agentId=Number(ag.id);const sm=get('SELECT id,parent_id,role FROM users WHERE id=?',[ag.parent_id]);if(sm&&sm.role==='supermanager')superId=Number(sm.id)}}run('INSERT INTO bets(user_id,agent_id,supermanager_id,stake,total_odds,potential_win,status,payout,reserved) VALUES(?,?,?,?,?,?,?,?,?)',[req.user.id,agentId,superId,stake,odds,potential,'pending',0,stake]);const createdBetId=lastId();for(const ancestor of access.lineage(u.id)){const col={partner:'partner_id',admin:'administrator_id',senior:'senior_id',supermanager:'senior_id',manager:'manager_id'}[ancestor.role];if(col)run('UPDATE bets SET '+col+'=? WHERE id=?',[ancestor.id,createdBetId]);}for(const sel of check.current)run('INSERT INTO bet_selections(bet_id,game_id,coef_id,market_id,league,home_team,away_team,market,selection,odd,event_time,result_status,special_value,game_api_id,league_id,sport_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',[createdBetId,String(sel.gameId),sel.coefId,sel.marketId,sel.league||sel.game?.league||'',sel.home||sel.game?.home_team||'',sel.away||sel.game?.away_team||'',sel.market||'Fulltime Result',String(sel.selection),Number(sel.odd),sel.eventTime||sel.game?.game_time||sel.game?.game_date||'','pending',sel.specialValue||sel.special_value||'',sel.gameApiId||sel.game?.game_api_id||sel.game?.api_id||'',sel.league_id,sel.sport_id??null]);run('UPDATE users SET reserved_balance=reserved_balance+? WHERE id=?',[stake,req.user.id]);run('INSERT INTO audit_log(actor_id,action,target_type,target_id,details) VALUES(?,?,?,?,?)',[req.user.id,'ticket_created','bet',createdBetId,JSON.stringify({stake,odds})]);for(const sel of check.current)run('UPDATE bet_selections SET acceptance_type=? WHERE bet_id=? AND game_id=? AND coef_id=?',[sel.acceptanceType||'unknown',createdBetId,String(sel.gameId),sel.coefId]);const automatic=ticketAcceptance.apply(createdBetId,check.current);const result={betId:createdBetId,odds,potential,status:'pending',balance:Number(u.balance),reservedBalance:money(Number(u.reserved_balance)+stake),...automatic};run('INSERT INTO idempotency(actor_id,key,fingerprint,response) VALUES(?,?,?,?)',[req.user.id,requestKey,fingerprint,JSON.stringify(result)]);return result;});for(const sel of check.current){if(marketFamily({...sel,market_id:sel.marketId})==='unknown')reportAnomaly('unknown-market:'+sel.marketId,'unknown_market','Market pa rregull zbardhjeje',{betId:out.betId,gameId:sel.gameId,marketId:sel.marketId,market:sel.market});}res.json({ok:true,betId:out.betId,totalOdds:out.odds,potentialWin:out.potential,status:out.status||'pending',balance:out.balance,reservedBalance:out.reservedBalance,availableBalance:money(out.balance-out.reservedBalance)})}catch(e){jsonError(res,400,e.message,e.code==='BET_LIMIT_EXCEEDED'?{code:e.code,limitAmount:e.limitAmount,limitKind:e.limitKind}:{})}}).catch(e=>jsonError(res,502,'Could not validate live odds right now.'));});
 
   app.get('/api/center/stats',centerAuth,(req,res)=>res.json({partners:Number(get("SELECT COUNT(*) n FROM users WHERE role='partner'").n),admins:Number(get("SELECT COUNT(*) n FROM users WHERE role='admin'").n),users:Number(get("SELECT COUNT(*) n FROM users WHERE role='user'").n),activeUsers:Number(get("SELECT COUNT(*) n FROM users WHERE role='user' AND status='active'").n),seniors:Number(get("SELECT COUNT(*) n FROM users WHERE role IN ('senior','supermanager')").n),managers:Number(get("SELECT COUNT(*) n FROM users WHERE role='manager'").n),supermanagers:Number(get("SELECT COUNT(*) n FROM users WHERE role='supermanager'").n),agents:Number(get("SELECT COUNT(*) n FROM users WHERE role='agent'").n),operators:Number(get("SELECT COUNT(*) n FROM users WHERE role='operator'").n),pendingBets:Number(get("SELECT COUNT(*) n FROM bets WHERE status='pending'").n),acceptedBets:Number(get("SELECT COUNT(*) n FROM bets WHERE status='accepted'").n),totalBets:Number(get('SELECT COUNT(*) n FROM bets').n),turnover:Number(get("SELECT COALESCE(SUM(stake),0) n FROM bets WHERE status NOT IN ('rejected','cancelled')").n),pendingStake:Number(get("SELECT COALESCE(SUM(stake),0) n FROM bets WHERE status='pending'").n)}));
   app.post('/api/staff/password',auth,(req,res)=>{
@@ -973,10 +1023,10 @@ async function start(){
     if(newPassword.length<6) return jsonError(res,400,'Password duhet të ketë të paktën 6 karaktere.');
     tx(()=>{run('UPDATE users SET password_hash=? WHERE id=?',[hashPassword(newPassword),u.id]);run('DELETE FROM sessions WHERE user_id=? AND token<>?',[u.id,req.user.token]);access.audit(req,'password_changed',u.id,null,{revokedOtherSessions:true});});res.json({ok:true});
   });
-  function serializeBet(b){return {...b,id:Number(b.id),user_id:Number(b.user_id),stake:Number(b.stake),total_odds:Number(b.total_odds),potential_win:Number(b.potential_win),payout:Number(b.payout),reserved:Number(b.reserved),selections:all('SELECT id,acceptance_type AS acceptanceType,game_id AS gameId,coef_id AS coefId,market_id AS marketId,league,home_team AS home,away_team AS away,market,selection,odd,event_time AS eventTime,result_status AS resultStatus,special_value AS specialValue,game_api_id AS gameApiId FROM bet_selections WHERE bet_id=? ORDER BY id',[b.id]).map(s=>({...s,id:Number(s.id),odd:Number(s.odd)}))}};
+  function serializeBet(b){const review=get("SELECT details FROM audit_log WHERE target_type='bet' AND target_id=? AND action='ticket_auto_review' ORDER BY id DESC LIMIT 1",[b.id]);let reviewReason='';try{reviewReason=JSON.parse(review?.details||'{}').reason||'';}catch(_){}return {...b,autoReviewReason:reviewReason,id:Number(b.id),user_id:Number(b.user_id),stake:Number(b.stake),total_odds:Number(b.total_odds),potential_win:Number(b.potential_win),payout:Number(b.payout),reserved:Number(b.reserved),selections:all('SELECT id,acceptance_type AS acceptanceType,game_id AS gameId,coef_id AS coefId,market_id AS marketId,league,home_team AS home,away_team AS away,market,selection,odd,event_time AS eventTime,result_status AS resultStatus,special_value AS specialValue,game_api_id AS gameApiId FROM bet_selections WHERE bet_id=? ORDER BY id',[b.id]).map(s=>({...s,id:Number(s.id),odd:Number(s.odd)}))}};
   // Operator center: tickets stay pending until an operator accepts them. Acceptance performs a fresh credit check.
-  app.get('/api/operator/tickets',operatorAuth,(req,res)=>{if(!hasPermission(req.user,'bets.view'))return jsonError(res,403,'Permission denied.');const status=['pending','accepted','won','lost','cancelled','rejected'].includes(req.query.status)?req.query.status:null;let sql=`SELECT b.*,u.username,ag.username agent_username,sm.username supermanager_username FROM bets b JOIN users u ON u.id=b.user_id LEFT JOIN users ag ON ag.id=b.agent_id LEFT JOIN users sm ON sm.id=b.supermanager_id WHERE 1=1`;const a=[];if(status){sql+=' AND b.status=?';a.push(status)}else sql+=" AND b.status IN ('pending','accepted')";sql+=' ORDER BY datetime(b.created_at) ASC,b.id ASC LIMIT 500';const tickets=all(sql,a),repeats=require('./ticket-repeats').loadTicketRepeats(tickets,all);res.json({tickets:tickets.map(b=>({...serializeBet(b),repeatCount:repeats.get(Number(b.id))||1,offer:get('SELECT status,total_odds,potential_win FROM bet_offers WHERE bet_id=?',[b.id])||null}))})});
-  app.post('/api/operator/tickets/:id/offer',operatorAuth,(req,res)=>{
+  app.get('/api/operator/tickets',operatorAuth,refreshPendingQuotes,(req,res)=>{if(!hasPermission(req.user,'bets.view'))return jsonError(res,403,'Permission denied.');const status=['pending','accepted','won','lost','cancelled','rejected'].includes(req.query.status)?req.query.status:null;let sql=`SELECT b.*,u.username,ag.username agent_username,sm.username supermanager_username FROM bets b JOIN users u ON u.id=b.user_id LEFT JOIN users ag ON ag.id=b.agent_id LEFT JOIN users sm ON sm.id=b.supermanager_id WHERE 1=1`;const a=[];if(status){sql+=' AND b.status=?';a.push(status)}else sql+=" AND b.status IN ('pending','accepted')";sql+=' ORDER BY datetime(b.created_at) ASC,b.id ASC LIMIT 500';const tickets=all(sql,a),repeats=require('./ticket-repeats').loadTicketRepeats(tickets,all);res.json({tickets:tickets.map(b=>({...serializeBet(b),repeatCount:repeats.get(Number(b.id))||1,offer:get('SELECT status,total_odds,potential_win FROM bet_offers WHERE bet_id=?',[b.id])||null}))})});
+  app.post('/api/operator/tickets/:id/offer',operatorAuth,refreshPendingQuotes,(req,res)=>{
     if(!hasPermission(req.user,'bets.offer_odds'))return jsonError(res,403,'Permission denied.');
     try{
       const offers=Array.isArray(req.body.offers)?req.body.offers:[];
@@ -997,7 +1047,7 @@ async function start(){
       res.json({ok:true,totalOdds:out.totalOdds,potentialWin:out.potentialWin});
     }catch(e){jsonError(res,400,e.message)}
   });
-  app.post('/api/operator/tickets/:id/accept',operatorAuth,(req,res)=>{try{const out=tx(()=>{const b=get('SELECT * FROM bets WHERE id=?',[Number(req.params.id)]);if(!b)throw Error('Ticket not found.');if(b.status!=='pending')throw Error('Ticket is no longer pending.');access.checkBet(b.user_id,Number(b.stake),Number(b.potential_win),b.id);const u=get('SELECT id,balance,reserved_balance,status FROM users WHERE id=?',[b.user_id]);if(!u||u.status!=='active')throw Error('User account is not active.');if(Number(u.reserved_balance)<Number(b.stake))throw Error('Reserved credit is missing.');if(Number(u.balance)<Number(u.reserved_balance))throw Error('Insufficient credit at acceptance.');const balance=money(Number(u.balance)-Number(b.stake));const reserved=money(Number(u.reserved_balance)-Number(b.stake));run('UPDATE users SET balance=?,reserved_balance=? WHERE id=?',[balance,reserved,u.id]);run('UPDATE bets SET status=\'accepted\',reserved=0,accepted_by=?,accepted_at=? WHERE id=?',[req.user.id,now(),b.id]);run('INSERT INTO wallet_transactions(user_id,type,amount,balance_after,bet_id,note) VALUES(?,?,?,?,?,?)',[u.id,'bet',-Number(b.stake),balance,b.id,'Ticket accepted by operator']);run('INSERT INTO audit_log(actor_id,action,target_type,target_id,details) VALUES(?,?,?,?,?)',[req.user.id,'ticket_accepted','bet',b.id,JSON.stringify({balance})]);return{balance,reservedBalance:reserved}});res.json({ok:true,status:'accepted',...out})}catch(e){jsonError(res,400,e.message)}});
+  app.post('/api/operator/tickets/:id/accept',operatorAuth,refreshPendingQuotes,(req,res)=>{try{const out=tx(()=>{const b=get('SELECT * FROM bets WHERE id=?',[Number(req.params.id)]);if(!b)throw Error('Ticket not found.');if(b.status!=='pending')throw Error('Ticket is no longer pending.');access.checkBet(b.user_id,Number(b.stake),Number(b.potential_win),b.id);const u=get('SELECT id,balance,reserved_balance,status FROM users WHERE id=?',[b.user_id]);if(!u||u.status!=='active')throw Error('User account is not active.');if(Number(u.reserved_balance)<Number(b.stake))throw Error('Reserved credit is missing.');if(Number(u.balance)<Number(u.reserved_balance))throw Error('Insufficient credit at acceptance.');const balance=money(Number(u.balance)-Number(b.stake));const reserved=money(Number(u.reserved_balance)-Number(b.stake));run('UPDATE users SET balance=?,reserved_balance=? WHERE id=?',[balance,reserved,u.id]);run('UPDATE bets SET status=\'accepted\',reserved=0,accepted_by=?,accepted_at=? WHERE id=?',[req.user.id,now(),b.id]);run('INSERT INTO wallet_transactions(user_id,type,amount,balance_after,bet_id,note) VALUES(?,?,?,?,?,?)',[u.id,'bet',-Number(b.stake),balance,b.id,'Ticket accepted by operator']);run('INSERT INTO audit_log(actor_id,action,target_type,target_id,details) VALUES(?,?,?,?,?)',[req.user.id,'ticket_accepted','bet',b.id,JSON.stringify({balance})]);return{balance,reservedBalance:reserved}});res.json({ok:true,status:'accepted',...out})}catch(e){jsonError(res,400,e.message)}});
   app.post('/api/operator/tickets/:id/cancel',operatorAuth,(req,res)=>{try{const out=tx(()=>{const b=get('SELECT * FROM bets WHERE id=?',[Number(req.params.id)]);if(!b)throw Error('Ticket not found.');if(!['pending','accepted'].includes(b.status))throw Error('Ticket cannot be cancelled now.');const u=get('SELECT id,balance,reserved_balance FROM users WHERE id=?',[b.user_id]);let balance=Number(u.balance),reserved=Number(u.reserved_balance||0);if(b.status==='pending'){reserved=money(reserved-Number(b.stake));run('UPDATE users SET reserved_balance=? WHERE id=?',[reserved,u.id])}else{balance=money(balance+Number(b.stake));run('UPDATE users SET balance=? WHERE id=?',[balance,u.id]);run('INSERT INTO wallet_transactions(user_id,type,amount,balance_after,bet_id,note) VALUES(?,?,?,?,?,?)',[u.id,'refund',Number(b.stake),balance,b.id,'Ticket cancelled by operator'])}run('UPDATE bets SET status=\'cancelled\',payout=?,reserved=0,cancelled_by=?,cancelled_at=?,settled_at=? WHERE id=?',[b.status==='accepted'?Number(b.stake):0,req.user.id,now(),now(),b.id]);run('UPDATE bet_selections SET result_status=\'cancelled\' WHERE bet_id=?',[b.id]);run('INSERT INTO audit_log(actor_id,action,target_type,target_id,details) VALUES(?,?,?,?,?)',[req.user.id,'ticket_cancelled','bet',b.id,JSON.stringify({previousStatus:b.status})]);return{balance,reservedBalance:reserved}});res.json({ok:true,status:'cancelled',...out})}catch(e){jsonError(res,400,e.message)}});
   app.post('/api/operator/tickets/:id/settle',operatorAuth,(req,res)=>{const status=req.body.status==='won'?'won':req.body.status==='lost'?'lost':null;if(!status)return jsonError(res,400,'Invalid settlement status.');try{const out=tx(()=>{const b=get('SELECT * FROM bets WHERE id=?',[Number(req.params.id)]);if(!b)throw Error('Ticket not found.');if(b.status!=='accepted'&&!(req.user.role==='center'&&['won','lost'].includes(b.status)))throw Error('Only accepted tickets can be settled; final status corrections require Center.');const u=get('SELECT id,balance FROM users WHERE id=?',[b.user_id]);const payout=status==='won'?money(Number(b.potential_win)):0;const adjustment=money(payout-Number(b.payout||0));const balance=money(Number(u.balance)+adjustment);run('UPDATE bets SET status=?,payout=?,settled_at=? WHERE id=?',[status,payout,now(),b.id]);if(status==='won')run("UPDATE bet_selections SET result_status='won' WHERE bet_id=? AND result_status='pending'",[b.id]);if(adjustment!==0){run('UPDATE users SET balance=? WHERE id=?',[balance,u.id]);run('INSERT INTO wallet_transactions(user_id,type,amount,balance_after,bet_id,note) VALUES(?,?,?,?,?,?)',[u.id,adjustment>0?'payout':'adjustment',adjustment,balance,b.id,b.status==='accepted'?'Winning ticket payout':'Center settlement correction'])}run('INSERT INTO audit_log(actor_id,action,target_type,target_id,details) VALUES(?,?,?,?,?)',[req.user.id,'ticket_settled','bet',b.id,JSON.stringify({previousStatus:b.status,previousPayout:Number(b.payout||0),status,payout,adjustment})]);return{payout,balance}});res.json({ok:true,status,...out})}catch(e){jsonError(res,400,e.message)}});
   app.post('/api/admin/bets/:id/settle',centerAuth,(req,res)=>{req.body.status=req.body.status==='void'?'cancelled':req.body.status;const old=req.headers.authorization; // keep backward-compatible admin settlement through operator endpoint logic
@@ -1008,7 +1058,7 @@ async function start(){
     if(!/^\/api(?:\/|$)/.test(req.path))return next(err);
     if(res.headersSent)return next(err);
     const status=err.type==='entity.parse.failed'?400:err.type==='entity.too.large'?413:500;
-    if(status===500)console.error('API failure:',req.method,req.path,err.message);
+    if(status===500){reportAnomaly('internal:'+req.method+req.path.replace(/\/\d+/g,'/:id'),'internal_error','Gabim i brendshëm i platformës',{method:req.method,path:req.path,error:err.message});console.error('API failure:',req.method,req.path,err.message);}
     jsonError(res,status,status===400?'Kërkesa përmban JSON të pavlefshëm.':status===413?'Kërkesa është shumë e madhe.':'Shërbimi nuk mund ta përpunojë kërkesën. Provoni përsëri.',{code:status===500?'API_ERROR':'INVALID_REQUEST'});
   });
   app.listen(PORT,()=>{console.log(`SPORTSBOOK PRO: http://localhost:${PORT}`);if(process.env.DISABLE_UPSTREAM!=='true'){connectUpstream();startSettlementEngine()}});

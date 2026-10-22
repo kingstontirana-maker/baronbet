@@ -154,7 +154,9 @@ module.exports = function accessControl({get, all, run, tx, now, hashPassword, v
       auth(req,res,()=>{
         if(req.user.role==='user')return jsonError(res,403,'Staff access only.');
         let p='users.view';
-        if(/permissions/.test(req.path))p='permissions.manage';
+        if(/^\/operator\/tickets\/\d+\/selections\/\d+\/status$/.test(req.path))p='bets.settle';
+        else if(/^\/operator\/ticket-acceptance(?:\/|$)/.test(req.path))p='bets.accept';
+        else if(/permissions/.test(req.path))p='permissions.manage';
         else if(/audit/.test(req.path))p='audit.view';
         else if(/transactions/.test(req.path))p='wallet.view';
         else if(/\/(credit|balance)$/.test(req.path))p=req.body.direction==='debit'?'wallet.debit':'wallet.credit';

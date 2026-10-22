@@ -1,0 +1,20 @@
+const assert=require('node:assert/strict');
+const init=require('sql.js');
+(async()=>{
+ const db=new (await init()).Database();
+ db.run("CREATE TABLE bets(id INTEGER,status TEXT,stake REAL,total_odds REAL,potential_win REAL,user_id INTEGER); CREATE TABLE bet_selections(id INTEGER,bet_id INTEGER,game_id TEXT,coef_id TEXT,market_id TEXT,selection TEXT,odd REAL,special_value TEXT); CREATE TABLE bet_offers(bet_id INTEGER,status TEXT); INSERT INTO bets VALUES(1,'pending',10,2,20,7),(2,'accepted',10,2,20,7); INSERT INTO bet_selections VALUES(11,1,'8','9','1','X',2,''),(12,2,'8','9','1','X',2,''); INSERT INTO bet_offers VALUES(1,'pending')");
+ const all=(sql,args=[])=>{const s=db.prepare(sql);s.bind(args);const rows=[];while(s.step())rows.push(s.getAsObject());s.free();return rows;};
+ const get=(...args)=>all(...args)[0],run=(sql,args)=>db.run(sql,args);
+ let odd=3;
+ const quotes=require('./pending-quotes')({all,get,run,tx:fn=>fn(),money:n=>Math.round(n*100)/100,validateSelections:async selections=>({current:[],changed:odd>1?selections.map(s=>({...s,newOdd:odd})):[],invalid:odd>1?[]:selections})});
+ await quotes.refresh({userId:7});
+ assert.equal(get('SELECT total_odds FROM bets WHERE id=1').total_odds,3);
+ assert.equal(get('SELECT potential_win FROM bets WHERE id=1').potential_win,30);
+ assert.equal(get('SELECT total_odds FROM bets WHERE id=2').total_odds,2);
+ assert.equal(get('SELECT status FROM bet_offers').status,'expired');
+ odd=0;assert.equal((await quotes.refresh({id:1})).invalid,true);
+ assert.equal(get('SELECT total_odds FROM bets WHERE id=1').total_odds,0);
+ odd=4;await quotes.refresh({id:1});
+ assert.equal(get('SELECT total_odds FROM bets WHERE id=1').total_odds,4);
+ console.log('Pending quotes: changes, totals, closed markets, reopening and accepted tickets PASS');
+})().catch(e=>{console.error(e);process.exitCode=1});

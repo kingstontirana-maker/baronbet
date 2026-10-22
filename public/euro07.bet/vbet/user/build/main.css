@@ -959,3 +959,21 @@ body:not(.player-account) .shell{grid-template-columns:226px minmax(0,1fr)}
 .today-match-row>.odd.locked{color:#93a39a}
 .today-match-row>button:focus-visible{outline:2px solid #00b98f;outline-offset:-2px}
 @media(max-width:650px){.today-match-teams{font-size:12px;padding-left:4px}.today-match-row>.odd{font-size:12px}}
+
+/* Casino lobby (LOJRA) */
+.casino-lobby,.casino-play{display:flex;flex-direction:column;min-height:100%;background:var(--surface-base);color:var(--surface-text)}
+.casino-lobby .create-account-header strong,.casino-play .create-account-header strong{flex:1;padding:0 12px}
+.casino-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px;border-bottom:1px solid var(--surface-line)}
+.casino-toolbar input{flex:1 1 220px;min-width:0;height:36px;padding:0 12px;border:1px solid var(--surface-line);border-radius:6px;background:var(--surface-panel);color:var(--surface-text)}
+.casino-toolbar span{color:var(--surface-muted);font-size:12px}
+.casino-msg{padding:0 12px;color:#f0b84b;font-size:13px}.casino-msg:not(:empty){padding:10px 12px}
+.casino-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:12px}
+.casino-tile{display:flex;flex-direction:column;padding:0;border:1px solid var(--surface-line);border-radius:8px;overflow:hidden;background:var(--surface-panel);color:var(--surface-text);cursor:pointer;text-align:left;transition:border-color .15s,transform .15s}
+.casino-tile:hover:not([disabled]){border-color:#148765;transform:translateY(-2px)}
+.casino-tile[disabled]{cursor:wait;opacity:.6}.casino-tile.loading{opacity:1;border-color:#148765}
+.casino-thumb{display:block;aspect-ratio:4/3;background:var(--surface-raised)}
+.casino-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.casino-name{padding:8px 10px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.casino-play iframe{display:block;width:100%;border:0;background:#000}
+.casino-full{margin-left:auto;align-self:stretch;width:44px;border:0;border-left:1px solid #ffffff30;background:transparent;color:#fff;font-size:18px;cursor:pointer}
+@media (max-width:600px){.casino-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;padding:8px}}
