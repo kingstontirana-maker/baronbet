@@ -15,7 +15,7 @@ module.exports=function({all,get,run,tx,now,money}){
     const factor=s=>s.result_status==='won'?Number(s.odd):s.result_status==='void'?1:s.result_status==='half_won'?(Number(s.odd)+1)/2:s.result_status==='half_lost'?0.5:0;
     const complete=selections.every(s=>['won','lost','void','half_won','half_lost'].includes(s.result_status));
     ticketStatus=selections.some(s=>s.result_status==='lost')?'lost':complete?(selections.every(s=>s.result_status==='void')?'void':'won'):'accepted';
-    payout=complete&&ticketStatus!=='lost'?money(Number(bet.stake)*selections.reduce((n,s)=>n*factor(s),1)):0;
+    payout=complete&&ticketStatus!=='lost'?money(Number(bet.stake)*money(selections.reduce((n,s)=>n*factor(s),1))):0;
     adjustment=money(payout-Number(bet.payout||0));
     if(adjustment){
      const user=get('SELECT balance FROM users WHERE id=?',[bet.user_id]);

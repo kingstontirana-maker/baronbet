@@ -51,7 +51,18 @@ function notice(text,error=false){$('message').textContent=text;$('message').cla
 async function api(url,method='GET',body,key,signal){
   const response=await fetch(url,{method,headers:{Authorization:'Bearer '+sessionToken,'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{})},body:body===undefined?undefined:JSON.stringify(body),signal});
   const data=await SportsbookApi.readJson(response);
-  if(!response.ok){if(response.status===401){document.body.style.visibility='hidden';location.replace('/');sessionStorage.removeItem('sportsbook_token');sessionToken='';}throw Error(data.error||'Kërkesa dështoi.');}return data;
+  if(!response.ok){if(response.status===401){document.body.style.visibility='hidden';location.replace('/');sessionStorage.removeItem('sportsbook_token');sessionToken='';}throw Object.assign(Error(data.error||'Kërkesa dështoi.'),{code:data.code,data});}return data;
+}
+// Accepting never rewrites the player's odds: if the market moved, the operator either
+// confirms the player's original odds or cancels and sends an offer instead.
+async function acceptTicket(id,{bulk=false}={}){
+  try{return await api('/api/operator/tickets/'+id+'/accept','POST',{});}
+  catch(error){
+    if(error.code!=='ODDS_CHANGED'||bulk)throw error;
+    const list=(error.data.changes||[]).map(c=>`• ${c.selection}: ${Number(c.odd).toFixed(2)} → tani ${Number(c.currentOdd).toFixed(2)}`).join('\n');
+    if(!confirm(`Koeficientët e tregut kanë ndryshuar që kur u vendos bileta:\n${list}\n\nTë pranohet me koeficientët origjinalë të lojtarit?\n(Anulo për të dërguar një ofertë.)`))throw Error('Bileta nuk u pranua: koeficientët kanë ndryshuar.');
+    return api('/api/operator/tickets/'+id+'/accept','POST',{confirmOdds:true});
+  }
 }
 function showDialog(title,body,eyebrow='MENAXHIMI'){$('dialog').classList.remove('offer-dialog');$('dialogTitle').textContent=title;$('dialogEyebrow').textContent=eyebrow;$('dialogBody').innerHTML=body;$('dialogMessage').hidden=true;if(!$('dialog').open)$('dialog').showModal();}
 function bindForm(id,handler){const form=$(id);if(!form)return;form.onsubmit=async e=>{e.preventDefault();const buttons=[...form.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);try{await handler(new FormData(form));}catch(error){if($('dialog').open){$('dialogMessage').textContent=error.message;$('dialogMessage').hidden=false;}else notice(error.message,true);}finally{buttons.forEach(b=>b.disabled=false);}};}
@@ -243,7 +254,7 @@ async function operatorAcceptPage(ctx){
       showDialog(action==='accept'?'Prano biletat e filtruarа':'Refuzo biletat e filtruara',`<p class="form-note">${rows.length} bileta ${kind==='live'?'Live':'Prematch'} · shuma gjithsej ${money(rows.reduce((sum,b)=>sum+Number(b.stake),0))}. Zbatimi përfshin vetëm biletat e shfaqura nga filtrat, me shumën deri në ${money(filters[kind].bulk)}.</p><form id="confirmOperatorBulk"><div class="form-actions"><button class="button ${action==='accept'?'success':'danger'}">Konfirmo ${rows.length} bileta</button><button type="button" class="button" data-close-dialog>Anulo</button></div></form>`,'VEPRIM NË GRUP');
       bindForm('confirmOperatorBulk',async()=>{
         let done=0,failed=0;rows.forEach(b=>busy.add(Number(b.id)));draw();
-        try{for(const b of rows){if(!ctx.valid())break;try{await api('/api/operator/tickets/'+b.id+'/'+action,'POST',{});tickets=tickets.filter(t=>t.id!==b.id);done++;}catch{failed++;}}}
+        try{for(const b of rows){if(!ctx.valid())break;try{await (action==='accept'?acceptTicket(b.id,{bulk:true}):api('/api/operator/tickets/'+b.id+'/'+action,'POST',{}));tickets=tickets.filter(t=>t.id!==b.id);done++;}catch{failed++;}}}
         finally{rows.forEach(b=>busy.delete(Number(b.id)));if(ctx.valid()){$('dialog').close();draw();notice(done+' bileta u përditësuan'+(failed?' · '+failed+' nuk u përditësuan; rifreskoni radhën.':'.'),failed>0);}}
       });return;
     }
@@ -251,7 +262,7 @@ async function operatorAcceptPage(ctx){
     const id=Number(btn.dataset.ticketId),action=btn.dataset.operatorAction;if(busy.has(id))return;busy.add(id);draw();
     try{
       if(action==='offer'){const {bet}=await ctx.get('/api/admin/bets/'+id);if(!ctx.valid())return;if(bet.status!=='pending')throw Error('Bileta është shqyrtuar tashmë. Rifresko radhën.');await offerDialog(bet,async()=>{const ticket=tickets.find(b=>Number(b.id)===id);if(ticket)ticket.offer={status:'pending'};if(ctx.valid())draw();});}
-      else{await api('/api/operator/tickets/'+id+'/'+action,'POST',{});if(!ctx.valid())return;tickets=tickets.filter(b=>Number(b.id)!==id);notice((action==='accept'?'U pranua ':'U refuzua ')+(tickets.find(b=>Number(b.id)===id)?.ticket_code||'T-'+id)+'.');}
+      else{await (action==='accept'?acceptTicket(id):api('/api/operator/tickets/'+id+'/'+action,'POST',{}));if(!ctx.valid())return;tickets=tickets.filter(b=>Number(b.id)!==id);notice((action==='accept'?'U pranua ':'U refuzua ')+(tickets.find(b=>Number(b.id)===id)?.ticket_code||'T-'+id)+'.');}
     }catch(e){if(ctx.valid())notice(e.message,true);}
     finally{busy.delete(id);if(ctx.valid())draw();}
   };
@@ -273,7 +284,7 @@ async function betsPage(ctx,query){
     const card=btn.closest('.queue-ticket');card.querySelectorAll('button').forEach(b=>b.disabled=true);
     try{
       if(action==='offer'){const {bet}=await api('/api/admin/bets/'+id);if(!ctx.valid())return;if(bet.status!=='pending')throw Error('Kjo biletë është shqyrtuar tashmë. Rifreskoni radhën.');await offerDialog(bet,async()=>{});}
-      else {await api('/api/operator/tickets/'+id+'/'+action,'POST',{});if(!ctx.valid())return;bets=bets.filter(b=>b.id!==id);filter();notice('Bileta T-'+id+(action==='accept'?' u pranua.':' u refuzua.'));}
+      else {await (action==='accept'?acceptTicket(id):api('/api/operator/tickets/'+id+'/'+action,'POST',{}));if(!ctx.valid())return;bets=bets.filter(b=>b.id!==id);filter();notice('Bileta T-'+id+(action==='accept'?' u pranua.':' u refuzua.'));}
     }catch(error){if(ctx.valid())notice(error.message,true);}finally{busy.delete(id);if(card.isConnected)card.querySelectorAll('button').forEach(b=>b.disabled=false);}
   };
   if(queue){
@@ -298,7 +309,7 @@ async function ticketPage(ctx,id){const {bet:b}=await ctx.get('/api/admin/bets/'
   ctx.commit(panel('Përmbledhja e biletës','Vendosur më '+date(b.created_at),`<div class="panel-body">${badge(b.status)}<div class="ticket-meta">${[['Lojtari',b.username||'#'+b.user_id],['Shuma',money(b.stake)],['Koeficienti',Number(b.total_odds).toFixed(2)],['Fitimi i mundshëm',money(b.potential_win)],['Pagesa reale',money(b.payout)]].map(([label,value])=>`<span>${label}<strong>${esc(value)}</strong></span>`).join('')}</div></div>`)+panel('Përzgjedhjet',selections.length+' përzgjedhje në biletë',`<div class="panel-body">${selections.map(s=>`<div class="selection-row"><div><h3>${esc(s.home_team||s.home)} – ${esc(s.away_team||s.away)}</h3><p>${esc(s.market)} · ${esc(s.selection)}</p><p>${esc(s.league||'')} · Fillestar: ${Number(s.original_odd||s.odd).toFixed(2)}</p></div><div class="odd">${Number(s.odd).toFixed(2)}${selectionStatusButtons(b,s)}</div></div>`).join('')||empty()}</div>`)+(operate&&(pending||accepted||correctable)?panel('Veprimet e biletës','Çdo veprim regjistrohet në audit.',`<div class="panel-body"><div class="ticket-actions">${pending&&can('bets.accept')?button('Prano biletën','accept-ticket','success','check'):''}${!correctable&&can('bets.cancel')?button(pending?'Refuzo biletën':'Anulo dhe rimburso','cancel-ticket','danger'):''}${(accepted||correctable)&&can('bets.settle')?button('Shëno si fituese','won-ticket','success')+button('Shëno si humbëse','lost-ticket','danger'):''}${pending&&can('bets.offer_odds')?button('Propozo koeficientë','offer-ticket','','chart'):''}</div></div>`):'')+(b.offer?panel('Oferta aktuale','Oferta e fundit e dërguar lojtarit.',`<div class="panel-body"><p class="form-note">Status: ${esc(b.offer.status)} · Koeficienti total: ${Number(b.offer.total_odds).toFixed(2)} · Fitimi i mundshëm: ${money(b.offer.potential_win)}</p></div>`):''));
   for(const action of ['accept','cancel','won','lost'])document.querySelector(`[data-action="${action}-ticket"]`)?.addEventListener('click',()=>{
     showDialog(({accept:'Prano biletën',cancel:'Anulo biletën',won:'Konfirmo biletën fituese',lost:'Konfirmo biletën humbëse'})[action],`<p class="form-note">${esc(b.ticket_code||'T-'+b.id)} · ${money(b.stake)} · ${esc(b.username)}. ${['won','lost'].includes(action)?'Ndryshimi në balancën e lojtarit: '+money((action==='won'?Number(b.potential_win):0)-Number(b.payout||0))+'.':''}</p><form id="confirmTicket"><div class="form-actions"><button class="button primary">Konfirmo</button><button type="button" class="button" data-close-dialog>Kthehu</button></div></form>`,'VEPRIM MBI BILETËN');
-    bindForm('confirmTicket',async()=>{await api('/api/operator/tickets/'+id+'/'+(['won','lost'].includes(action)?'settle':action),'POST',['won','lost'].includes(action)?{status:action}:{});$('dialog').close();await renderRoute();notice('Bileta u përditësua.');});
+    bindForm('confirmTicket',async()=>{await (action==='accept'?acceptTicket(id):api('/api/operator/tickets/'+id+'/'+(['won','lost'].includes(action)?'settle':action),'POST',['won','lost'].includes(action)?{status:action}:{}));$('dialog').close();await renderRoute();notice('Bileta u përditësua.');});
   });
   const actionPanel=document.querySelector('.ticket-actions')?.closest('.panel');
   if(actionPanel){actionPanel.classList.add('ticket-actionbar');$('content').prepend(actionPanel);}
