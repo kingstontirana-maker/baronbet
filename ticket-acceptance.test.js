@@ -1,59 +1,78 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {defaults,validate,eligible}=require('./ticket-acceptance');
-test('automatic acceptance requires every applicable rule and rejects unknown event types',()=>{
- const c=defaults(),live=[{acceptanceType:'live'}],pre=[{acceptanceType:'prematch'}],mixed=[...live,...pre];
- assert.equal(eligible(c,live,1,2,2),false);c.live.enabled=true;
- assert.equal(eligible(c,live,50,500,20),true);
- for(const values of [[50.01,500,20],[50,500.01,20],[50,500,20.01]])assert.equal(eligible(c,live,...values),false);
- assert.equal(eligible(c,Array(6).fill(live[0]),1,2,2),false);
- assert.equal(eligible(c,mixed,1,2,2),false);c.prematch.enabled=true;
- assert.equal(eligible(c,pre,100,1000,50),true);assert.equal(eligible(c,mixed,50,500,20),true);
- assert.equal(eligible(c,mixed,51,500,20),false);
- assert.equal(eligible(c,[{acceptanceType:'unknown'}],1,2,2),false);assert.equal(eligible(c,[],1,2,2),false);
+const {defaults,validate,migrate,eligible,decision,albaniaDayStart}=require('./ticket-acceptance');
+const live=(gameId=1)=>({gameId,acceptanceType:'live'}),pre=(gameId=2)=>({gameId,acceptanceType:'prematch'});
+
+test('a ticket is accepted only inside every cap of its type',()=>{
+ const c=defaults();
+ assert.match(decision(c,[live()],1,2,2),/nuk është aktiv për Live/);
+ c.live.enabled=true;
+ assert.equal(eligible(c,[live()],50,500,20),true,'caps are inclusive');
+ for(const [stake,payout,odds,reason] of [[50.01,500,20,/shumës maksimale/],[50,500.01,20,/fitimit maksimal/],[50,500,20.01,/koeficientit maksimal/]])
+  assert.match(decision(c,[live()],stake,payout,odds),reason);
+ assert.match(decision(c,[1,2,3,4,5,6].map(live),1,2,2),/numrit të ndeshjeve/);
+ assert.match(decision(c,[{gameId:9,acceptanceType:'unknown'}],1,2,2),/nuk është aktiv/);
+ assert.equal(eligible(c,[],1,2,2),false);
+});
+
+test('mandatory caps: stake and payout must be set when a type is enabled',()=>{
+ const c=defaults();c.live.enabled=true;
+ assert.throws(()=>validate({...c,live:{...c.live,maxStake:null}}),/shuma maksimale është e detyrueshme/);
+ assert.throws(()=>validate({...c,live:{...c.live,maxPayout:''}}),/fitimi maksimal është i detyrueshëm/);
+ const optional=validate({...c,live:{...c.live,maxOdds:null,maxEvents:null}});
+ assert.equal(optional.live.maxOdds,null);assert.equal(eligible(optional,[live()],50,500,999),true,'blank optional cap = no limit');
+ assert.equal(validate({...c,prematch:{...c.prematch,enabled:false,maxStake:null,maxPayout:null}}).prematch.maxStake,null,'a disabled type needs no caps');
  for(const bad of [NaN,Infinity,-1,0,'20'])assert.throws(()=>validate({...c,live:{...c.live,maxStake:bad}}));
  assert.throws(()=>validate({...c,live:{...c.live,maxEvents:1.5}}));
+ assert.throws(()=>validate({...c,blacklist:['50']}));
  assert.deepEqual(validate(c),c);
 });
 
-test('blank limits are independent, persist as null and do not remove other restrictions',()=>{
- const c=defaults();c.live={enabled:true,maxStake:null,maxPayout:100,maxOdds:'',maxEvents:null};
- const clean=validate(c);assert.equal(clean.live.maxOdds,null);
- assert.equal(eligible(clean,[{acceptanceType:'live'}],50,100,40),true);
- assert.equal(eligible(clean,[{acceptanceType:'live'}],50,101,40),false);
- clean.live.maxPayout=null;assert.equal(eligible(clean,Array(12).fill({acceptanceType:'live'}),1000,5000,100),true);
- clean.live.enabled=false;assert.equal(eligible(clean,[{acceptanceType:'live'}],1,2,2),false);
+test('fixed rules: same match goes to the operator, mixed tickets need both rule sets',()=>{
+ const c=defaults();c.live.enabled=true;
+ assert.match(decision(c,[live(10),{...live(10),selection:'Over'}],10,40,4),/e njëjta ndeshje/);
+ assert.match(decision(c,[live(10),pre(11)],10,40,4),/nuk është aktiv për Prematch/);
+ c.prematch.enabled=true;
+ assert.equal(eligible(c,[live(10),pre(11)],50,40,4),true);
+ assert.match(decision(c,[live(10),pre(11)],51,40,4),/Live: mbi kufirin e shumës/,'the stricter Live cap applies');
 });
 
-test('match limit counts distinct events across markets and mixed tickets',()=>{
- const c=defaults();for(const kind of ['live','prematch'])c[kind]={enabled:true,maxStake:null,maxPayout:null,maxOdds:null,maxEvents:1};
- const picks=[{gameId:10,acceptanceType:'live'},{gameId:10,acceptanceType:'live'}];
- assert.equal(eligible(c,picks,10,40,4),true);
- assert.equal(eligible(c,[...picks,{gameId:11,acceptanceType:'live'}],10,40,4),false);
- c.live.maxEvents=2;
- assert.equal(eligible(c,[picks[0],{gameId:11,acceptanceType:'prematch'}],10,40,4),false);
- c.prematch.maxEvents=2;
- assert.equal(eligible(c,[picks[0],{gameId:11,acceptanceType:'prematch'}],10,40,4),true);
- assert.equal(eligible(c,picks,NaN,40,4),false);
- const optional=validate({live:{enabled:true},prematch:{enabled:false}});
- assert.equal(optional.live.maxEvents,null);assert.equal(optional.live.maxOdds,null);
+test('blacklist and the daily cap per player',()=>{
+ const c=defaults();c.live.enabled=true;c.blacklist=[50];
+ assert.match(decision(c,[live()],10,20,2,{lineage:[1,50]}),/listën e zezë/);
+ c.blacklist=[];c.maxDailyStake=100;
+ assert.equal(eligible(c,[live()],10,20,2,{dailyStake:100}),true);
+ assert.match(decision(c,[live()],10,20,2,{dailyStake:100.01}),/kufiri ditor/);
+ assert.equal(eligible(c,[live()],10,20,2),false,'fails closed without the daily total');
 });
 
-test('operator configuration endpoints preserve old settings and reject concurrent updates',async()=>{
+test('the day starts at midnight in Albania, not UTC',()=>{
+ assert.equal(albaniaDayStart('2026-10-23T23:30:00Z'),'2026-10-23 22:00:00'); // 01:30 on the 24th in Tirana (UTC+2)
+ assert.equal(albaniaDayStart('2026-10-23T21:59:00Z'),'2026-10-22 22:00:00');
+ assert.equal(albaniaDayStart('2026-12-01T10:00:00Z'),'2026-11-30 23:00:00'); // winter time, UTC+1
+});
+
+test('old detailed configurations migrate to the simple one',()=>{
+ const old={live:{enabled:true,minEvents:2,maxStake:null,maxPayout:300,maxOdds:15,maxSelections:4,maxDailyStake:200,maxDailyTickets:9},prematch:{enabled:false,maxStake:80,maxPayout:null,maxDailyStake:150},policy:{allowMixed:false,blockRepeats:true},blacklist:[7]};
+ assert.deepEqual(migrate(old),{live:{enabled:true,maxStake:50,maxPayout:300,maxOdds:15,maxEvents:4},prematch:{enabled:false,maxStake:80,maxPayout:null,maxOdds:null,maxEvents:null},maxDailyStake:150,blacklist:[7]});
+ const current=validate(defaults());assert.deepEqual(migrate(current),current,'new configurations pass through unchanged');
+});
+
+test('configuration endpoints migrate stored settings and reject concurrent updates',async()=>{
  const SQL=await require('sql.js')(),db=new SQL.Database();
  const run=(sql,args=[])=>db.run(sql,args),get=(sql,args=[])=>{const q=db.prepare(sql);q.bind(args);const row=q.step()?q.getAsObject():null;q.free();return row;};
  run('CREATE TABLE audit_log(actor_id INTEGER,action TEXT,target_type TEXT,target_id INTEGER,details TEXT)');
+ run('CREATE TABLE users(id INTEGER,username TEXT,role TEXT)');run("INSERT INTO users VALUES(7,'manager_x','manager')");
  const acceptance=require('./ticket-acceptance').createAcceptance({run,get,tx:fn=>fn(),now:()=>new Date().toISOString(),money:n=>Math.round(n*100)/100});
- const old=defaults();for(const kind of ['live','prematch']){old[kind].maxSelections=old[kind].maxEvents;delete old[kind].maxEvents;}
- run('UPDATE ticket_acceptance_config SET config=?',[JSON.stringify(old)]);
- assert.equal(acceptance.read().rules.live.maxEvents,5);
+ run('UPDATE ticket_acceptance_config SET config=?',[JSON.stringify({live:{enabled:false,maxSelections:3},prematch:{enabled:false},policy:{}})]);
+ assert.equal(acceptance.read().rules.live.maxEvents,3);
  const routes=[];const guard=()=>{};
  acceptance.mount({get:(...args)=>routes.push(args),put:(...args)=>routes.push(args)},guard);
  assert(routes.every(r=>r[0].startsWith('/api/operator/ticket-acceptance')&&r[1]===guard));
- const rules=validate({live:{enabled:true},prematch:{enabled:false}});
+ const rules={...defaults(),blacklist:[7]};rules.live.enabled=true;
  let result,status=200;const res={json:x=>result=x,status:n=>{status=n;return res;}};
  routes[2][2]({body:{rules,version:0},user:{id:9}},res);
- assert.equal(result.version,1);assert.equal(acceptance.read().rules.live.maxStake,null);
+ assert.equal(result.version,1);assert.deepEqual(result.rules.blacklist,[7],'any network role can be blacklisted');
  routes[2][2]({body:{rules,version:0},user:{id:9}},res);
  assert.equal(status,409);
 });
@@ -80,66 +99,41 @@ test('operator navigation displays the acceptance configuration and excludes it 
  ctx.can=()=>true;ctx.me.role='center';ctx.navigation();assert(!nodes.navigation.innerHTML.includes('href="#/configuration"'));
 });
 
-test('advanced ranges enforce inclusive minima, maxima, per-selection odds and policy precedence',()=>{
- const {decision}=require('./ticket-acceptance'),c=defaults();c.live.enabled=true;c.live.minEvents=3;
- const picks=[1,2,3].map(gameId=>({gameId,acceptanceType:'live',odd:2}));
- assert.equal(eligible(c,picks.slice(0,2),10,80,8),false);assert.equal(eligible(c,picks,10,80,8),true);
- c.live.minOdds=8;c.live.minStake=10;c.live.minPayout=80;c.live.minSelectionOdds=2;c.live.maxSelectionOdds=2;
- assert.equal(eligible(c,picks,10,80,8),true);
- assert.equal(eligible(c,[...picks.slice(0,2),{...picks[2],odd:2.01}],10,80,8),false);
- c.blacklist=[50];assert.match(decision(c,picks,10,80,8,{lineage:[1,50]}),/listën e zezë/);
- c.blacklist=[];c.policy.blockRepeats=true;assert.equal(eligible(c,picks,10,80,8,{repeated:true}),false);
- c.policy.blockRepeats=false;c.policy.allowSameEvent=false;assert.equal(eligible(c,[...picks,picks[0]],10,80,8),false);
- c.policy.allowMixed=false;assert.equal(eligible(c,[...picks,{gameId:4,acceptanceType:'prematch',odd:2}],10,80,8),false);
- assert.throws(()=>validate({...c,live:{...c.live,minEvents:6,maxEvents:5}}));
- assert.throws(()=>validate({...c,blacklist:['50']}));assert.throws(()=>validate({...c,policy:{allowMixed:'yes'}}));
-});
-
-test('daily and open-ticket caps include the current ticket and fail closed without context',()=>{
- const c=defaults();c.live.enabled=true;c.live.maxDailyTickets=3;c.live.maxDailyStake=100;c.live.maxOpenTickets=2;
- const picks=[{gameId:1,odd:2,acceptanceType:'live'}],context={dailyTickets:3,dailyStake:100,openTickets:2};
- assert.equal(eligible(c,picks,10,20,2,context),true);
- for(const [key,value] of [['dailyTickets',4],['dailyStake',100.01],['openTickets',3]])assert.equal(eligible(c,picks,10,20,2,{...context,[key]:value}),false);
- assert.equal(eligible(c,picks,10,20,2),false);
-});
-
-test('real placement blocks a blacklisted ancestor and accepts an eligible ticket only once',async()=>{
+test('real placement: blacklisted branch, daily cap, and a single acceptance',async()=>{
  const SQL=await require('sql.js')(),db=new SQL.Database();
  const run=(sql,args)=>args?db.run(sql,args):db.run(sql),all=(sql,args=[])=>{const q=db.prepare(sql);q.bind(args);const rows=[];while(q.step())rows.push(q.getAsObject());q.free();return rows;},get=(...args)=>all(...args)[0];
- run("CREATE TABLE users(id INTEGER,role TEXT,parent_id INTEGER,business_parent_id INTEGER,status TEXT,balance REAL,reserved_balance REAL);CREATE TABLE bets(id INTEGER,user_id INTEGER,status TEXT,stake REAL,potential_win REAL,total_odds REAL,created_at TEXT,reserved REAL,accepted_by INTEGER,accepted_at TEXT);CREATE TABLE bet_selections(bet_id INTEGER,game_id TEXT,market_id TEXT,market TEXT,selection TEXT,special_value TEXT);CREATE TABLE audit_log(actor_id INTEGER,action TEXT,target_type TEXT,target_id INTEGER,details TEXT);CREATE TABLE wallet_transactions(user_id INTEGER,type TEXT,amount REAL,balance_after REAL,bet_id INTEGER,note TEXT);INSERT INTO users VALUES(1,'user',2,2,'active',100,10),(2,'agent',3,3,'active',0,0),(3,'partner',NULL,NULL,'active',0,0);INSERT INTO bets VALUES(10,1,'pending',10,20,2,'2026-10-16T10:00:00Z',10,NULL,NULL);INSERT INTO bet_selections VALUES(10,'50','1','Result','1','')");
- const service=require('./ticket-acceptance').createAcceptance({run,get,all,tx:fn=>fn(),now:()=> '2026-10-16T10:00:00Z',money:n=>Math.round(n*100)/100});
- const rules=defaults();rules.live.enabled=true;rules.blacklist=[3];run('UPDATE ticket_acceptance_config SET config=?',[JSON.stringify(rules)]);
- const picks=[{gameId:50,marketId:1,selection:'1',odd:2,acceptanceType:'live'}];
- assert.equal(service.apply(10,picks),null);assert.equal(get('SELECT balance FROM users WHERE id=1').balance,100);
- assert.match(JSON.parse(get("SELECT details FROM audit_log WHERE action='ticket_auto_review'").details).reason,/listën e zezë/);
- rules.blacklist=[];run('UPDATE ticket_acceptance_config SET config=?',[JSON.stringify(rules)]);
- run("INSERT INTO bets VALUES(11,1,'accepted',10,20,2,'2026-10-16T09:00:00Z',0,NULL,NULL);INSERT INTO bet_selections VALUES(11,'50','1','Result','1','')");
- rules.policy.blockRepeats=true;run('UPDATE ticket_acceptance_config SET config=?',[JSON.stringify(rules)]);
- assert.equal(service.apply(10,picks),null);
- assert.match(JSON.parse(all("SELECT details FROM audit_log WHERE action='ticket_auto_review'").at(-1).details).reason,/përsëritur/);
- rules.policy.blockRepeats=false;rules.live.maxDailyTickets=1;run('UPDATE ticket_acceptance_config SET config=?',[JSON.stringify(rules)]);
- assert.equal(service.apply(10,picks),null);
- rules.live.maxDailyTickets=null;run('UPDATE ticket_acceptance_config SET config=?',[JSON.stringify(rules)]);
- assert.equal(service.apply(10,picks).status,'accepted');assert.equal(service.apply(10,picks),null);
+ run("CREATE TABLE users(id INTEGER,role TEXT,parent_id INTEGER,business_parent_id INTEGER,status TEXT,balance REAL,reserved_balance REAL);CREATE TABLE bets(id INTEGER,user_id INTEGER,status TEXT,stake REAL,potential_win REAL,total_odds REAL,created_at TEXT,reserved REAL,accepted_by INTEGER,accepted_at TEXT);CREATE TABLE audit_log(actor_id INTEGER,action TEXT,target_type TEXT,target_id INTEGER,details TEXT);CREATE TABLE wallet_transactions(user_id INTEGER,type TEXT,amount REAL,balance_after REAL,bet_id INTEGER,note TEXT)");
+ run("INSERT INTO users VALUES(1,'user',3,3,'active',100,10),(3,'agent',NULL,NULL,'active',0,0);INSERT INTO bets VALUES(10,1,'pending',10,20,2,'2026-10-23 08:00:00',10,NULL,NULL)");
+ const service=require('./ticket-acceptance').createAcceptance({run,get,all,tx:fn=>fn(),now:()=>'2026-10-23T10:00:00.000Z',money:n=>Math.round(n*100)/100});
+ const save=rules=>run('UPDATE ticket_acceptance_config SET config=?',[JSON.stringify(rules)]);
+ const reason=()=>JSON.parse(all("SELECT details FROM audit_log WHERE action='ticket_auto_review'").at(-1).details).reason;
+ const rules=defaults();rules.live.enabled=true;rules.blacklist=[3];save(rules);
+ const picks=[{gameId:50,odd:2,acceptanceType:'live'}];
+ assert.equal(service.apply(10,picks),null);assert.match(reason(),/listën e zezë/);
+ // 95 € already played today (Albanian day starts 2026-10-22 22:00 UTC); yesterday's ticket does not count.
+ run("INSERT INTO bets VALUES(11,1,'won',95,190,2,'2026-10-22 23:00:00',0,NULL,NULL),(12,1,'lost',500,1000,2,'2026-10-22 21:00:00',0,NULL,NULL)");
+ rules.blacklist=[];rules.maxDailyStake=100;save(rules);
+ assert.equal(service.apply(10,picks),null);assert.match(reason(),/kufiri ditor/);
+ rules.maxDailyStake=105;save(rules);
+ assert.equal(service.apply(10,picks).status,'accepted');assert.equal(service.apply(10,picks),null,'never twice');
  assert.equal(get('SELECT balance FROM users WHERE id=1').balance,90);assert.equal(get('SELECT COUNT(*) n FROM wallet_transactions').n,1);
+ assert.deepEqual(service.apply(10,picks,{defer:true}),null,'an accepted ticket is not deferred again');
 });
 
-test('advanced configuration renders ranges, policy switches and inherited blacklist accounts',async()=>{
+test('the configuration page shows only the essential fields',async()=>{
  const fs=require('fs'),vm=require('vm'),source=fs.readFileSync('public/backoffice.js','utf8');
  const nodes=new Map();const node=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',textContent:'',addEventListener(){},querySelectorAll:()=>[]});return nodes.get(id);};
- let html='',submit;const rules=defaults();rules.prematch.minEvents=3;
- const ctx={$:node,esc:String,date:String,labels:{partner:'Partner'},panel:(title,subtitle,body)=>title+body,table:rows=>rows.map(a=>a.username).join(','),bindForm:(id,fn)=>submit=fn,Map,clearTimeout,setTimeout};
- vm.createContext(ctx);vm.runInContext(source.slice(source.indexOf('async function acceptancePage('),source.indexOf('async function competitionsPage(')),ctx);
+ let html='',submit,sent;const rules=defaults();rules.maxDailyStake=250;
+ const ctx={$:node,esc:String,date:String,labels:{partner:'Partner'},panel:(title,subtitle,body)=>title+body,table:rows=>rows.map(a=>a.username).join(','),bindForm:(id,fn)=>submit=fn,notice(){},api:async(url,method,body)=>{sent=body;return {version:2,updatedAt:'now'};},Map,clearTimeout,setTimeout};
+ vm.createContext(ctx);vm.runInContext(source.slice(source.indexOf('// Automatic acceptance: a switch'),source.indexOf('async function competitionsPage(')),ctx);
  await ctx.acceptancePage({valid:()=>true,get:async()=>({rules,version:1,blockedAccounts:[{id:7,role:'partner',username:'partner_blocked'}]}),commit:s=>html=s});
- assert(html.includes('name="prematch.minEvents" value="3"'));assert(html.includes('name="live.maxDailyStake"'));assert(html.includes('name="policy.blockRepeats"'));assert(nodes.get('acceptanceBlacklist').innerHTML.includes('partner_blocked'));assert.equal(typeof submit,'function');
- // Older running servers return only the two original rule groups.
- delete rules.policy;
- await ctx.acceptancePage({valid:()=>true,get:async()=>({rules,version:1}),commit:s=>html=s});
- assert(html.includes('name="policy.allowMixed" checked'));
- assert(html.includes('name="policy.allowSameEvent" checked'));
- assert(!html.includes('name="policy.blockRepeats" checked'));
- assert(html.includes('name="prematch.minEvents" value="3"'));
- rules.policy={allowMixed:false};
- await ctx.acceptancePage({valid:()=>true,get:async()=>({rules,version:1}),commit:s=>html=s});
- assert(!html.includes('name="policy.allowMixed" checked'));
+ const inputs=[...html.matchAll(/name="([^"]+)"/g)].map(m=>m[1]);
+ assert.deepEqual(inputs.sort(),['live.enabled','live.maxEvents','live.maxOdds','live.maxPayout','live.maxStake','maxDailyStake','prematch.enabled','prematch.maxEvents','prematch.maxOdds','prematch.maxPayout','prematch.maxStake'].sort());
+ assert(html.includes('name="maxDailyStake" min="0.01" step="0.01" value="250"'));
+ assert(nodes.get('acceptanceBlacklist').innerHTML.includes('partner_blocked'));
+ const form=new Map([['live.enabled','on'],['live.maxStake','40'],['live.maxPayout','400'],['live.maxOdds',''],['live.maxEvents','3'],['prematch.maxStake',''],['prematch.maxPayout',''],['prematch.maxOdds',''],['prematch.maxEvents',''],['maxDailyStake','']]);
+ await submit({get:k=>form.get(k)??null,has:k=>form.has(k)});
+ sent=JSON.parse(JSON.stringify(sent)); // objects built inside vm carry another realm's prototypes
+ assert.deepEqual(sent,{rules:{maxDailyStake:null,blacklist:[7],live:{enabled:true,maxStake:40,maxPayout:400,maxOdds:null,maxEvents:3},prematch:{enabled:false,maxStake:null,maxPayout:null,maxOdds:null,maxEvents:null}},version:1});
+ assert.deepEqual(validate(sent.rules),sent.rules,'what the page sends is accepted by the server');
 });
