@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "test": "node settlement.test.js && node odds-routing.test.cjs && node pending-quotes.test.cjs && node --test casino-gsdeluxe.test.js casino-routes.test.js ticket-integrity.test.js same-event-markets.test.js ticket-acceptance.test.js platform-alerts.test.js selection-status.test.js timeline-identity.test.js ticket-repeats.test.js competition-control.test.js database-storage.test.js authorization.test.js api-client.test.js live-clock.test.js live-corners.test.js session-expiry.test.js password-change.test.js market-results.test.js provider-markets.test.js reliability.test.js",
+    "test": "node settlement.test.js && node odds-routing.test.cjs && node pending-quotes.test.cjs && node --test casino-gsdeluxe.test.js casino-routes.test.js ticket-integrity.test.js brand.test.js same-event-markets.test.js ticket-acceptance.test.js platform-alerts.test.js selection-status.test.js timeline-identity.test.js ticket-repeats.test.js competition-control.test.js database-storage.test.js authorization.test.js api-client.test.js live-clock.test.js live-corners.test.js session-expiry.test.js password-change.test.js market-results.test.js provider-markets.test.js reliability.test.js",
     "test:navigation": "node navigation-search-browser.cjs",
     "test:ui": "node backoffice.test.cjs",
     "test:user-management": "node user-management-browser.cjs",
