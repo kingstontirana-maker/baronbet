@@ -53,7 +53,11 @@ const FINAL=new Set(['closed','failed']);
 
 function createCasino({run,get,all,tx,now,client,config={},alert=()=>{},log=console}){
  const cfg={clubId:Number(config.clubId),loginPrefix:String(config.loginPrefix||'bb'),balanceDenomination:Number(config.balanceDenomination??100),gameDenomination:Number(config.gameDenomination??0.01),currency:String(config.currency||'EUR'),idleMs:Number(config.idleMs??180000),maxCredit:1500000,
-  mode:config.mode==='transfer'?'transfer':'seamless',callbackSecret:String(config.callbackSecret||''),callbackSkewMs:Number(config.callbackSkewSeconds??300)*1000,
+  mode:config.mode==='transfer'?'transfer':'seamless',callbackSkewMs:Number(config.callbackSkewSeconds??120)*1000,
+  // GSDeluxe did not name a separate secret_key: without GSD_CALLBACK_SECRET the callback hash is
+  // checked against the shared API keys we hold, and only a correctly signed request is accepted.
+  callbackSecrets:(config.callbackSecret?[['GSD_CALLBACK_SECRET',config.callbackSecret]]:Object.entries(config.fallbackSecrets||{})).filter(([,v])=>v).map(([label,value])=>({label,value:String(value)})),
+  // '*' any IP, a list = only those, empty = signed requests from any IP, each new IP reported to the center.
   callbackIps:config.callbackIps==='*'?'*':String(config.callbackIps||'').split(',').map(x=>x.trim()).filter(Boolean)};
  run(`CREATE TABLE IF NOT EXISTS casino_accounts(user_id INTEGER PRIMARY KEY,provider TEXT NOT NULL DEFAULT 'gsdeluxe',login TEXT NOT NULL UNIQUE,password TEXT NOT NULL,provider_user_id INTEGER,created_at TEXT NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)`);
  run(`CREATE TABLE IF NOT EXISTS casino_sessions(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,provider TEXT NOT NULL DEFAULT 'gsdeluxe',game_id INTEGER,game_name TEXT,status TEXT NOT NULL,amount_cents INTEGER NOT NULL,returned_cents INTEGER,credit_per_cent REAL,sweep_attempts INTEGER NOT NULL DEFAULT 0,sweep_uncertain INTEGER NOT NULL DEFAULT 0,error TEXT,opened_at TEXT NOT NULL,last_seen_at TEXT NOT NULL,closed_at TEXT,resolved_by INTEGER,FOREIGN KEY(user_id) REFERENCES users(id))`);
@@ -82,6 +86,7 @@ function createCasino({run,get,all,tx,now,client,config={},alert=()=>{},log=cons
  run(`CREATE TABLE IF NOT EXISTS casino_transactions(id INTEGER PRIMARY KEY AUTOINCREMENT,provider TEXT NOT NULL DEFAULT 'gsdeluxe',provider_tx_id INTEGER NOT NULL UNIQUE,user_id INTEGER NOT NULL,type TEXT NOT NULL,reason TEXT,amount_cents INTEGER NOT NULL,round_id INTEGER,round_finished INTEGER,game_id INTEGER,balance_after REAL NOT NULL,provider_time TEXT,created_at TEXT NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id))`);
  run('CREATE INDEX IF NOT EXISTS idx_casino_tx_round ON casino_transactions(user_id,round_id,game_id)');
  run('CREATE INDEX IF NOT EXISTS idx_casino_tx_date ON casino_transactions(created_at)');
+ run('CREATE TABLE IF NOT EXISTS casino_callback_ips(ip TEXT PRIMARY KEY,secret TEXT,first_seen TEXT NOT NULL)');
  const isActive=config.isActive||(()=>true),persist=config.persist||(()=>{}),journalFile=config.journalFile||null;
  let journalFd=null,flushTimer=null;
  const LEDGER={BET:'casino_bet',WIN:'casino_win',REFUND:'casino_refund'};
@@ -142,15 +147,22 @@ function createCasino({run,get,all,tx,now,client,config={},alert=()=>{},log=cons
  function callback(body,ip){
   const sha1=s=>crypto.createHash('sha1').update(s).digest('hex');
   const stamp=new Date().toISOString().slice(0,19).replace('T',' ');
-  const reply=(status,data)=>({request:body,response:{status,response_timestamp:stamp,hash:sha1(status+stamp+cfg.callbackSecret),data}});
+  let secret=cfg.callbackSecrets[0]?.value||'';
+  const reply=(status,data)=>({request:body,response:{status,response_timestamp:stamp,hash:sha1(status+stamp+secret),data}});
   const error=(code,message)=>reply('ERROR',{error_code:code,error_message:message});
   try{
    if(!body||typeof body!=='object'||typeof body.command!=='string'||typeof body.request_timestamp!=='string'||typeof body.hash!=='string'||!body.data||typeof body.data!=='object')return error('ERR4','Invalid request');
-   if(cfg.callbackIps!=='*'&&!cfg.callbackIps.includes(ip))return error('ERR3','IP not allowed');
-   const expected=sha1(body.command+body.request_timestamp+cfg.callbackSecret);
-   if(body.hash.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(body.hash.toLowerCase()),Buffer.from(expected)))return error('ERR3','Invalid hash');
+   if(Array.isArray(cfg.callbackIps)&&cfg.callbackIps.length&&!cfg.callbackIps.includes(ip)){alert('casino:callback-ip:'+ip,'casino_callback_ip','Callback casino nga IP e palejuar',{ip,command:body.command});return error('ERR3','IP not allowed');}
+   const given=Buffer.from(body.hash.toLowerCase());
+   const match=cfg.callbackSecrets.find(s=>{const expected=Buffer.from(sha1(body.command+body.request_timestamp+s.value));return expected.length===given.length&&crypto.timingSafeEqual(expected,given);});
+   if(!match)return error('ERR3','Invalid hash');
+   secret=match.value;
    const sent=Date.parse(body.request_timestamp.replace(' ','T')+'Z');
    if(!Number.isFinite(sent)||Math.abs(Date.now()-sent)>cfg.callbackSkewMs)return error('ERR3','Request timestamp out of range');
+   if(Array.isArray(cfg.callbackIps)&&!cfg.callbackIps.length&&!get('SELECT ip FROM casino_callback_ips WHERE ip=?',[ip])){
+    tx(()=>run('INSERT OR IGNORE INTO casino_callback_ips(ip,secret,first_seen) VALUES(?,?,?)',[ip,match.label,now()]));
+    alert('casino:callback-ip:'+ip,'casino_callback_ip','IP e re e GSDeluxe për callback-et',{ip,secret:match.label,hint:'Vendose te GSD_CALLBACK_IPS për të pranuar vetëm këtë IP.'});
+   }
    const d=body.data,acc=get('SELECT user_id FROM casino_accounts WHERE login=?',[String(d.token||'')]);
    if(!acc)return error('ERR1','Login does not exist');
    if(String(d.currency_code||'').toUpperCase()!==cfg.currency)return error('ERR6','Currency mismatch');

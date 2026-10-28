@@ -861,11 +861,11 @@ async function start(){
   // Seamless (GSDeluxe calls our balance/changebalance URLs) is the default; GSD_MODE=transfer
   // uses balance_operation instead. Seamless also needs the callback secret and caller IPs.
   const casinoMode=env.GSD_MODE==='transfer'?'transfer':'seamless';
-  const casinoConfigured=['GSD_TOKEN_NAME','GSD_TOKEN_VALUE','GSD_API_HASH_KEY','GSD_CLUB_ID',...(casinoMode==='seamless'?['GSD_CALLBACK_SECRET','GSD_CALLBACK_IPS']:[])].every(k=>env[k]);
+  const casinoConfigured=['GSD_TOKEN_NAME','GSD_TOKEN_VALUE','GSD_API_HASH_KEY','GSD_CLUB_ID'].every(k=>env[k]);
   const casino=gsd.createCasino({run,get,all,tx,now,alert:reportAnomaly,
     client:gsd.createClient({url:env.GSD_API_URL||'https://api.gsdeluxe.com/api.php',tokenName:env.GSD_TOKEN_NAME,tokenValue:env.GSD_TOKEN_VALUE,hashKey:env.GSD_API_HASH_KEY,monitor:(d,m,a)=>apiMonitor.begin(d,m,a)}),
     config:{mode:casinoMode,clubId:env.GSD_CLUB_ID,loginPrefix:env.GSD_LOGIN_PREFIX,balanceDenomination:env.GSD_BALANCE_DENOMINATION,gameDenomination:env.GSD_GAME_DENOMINATION,currency:'EUR',
-      callbackSecret:env.GSD_CALLBACK_SECRET,callbackIps:env.GSD_CALLBACK_IPS,isActive:id=>access.active(id),persist:saveDb,journalFile:path.resolve(DB_FILE)+'.casino-journal'}});
+      callbackSecret:env.GSD_CALLBACK_SECRET,fallbackSecrets:{GSD_API_HASH_KEY:env.GSD_API_HASH_KEY,GSD_TOKEN_VALUE:env.GSD_TOKEN_VALUE},callbackIps:env.GSD_CALLBACK_IPS,isActive:id=>access.active(id),persist:saveDb,journalFile:path.resolve(DB_FILE)+'.casino-journal'}});
   gsd.mount(app,{casino,auth,centerAuth,jsonError,configured:casinoConfigured,enabled:env.GSD_ENABLED!=='false',trustProxy:env.GSD_TRUST_PROXY==='true'});
   if(casinoConfigured){let sweeping=false;setInterval(()=>{if(sweeping)return;sweeping=true;casino.tick().finally(()=>{sweeping=false;});},30000).unref();}
   app.get('/api/health',(req,res)=>res.json({ok:true,database:'sqlite/sql.js',apiVersion:'ticket-details-json-v1',storageVersion:'filesystem-lease-v2',settlementVersion:SETTLEMENT_VERSION,startedAt:STARTED_AT,time:now()}));

@@ -240,3 +240,19 @@ test('an acknowledged spin survives a crash before the database is saved',async(
   first.casino.flush();
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+test('without a named secret_key or IPs: only callbacks signed with our API keys pass, new IPs are reported',async()=>{
+ const ctx=await setup({mode:'seamless',fallbackSecrets:{GSD_API_HASH_KEY:'hash-key',GSD_TOKEN_VALUE:'token-value'},callbackIps:''});
+ await ctx.casino.launch(1,{gameId:17});
+ const login=ctx.get('SELECT login FROM casino_accounts WHERE user_id=1').login;
+ const body=secret=>request('balance',{token:login,currency_code:'EUR'},{secret});
+ assert.equal(ctx.casino.callback(body('guessed'),'203.0.113.9').response.data.error_code,'ERR3','unsigned callbacks are refused');
+ assert.equal(ctx.alerts.length,0,'a refused callback does not register its IP');
+ const ok=ctx.casino.callback(body('hash-key'),'203.0.113.9');
+ assert.equal(ok.response.status,'OK');
+ assert.equal(ok.response.hash,sha1('OK'+ok.response.response_timestamp+'hash-key'),'the reply is signed with the key that matched');
+ assert.equal(ctx.alerts.at(-1)[1],'casino_callback_ip');assert.equal(ctx.alerts.at(-1)[3].ip,'203.0.113.9');assert.equal(ctx.alerts.at(-1)[3].secret,'GSD_API_HASH_KEY');
+ assert.equal(ctx.casino.callback(body('token-value'),'203.0.113.9').response.status,'OK');
+ assert.equal(ctx.alerts.length,1,'each IP is reported once');
+ assert.equal(ctx.casino.callback(request('balance',{token:login,currency_code:'EUR'},{secret:'hash-key',time:stamp(-180e3)}),'203.0.113.9').response.data.error_code,'ERR3','a 3-minute-old signature is too old');
+});
