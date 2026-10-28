@@ -171,7 +171,7 @@ function createCasino({run,get,all,tx,now,client,config={},alert=()=>{},log=cons
    return error(code,message);
   };
   try{
-   if(!body||typeof body!=='object'||typeof body.command!=='string'||typeof body.request_timestamp!=='string'||typeof body.hash!=='string'||!body.data||typeof body.data!=='object')return refuse('ERR4','Invalid request',{keys:body&&typeof body==='object'?Object.keys(body).join(',').slice(0,100):typeof body});
+   if(!body||typeof body!=='object'||typeof body.command!=='string'||typeof body.request_timestamp!=='string'||typeof body.hash!=='string'||!body.data||typeof body.data!=='object')return refuse('ERR4','Invalid request',{keys:body&&typeof body==='object'?Object.keys(body).join(',').slice(0,100):typeof body,...(body?.unparsed||{})});
    if(Array.isArray(cfg.callbackIps)&&cfg.callbackIps.length&&!cfg.callbackIps.includes(ip)){alert('casino:callback-ip:'+ip,'casino_callback_ip','Callback casino nga IP e palejuar',{ip,command:body.command});return error('ERR3','IP not allowed');}
    const given=Buffer.from(body.hash.toLowerCase());
    const match=cfg.callbackSecrets.find(s=>{const expected=Buffer.from(sha1(body.command+body.request_timestamp+s.value));return expected.length===given.length&&crypto.timingSafeEqual(expected,given);});
@@ -369,14 +369,54 @@ function createCasino({run,get,all,tx,now,client,config={},alert=()=>{},log=cons
 function frameHostGuard(frameHost){
  return (req,res,next)=>frameHost&&req.hostname===frameHost&&!req.path.startsWith('/api/casino/frame/')?res.status(404).type('text/plain').send('Not found'):next();
 }
-function mount(app,{casino,auth,centerAuth,jsonError,configured,enabled,trustProxy=false,frameHost='',frameAncestors='https:'}){
+// GSDeluxe documents the callback JSON but not how it travels, so every usual form is read:
+// a raw JSON body, a form or multipart field holding it (or flat fields with data[x] keys),
+// query parameters, or the encrypted {token_name,request,sign} envelope of the main API.
+function parseCallbackBody(raw,contentType='',query={},keys={}){
+ const json=s=>{try{const v=JSON.parse(s);return v&&typeof v==='object'?v:null;}catch(_){return null;}};
+ const fromFields=fields=>{
+  for(const v of Object.values(fields)){const o=typeof v==='string'&&json(v);if(o&&(o.command||o.request))return o;}
+  if(!fields.command&&!fields.request)return null;
+  const out={},data={};
+  for(const [k,v] of Object.entries(fields)){const m=/^data\[([^\]]+)\]$/.exec(k);if(m)data[m[1]]=v;else out[k]=v;}
+  if(typeof out.data==='string')out.data=json(out.data)||out.data;
+  if(!out.data&&Object.keys(data).length)out.data=data;
+  return out;
+ };
+ // express.json may already have parsed a JSON body into an object.
+ const parsed=raw&&typeof raw==='object'&&!Buffer.isBuffer(raw)?raw:null;
+ const text=parsed?'':Buffer.isBuffer(raw)?raw.toString('utf8'):String(raw??'');
+ let body=parsed?(parsed.command||parsed.request?{...parsed}:fromFields(Object.fromEntries(Object.entries(parsed).map(([k,v])=>[k,typeof v==='object'?JSON.stringify(v):String(v)])))):json(text.trim());
+ const boundary=/boundary=(?:"([^"]+)"|([^;]+))/i.exec(contentType);
+ if(!body&&boundary){
+  const fields={};
+  for(const part of text.split('--'+(boundary[1]||boundary[2]).trim())){const m=/name="([^"]+)"[^\r\n]*\r?\n(?:[^\r\n]+\r?\n)*\r?\n([\s\S]*?)\r?\n?$/.exec(part);if(m)fields[m[1]]=m[2];}
+  body=fromFields(fields);
+ }
+ if(!body&&text.includes('='))body=fromFields(Object.fromEntries(new URLSearchParams(text)));
+ if(!body&&query&&Object.keys(query).length)body=fromFields(Object.fromEntries(Object.entries(query).map(([k,v])=>[k,typeof v==='object'?JSON.stringify(v):String(v)])));
+ if(body&&typeof body.request==='string'&&body.sign&&!body.command&&keys.tokenValue){
+  if(keys.hashKey&&sign(body.request,keys.hashKey)!==String(body.sign).toLowerCase())return null;
+  try{body=json(decrypt(body.request,keys.tokenValue));}catch(_){return null;}
+ }
+ if(body&&typeof body.data==='string')body.data=json(body.data)||body.data;
+ return body;
+}
+// Field names and value types only: enough to see the format, never a value.
+function bodyShape(raw,contentType){
+ const text=Buffer.isBuffer(raw)?raw.toString('utf8'):raw&&typeof raw==='object'?JSON.stringify(Object.fromEntries(Object.keys(raw).map(k=>[k,0]))):String(raw??'');
+ const names=[...new Set([...text.matchAll(/(?:^|[&\s"{,])([A-Za-z_][\w\[\]]{0,30})(?=["]?\s*[:=])/g)].map(m=>m[1]))].slice(0,15);
+ return {content_type:String(contentType||'').slice(0,80),length:text.length,starts:text.trim().slice(0,1).replace(/[^\[{<\w%-]/,'?'),fields:names.join(',')};
+}
+
+function mount(app,{casino,auth,centerAuth,jsonError,configured,enabled,trustProxy=false,frameHost='',frameAncestors='https:',envelopeKeys={}}){
  const player=(req,res,next)=>auth(req,res,()=>req.user.role==='user'?next():jsonError(res,403,'Casino është vetëm për lojtarët.'));
  const fail=(res,e)=>{if(!e.status)console.error('Casino:',e.message);jsonError(res,e.status||502,e.status?e.message:'Casino është përkohësisht e padisponueshme.');};
  const guard=(fn,launching=false)=>async(req,res)=>{if(!configured||(launching&&!enabled))return jsonError(res,503,'Casino nuk është aktive.',{code:'CASINO_DISABLED'});try{await fn(req,res);}catch(e){fail(res,e);}};
  // Seamless wallet callbacks called by GSDeluxe. Always HTTP 200; errors travel in the body.
  app.post('/api/casino/gsd/:command(balance|changebalance)',express.text({type:()=>true,limit:'64kb'}),(req,res)=>{
-  let body=req.body;
-  if(typeof body==='string'){try{body=JSON.parse(body);}catch(_){try{body=JSON.parse(new URLSearchParams(body).get('data'));}catch(__){body=null;}}}
+  let body=parseCallbackBody(req.body,req.headers['content-type'],req.query,envelopeKeys);
+  if(!body)body={unparsed:bodyShape(req.body,req.headers['content-type'])};
   const forwarded=trustProxy&&String(req.headers['x-forwarded-for']||'').split(',')[0].trim();
   const ip=String(forwarded||req.socket.remoteAddress||'').replace(/^::ffff:/,'');
   const result=configured?casino.callback(body&&body.command===req.params.command?body:{...(body||{}),command:undefined},ip):{response:{status:'ERROR',data:{error_code:'ERR7',error_message:'Casino is not configured'}}};
@@ -404,4 +444,4 @@ function mount(app,{casino,auth,centerAuth,jsonError,configured,enabled,trustPro
  app.post('/api/center/casino/sessions/:id/resolve',centerAuth,guard(async(req,res)=>res.json({session:await casino.resolve(Number(req.params.id),Number(req.body?.amount),req.user.id)})));
 }
 
-module.exports={encrypt,decrypt,sign,gameUrl,GsdError,createClient,createCasino,mount,frameHostGuard};
+module.exports={encrypt,decrypt,sign,gameUrl,parseCallbackBody,bodyShape,GsdError,createClient,createCasino,mount,frameHostGuard};

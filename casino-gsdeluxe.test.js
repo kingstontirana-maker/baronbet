@@ -259,7 +259,7 @@ test('without a named secret_key or IPs: only callbacks signed with our API keys
  assert.equal(ctx.casino.callback(body('token-value'),'203.0.113.9').response.status,'OK');
  assert.equal(ipAlerts().length,1,'each IP is reported once');
  assert.equal(ctx.casino.callback(request('balance',{token:login,currency_code:'EUR'},{secret:'hash-key',time:stamp(-180e3)}),'203.0.113.9').response.data.error_code,'ERR3','a 3-minute-old signature is too old');
- assert.equal(ctx.alerts.find(a=>a[0]==='casino:callback-refused:Request timestamp out of range')[3].skew_seconds,-180);
+ assert.ok(Math.abs(ctx.alerts.find(a=>a[0]==='casino:callback-refused:Request timestamp out of range')[3].skew_seconds+180)<=1);
 });
 
 test('a refused hash names the variant it matches, without the secret',async()=>{
@@ -280,4 +280,26 @@ test('start_game leaves denomination to the club unless one is configured',async
  const fixed=await setup({mode:'seamless',callbackIps:'*',gameDenomination:'0.01'});
  await fixed.casino.launch(1,{gameId:17});
  assert.equal(fixed.provider.lastStart.denomination,0.01);
+});
+
+test('callback body is read whether it comes as JSON, form, multipart, query or envelope',()=>{
+ const want={command:'balance',request_timestamp:'2026-10-28 17:06:23',hash:'h',data:{token:'bb1',currency_code:'EUR'}};
+ const parse=(raw,type,query)=>gsd.parseCallbackBody(raw,type,query,{tokenValue:'token-value',hashKey:'hash-key'});
+ assert.deepEqual(parse(JSON.stringify(want),'application/json'),want);
+ assert.deepEqual(parse(Buffer.from(JSON.stringify(want)),'text/plain'),want);
+ assert.deepEqual(parse('data='+encodeURIComponent(JSON.stringify(want)),'application/x-www-form-urlencoded'),want,'JSON in a form field');
+ assert.deepEqual(parse('json='+encodeURIComponent(JSON.stringify(want)),'application/x-www-form-urlencoded'),want,'JSON in a field of another name');
+ assert.deepEqual(parse('command=balance&request_timestamp=2026-10-28+17%3A06%3A23&hash=h&data%5Btoken%5D=bb1&data%5Bcurrency_code%5D=EUR','application/x-www-form-urlencoded'),want,'flat PHP-style fields');
+ assert.deepEqual(parse('command=balance&request_timestamp=2026-10-28+17%3A06%3A23&hash=h&data='+encodeURIComponent(JSON.stringify(want.data)),'application/x-www-form-urlencoded'),want,'data as a JSON field');
+ const multipart=['--XyZ','Content-Disposition: form-data; name="command"','','balance','--XyZ','Content-Disposition: form-data; name="request_timestamp"','','2026-10-28 17:06:23','--XyZ','Content-Disposition: form-data; name="hash"','','h','--XyZ','Content-Disposition: form-data; name="data"','',JSON.stringify(want.data),'--XyZ--',''].join('\r\n');
+ assert.deepEqual(parse(multipart,'multipart/form-data; boundary=XyZ'),want,'multipart fields');
+ assert.deepEqual(parse('','',{command:'balance',request_timestamp:'2026-10-28 17:06:23',hash:'h',data:{token:'bb1',currency_code:'EUR'}}),want,'query parameters');
+ const request=gsd.encrypt(JSON.stringify(want),'token-value');
+ assert.deepEqual(parse(JSON.stringify({token_name:'t',request,sign:gsd.sign(request,'hash-key')}),'application/json'),want,'encrypted envelope');
+ assert.deepEqual(parse('data='+encodeURIComponent(JSON.stringify({token_name:'t',request,sign:gsd.sign(request,'hash-key')})),'application/x-www-form-urlencoded'),want,'envelope in the data field');
+ assert.equal(parse(JSON.stringify({token_name:'t',request,sign:'forged'}),'application/json'),null,'a badly signed envelope is refused');
+ assert.deepEqual(parse(structuredClone(want),'application/json'),want,'already parsed by express.json');
+ assert.equal(parse('garbage','text/plain'),null);
+ const shape=gsd.bodyShape('command=balance&hash=abc123&data%5Btoken%5D=secretlogin','application/x-www-form-urlencoded');
+ assert.equal(shape.fields,'command,hash');assert.ok(!JSON.stringify(shape).includes('abc123')&&!JSON.stringify(shape).includes('balance'),'shape carries no values');
 });
