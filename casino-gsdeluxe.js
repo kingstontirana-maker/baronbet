@@ -52,7 +52,7 @@ function gameUrl(html){
 const FINAL=new Set(['closed','failed']);
 
 function createCasino({run,get,all,tx,now,client,config={},alert=()=>{},log=console}){
- const cfg={clubId:Number(config.clubId),loginPrefix:String(config.loginPrefix||'bb'),balanceDenomination:Number(config.balanceDenomination??100),gameDenomination:Number(config.gameDenomination??0.01),currency:String(config.currency||'EUR'),idleMs:Number(config.idleMs??180000),maxCredit:1500000,
+ const cfg={clubId:Number(config.clubId),loginPrefix:String(config.loginPrefix||'bb'),balanceDenomination:Number(config.balanceDenomination??100),gameDenomination:config.gameDenomination==null||config.gameDenomination===''?null:Number(config.gameDenomination),currency:String(config.currency||'EUR'),idleMs:Number(config.idleMs??180000),maxCredit:1500000,
   mode:config.mode==='transfer'?'transfer':'seamless',callbackSkewMs:Number(config.callbackSkewSeconds??120)*1000,
   // GSDeluxe did not name a separate secret_key: without GSD_CALLBACK_SECRET the callback hash is
   // checked against the shared API keys we hold, and only a correctly signed request is accepted.
@@ -233,7 +233,9 @@ function createCasino({run,get,all,tx,now,client,config={},alert=()=>{},log=cons
  }
 
  async function startGame(userId,game,{width,height},jwt,currencyId){
-  const html=await client.call('start_game',{jwt,game_id:game.id,currency_id:currencyId,denomination:cfg.gameDenomination,width:Math.max(320,Math.min(3840,Number(width)||1280)),height:Math.max(240,Math.min(2160,Number(height)||720))},{html:true});
+  // denomination is optional: club 125569 rejects every explicit value (-105) and uses its own
+  // configured denomination when the field is left out.
+  const html=await client.call('start_game',{jwt,game_id:game.id,currency_id:currencyId,...(cfg.gameDenomination!=null?{denomination:cfg.gameDenomination}:{}),width:Math.max(320,Math.min(3840,Number(width)||1280)),height:Math.max(240,Math.min(2160,Number(height)||720))},{html:true});
   if(typeof html!=='string')throw Error('GSDeluxe nuk ktheu lojën.');
   // A wrapper around a single HTTPS game iframe is opened directly: the browser isolates
   // that foreign origin itself, and the game keeps its own cookies and storage.

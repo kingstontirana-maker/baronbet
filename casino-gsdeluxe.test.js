@@ -30,7 +30,7 @@ async function setup(config={mode:'transfer'},snapshot){
   if(cmd==='gamelist')return {success:1,baseURL:'https://cdn/',gamelist:[{ID:17,Name:'Book',GameIconUrl:'017.png'}]};
   if(cmd==='balance')return {success:1,credit:provider.credit};
   if(cmd==='balance_operation'){if(body.operation==='increase'){provider.credit+=body.sum*provider.factor;return {success:1,credit:body.sum*provider.factor};}const taken=provider.credit;provider.credit=0;return {success:1,credit:taken};}
-  if(cmd==='start_game'){assert.equal(body.currency_id,51);return '<html><body><iframe src="https://game"></iframe></body></html>';}
+  if(cmd==='start_game'){assert.equal(body.currency_id,51);provider.lastStart=body;return '<html><body><iframe src="https://game"></iframe></body></html>';}
   if(cmd==='user_ping')return {success:1};
   throw Error('unexpected '+cmd);
  }
@@ -255,4 +255,13 @@ test('without a named secret_key or IPs: only callbacks signed with our API keys
  assert.equal(ctx.casino.callback(body('token-value'),'203.0.113.9').response.status,'OK');
  assert.equal(ctx.alerts.length,1,'each IP is reported once');
  assert.equal(ctx.casino.callback(request('balance',{token:login,currency_code:'EUR'},{secret:'hash-key',time:stamp(-180e3)}),'203.0.113.9').response.data.error_code,'ERR3','a 3-minute-old signature is too old');
+});
+
+test('start_game leaves denomination to the club unless one is configured',async()=>{
+ const plain=await setup({mode:'seamless',callbackIps:'*'});
+ await plain.casino.launch(1,{gameId:17});
+ assert.equal(Object.hasOwn(plain.provider.lastStart,'denomination'),false,'club 125569 rejects every explicit value with -105');
+ const fixed=await setup({mode:'seamless',callbackIps:'*',gameDenomination:'0.01'});
+ await fixed.casino.launch(1,{gameId:17});
+ assert.equal(fixed.provider.lastStart.denomination,0.01);
 });
