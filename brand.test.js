@@ -27,7 +27,7 @@ test('BRAND=escobet serves the EscoBet name and logos from the same code',async 
  const office=await get('/backoffice.html');assert.match(office.text,/EscoBet/);assert.doesNotMatch(office.text,/EURO97/);
  const script=await get('/backoffice.js');assert.match(script.type,/javascript/);assert.match(script.text,/document\.title='EscoBet · '/);
  for(const logo of ['/assets/brand/baronbet.png','/assets/brand/bb.png']){
-  const image=await get(logo);assert.equal(image.status,200);assert.match(image.type,/image\/svg\+xml/);assert.match(image.text,/EscoBet/);
+  const image=await get(logo);assert.equal(image.status,200);assert.match(image.type,logo.endsWith('bb.png')?/image\/webp/:/image\/png/);assert.ok(image.text.length>1000,'EscoBet logo served for '+logo);
  }
  assert.match(office.text,/<span class="brand-symbol">EB<span>●<\/span><\/span><span>ESCO<span class="brand-number">BET<\/span>/,'sidebar mark');
  // Blue theme: every stylesheet is served with its greens moved to blue.

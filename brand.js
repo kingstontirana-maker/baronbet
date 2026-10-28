@@ -61,7 +61,7 @@ function createBrand(key,publicDir){
   const id=Object.hasOwn(BRANDS,key)?key:'baronbet',brand=BRANDS[id];
   const cache=new Map();
   function logoFile(kind){
-    for(const ext of ['png','svg']){const file=path.join(publicDir,'assets','brand',id,kind+'.'+ext);if(fs.existsSync(file))return file;}
+    for(const ext of ['png','webp','svg']){const file=path.join(publicDir,'assets','brand',id,kind+'.'+ext);if(fs.existsSync(file))return file;}
     return null;
   }
   function read(file,transform){
