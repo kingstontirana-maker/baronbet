@@ -7,10 +7,13 @@ const fs=require('fs'),path=require('path');
 // every green tone is moved to this hue at the same perceived brightness (see recolorCss).
 const BRANDS={
   baronbet:{name:'Baronbet',console:'EURO97'},
-  escobet:{name:'EscoBet',console:'EscoBet',hue:216,mark:{symbol:'EB',text:'ESCO',accent:'BET'}}
+  escobet:{name:'EscoBet',console:'EscoBet',hue:216,mark:{symbol:'EB',text:'ESCO',accent:'BET'},
+    // The player header crops the Baronbet wordmark with fixed offsets; this one is already tight.
+    siteCss:'.brand-wordmark img{position:static;left:auto;top:auto;width:100%;height:100%;object-fit:contain;object-position:left center}'}
 };
 // The backoffice sidebar draws the default brand as "97" in a badge and "EURO" + accent "97".
 const CONSOLE_MARK='<span class="brand-symbol">97<span>●</span></span><span>EURO<span class="brand-number">97</span>';
+const SITE_CSS='euro07.bet/vbet/user/build/main.css';
 // The pages and stylesheets reference the default brand's logo files by these paths.
 const LOGOS={'/assets/brand/baronbet.png':'wordmark','/assets/brand/bb.png':'monogram'};
 const PAGES={'/':'index.html','/index.html':'index.html','/backoffice.html':'backoffice.html','/backoffice.js':'backoffice.js'};
@@ -77,7 +80,8 @@ function createBrand(key,publicDir){
     if(brand.hue!=null&&req.path.endsWith('.css')){
       const file=path.normalize(decodeURIComponent(req.path)).replace(/^[\\/]+/,'');
       if(file.startsWith('..')||!fs.existsSync(path.join(publicDir,file)))return next();
-      return res.type('css').send(read(file,css=>recolorCss(css,brand.hue)));
+      const extra=brand.siteCss&&file.replace(/\\/g,'/')===SITE_CSS?'\n'+brand.siteCss+'\n':'';
+      return res.type('css').send(read(file,css=>recolorCss(css,brand.hue)+extra));
     }
     next();
   }

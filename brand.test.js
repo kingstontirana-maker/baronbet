@@ -36,6 +36,7 @@ test('BRAND=escobet serves the EscoBet name and logos from the same code',async 
   const original=fs.readFileSync(path.join(__dirname,'public',file),'utf8');
   if(/#138360/i.test(original))assert.doesNotMatch(css.text,/#138360/i,url+' still green');
   assert.equal(css.text.length>original.length*0.98,true,url+' kept its rules');
+  assert.equal(css.text.trimEnd().endsWith(require('./brand').BRANDS.escobet.siteCss),file==='euro07.bet/vbet/user/build/main.css',url+': header logo fit only on the player site');
  }
  assert.equal((await get('/../server.js')).status,404,'no path traversal through the theme');
 });
