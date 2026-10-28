@@ -20,13 +20,20 @@ module.exports = function accessControl({get, all, run, tx, now, hashPassword, v
     if(actor.role==='center') return true;
     const target=get('SELECT * FROM users WHERE id=?',[Number(id)]);
     if(!target) return false;
-    if(actor.role==='operator') return !['center','operator'].includes(target.role);
+    if(actor.role==='operator'){
+      if(['center','operator'].includes(target.role)) return false;
+      const partners=delegatedPartners(actor.id);
+      return !partners.length||lineage(target.id).some(u=>partners.includes(Number(u.id)));
+    }
     if(Number(actor.id)===Number(id)) return self;
     const chain=lineage(id);
     // Control staff must never become business owners through a legacy parent link.
     if(chain.some(u=>u.role==='operator' && Number(u.id)===Number(actor.id))) return false;
     return chain.some(u=>Number(u.id)===Number(actor.id));
   }
+  // A centre operator works for the whole network unless the centre delegates it to partners.
+  function delegatedPartners(operatorId){try{return all('SELECT partner_id FROM operator_partners WHERE operator_id=? ORDER BY partner_id',[Number(operatorId)]).map(r=>Number(r.partner_id));}catch(_){return [];}}
+  let userGroups=null;
   function ids(actor) { return all('SELECT id FROM users ORDER BY id').filter(u=>inside(actor,u.id)).map(u=>Number(u.id)); }
   function scope(actor,column='user_id') {
     const owned=ids(actor); return {sql:`${column} IN (${owned.map(()=>'?').join(',')||'NULL'})`,params:owned};
@@ -47,7 +54,9 @@ module.exports = function accessControl({get, all, run, tx, now, hashPassword, v
   function betLimit(amount,kind,message){throw Object.assign(new Error(message),{status:403,code:'BET_LIMIT_EXCEEDED',limitAmount:Number(amount),limitKind:kind});}
   function checkBet(userId,stake,payout,excludeBet=null,selections=[]) {
     if(!active(userId)) fail('Account or ancestor is not active.');
-    if(checkCompetitions)checkCompetitions(excludeBet?all('SELECT game_id,league_id FROM bet_selections WHERE bet_id=?',[excludeBet]):selections,stake,payout,userId,excludeBet);
+    const groups=userGroups?userGroups.groupsOf(userId):[];
+    const verdict=checkCompetitions?checkCompetitions(excludeBet?all('SELECT game_id,league_id,market FROM bet_selections WHERE bet_id=?',[excludeBet]):selections,stake,payout,userId,excludeBet,{groups}):null;
+    if(userGroups)userGroups.checkLimits(userId,stake,payout,excludeBet);
     const effective=limits(userId);
     if(stake>effective.max_bet)betLimit(effective.max_bet,'stake','Bet exceeds inherited limits.');
     if(payout>effective.max_payout)betLimit(effective.max_payout,'payout','Bet exceeds inherited limits.');
@@ -77,6 +86,7 @@ module.exports = function accessControl({get, all, run, tx, now, hashPassword, v
       const exposure=Number(get(`SELECT COALESCE(SUM(potential_win),0) n FROM bets WHERE ${own.sql} AND status IN ('pending','accepted') AND id<>?`,[...own.params,excludeBet??-1]).n);
       if(exposure+payout>limits(ancestor.id).max_exposure) fail('Exposure limit exceeded.');
     }
+    return {hold:verdict?.hold||[]};
   }
   function rememberLeagues(games){
     tx(()=>{for(const game of games){
@@ -118,6 +128,7 @@ module.exports = function accessControl({get, all, run, tx, now, hashPassword, v
     run('CREATE TABLE IF NOT EXISTS account_limits(user_id INTEGER NOT NULL REFERENCES users(id),key TEXT NOT NULL,value REAL NOT NULL CHECK(value>=0),PRIMARY KEY(user_id,key))');
     run('CREATE TABLE IF NOT EXISTS event_risk_limits(event_id TEXT NOT NULL,scope_id INTEGER NOT NULL DEFAULT 0,max_stake REAL CHECK(max_stake>=0),max_payout REAL CHECK(max_payout>=0),updated_by INTEGER NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(event_id,scope_id))');
     run('CREATE TABLE IF NOT EXISTS idempotency(actor_id INTEGER NOT NULL,key TEXT NOT NULL,fingerprint TEXT NOT NULL,response TEXT NOT NULL,PRIMARY KEY(actor_id,key))');
+    run('CREATE TABLE IF NOT EXISTS operator_partners(operator_id INTEGER NOT NULL,partner_id INTEGER NOT NULL,PRIMARY KEY(operator_id,partner_id))');
     run('CREATE TABLE IF NOT EXISTS login_history(id INTEGER PRIMARY KEY,user_id INTEGER,username TEXT NOT NULL,success INTEGER NOT NULL,ip_address TEXT,user_agent TEXT,created_at TEXT NOT NULL)');
     run('CREATE INDEX IF NOT EXISTS idx_login_history_user ON login_history(user_id,created_at)');
     run('CREATE INDEX IF NOT EXISTS idx_users_partner ON users(partner_id)');
@@ -146,6 +157,20 @@ module.exports = function accessControl({get, all, run, tx, now, hashPassword, v
       if(++record.count>30){res.setHeader('Retry-After',Math.ceil((record.until-time)/1000));return jsonError(res,429,'Too many login attempts.');}
       attempts.set(key,record); next();
     });
+    // Centre delegates an operator to one or more partners; none means the whole network.
+    app.get('/api/center/operators/:id/partners',auth,route((req,res)=>{
+      if(req.user.role!=='center')fail('Center access only.');
+      const op=get("SELECT id FROM users WHERE id=? AND role='operator'",[Number(req.params.id)]);if(!op)fail('Operatori nuk ekziston.',404);
+      res.json({partnerIds:delegatedPartners(op.id),partners:all("SELECT id,username,status FROM users WHERE role='partner' ORDER BY username")});
+    }));
+    app.put('/api/center/operators/:id/partners',auth,route((req,res)=>{
+      if(req.user.role!=='center')fail('Center access only.');
+      const op=get("SELECT id FROM users WHERE id=? AND role='operator'",[Number(req.params.id)]);if(!op)fail('Operatori nuk ekziston.',404);
+      const list=Array.isArray(req.body?.partnerIds)?[...new Set(req.body.partnerIds.map(Number))]:null;
+      if(!list||list.length>500||list.some(id=>!Number.isSafeInteger(id)||!get("SELECT id FROM users WHERE id=? AND role='partner'",[id])))fail('Zgjidh partnerë ekzistues.',400);
+      tx(()=>{const before=delegatedPartners(op.id);run('DELETE FROM operator_partners WHERE operator_id=?',[op.id]);for(const id of list)run('INSERT INTO operator_partners(operator_id,partner_id) VALUES(?,?)',[op.id,id]);audit(req,'operator_partners_updated',op.id,before,list);});
+      res.json({partnerIds:delegatedPartners(op.id)});
+    }));
     app.get('/api/login-history',auth,route((req,res)=>res.json({logins:all('SELECT success,ip_address,user_agent,created_at FROM login_history WHERE user_id=? ORDER BY id DESC LIMIT 100',[req.user.id])})));
     app.get('/api/sessions',auth,route((req,res)=>res.json({sessions:all('SELECT created_at,expires_at,token=? AS current FROM sessions WHERE user_id=? AND expires_at>?',[req.user.token,req.user.id,now()])})));
     // Every legacy staff route receives a permission check before its handler.
@@ -380,5 +405,5 @@ module.exports = function accessControl({get, all, run, tx, now, hashPassword, v
     }));
   }
   function recordLogin(req,user,success) {tx(()=>run('INSERT INTO login_history(user_id,username,success,ip_address,user_agent,created_at) VALUES(?,?,?,?,?,?)',[user?.id??null,String(req.body.username||'').trim().toLowerCase().slice(0,32),success?1:0,req.ip,String(req.headers['user-agent']||'').slice(0,500),now()]));}
-  return {liveExposure,rememberLeagues,children,lineage,active,inside,scope,limits,checkBet,audit,migrate,mount,recordLogin};
+  return {liveExposure,rememberLeagues,children,lineage,active,inside,scope,limits,checkBet,audit,migrate,mount,recordLogin,delegatedPartners,useGroups:g=>{userGroups=g;}};
 };

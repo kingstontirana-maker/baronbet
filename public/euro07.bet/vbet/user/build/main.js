@@ -884,6 +884,8 @@ function startTicketNotifications(){
   if(!user||user.role!=='user'||!token)return stopTicketNotifications();
   stopTicketNotifications();ticketNotificationStream=new EventSource('/api/notifications/stream?token='+encodeURIComponent(token));
   ticketNotificationStream.addEventListener('ticket-offer',e=>{try{applyTicketOfferRealtime(JSON.parse(e.data))}catch(_){}});
+  // A ticket left too long in pending is refused by the centre rules and its stake released.
+  ticketNotificationStream.addEventListener('ticket-rejected',e=>{try{const event=JSON.parse(e.data);if(pendingTicket&&Number(pendingTicket.id)===Number(event.betId)){pendingTicket=null;renderSlip();}scheduleWalletRefresh();}catch(_){}});
   ticketNotificationStream.onerror=()=>{};
 }
 function setMode(m,{fromHash=false}={}){

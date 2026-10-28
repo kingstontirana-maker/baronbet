@@ -28,3 +28,10 @@
 .management-pagination:empty{display:none}
 #treeControls[hidden],#accountRows[hidden],#tree[hidden]{display:none}
 @media(max-width:760px){.management-roles{padding:14px 16px 0}.management-viewbar{padding:0 16px 14px}.management-filters select{max-width:none}.management-actions{min-width:150px}.management-pagination{padding:14px 16px}}
+
+/* Sport & Competitions statuses and scope */
+.status-choice{border:1px solid rgba(139,152,166,.25);border-radius:10px;padding:12px 14px;display:grid;gap:10px;margin:0}
+.status-choice legend{font-size:12px;color:#8b98a6;padding:0 6px}
+.status-choice label{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:start;cursor:pointer}
+.status-choice label .subline{grid-column:2}
+.inline-field{display:flex;align-items:center;gap:8px;white-space:nowrap}
