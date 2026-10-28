@@ -960,7 +960,7 @@ body:not(.player-account) .shell{grid-template-columns:226px minmax(0,1fr)}
 .today-match-row>button:focus-visible{outline:2px solid #00b98f;outline-offset:-2px}
 @media(max-width:650px){.today-match-teams{font-size:12px;padding-left:4px}.today-match-row>.odd{font-size:12px}}
 
-/* Casino lobby (LOJRA) */
+/* Casino lobby */
 .casino-lobby,.casino-play{display:flex;flex-direction:column;min-height:100%;background:var(--surface-base);color:var(--surface-text)}
 .casino-lobby .create-account-header strong,.casino-play .create-account-header strong{flex:1;padding:0 12px}
 .casino-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px;border-bottom:1px solid var(--surface-line)}
