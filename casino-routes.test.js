@@ -28,7 +28,7 @@ async function boot(t,extraEnv){
  const base='http://127.0.0.1:'+port;
  let child,output='';
  async function start(){
-  child=spawn(process.execPath,['server.js'],{cwd:__dirname,env:{...process.env,PORT:String(port),DB_FILE:path.join(dir,'test.db'),CENTER_PASSWORD:'Test-only-root-917!',DISABLE_UPSTREAM:'true',GSD_API_URL:`http://127.0.0.1:${provider.address().port}/api.php`,GSD_TOKEN_NAME:'test-token',GSD_TOKEN_VALUE:'token-value',GSD_API_HASH_KEY:'hash-key',GSD_CLUB_ID:'12',...extraEnv},stdio:['ignore','pipe','pipe']});
+  child=spawn(process.execPath,['server.js'],{cwd:__dirname,env:{...process.env,PORT:String(port),DB_FILE:path.join(dir,'test.db'),CENTER_PASSWORD:'Test-only-root-917!',DISABLE_UPSTREAM:'true',GSD_API_URL:`http://127.0.0.1:${provider.address().port}/api.php`,GSD_TOKEN_NAME:'test-token',GSD_TOKEN_VALUE:'token-value',GSD_API_HASH_KEY:'hash-key',GSD_CLUB_ID:'12',...(typeof extraEnv==='function'?extraEnv(port):extraEnv)},stdio:['ignore','pipe','pipe']});
   child.stdout.on('data',b=>output+=b);child.stderr.on('data',b=>output+=b);
   for(let i=0;i<300;i++){if(child.exitCode!==null)throw Error(output);try{if((await fetch(base+'/api/health')).ok)break;}catch{}await new Promise(r=>setTimeout(r,100));if(i===299)throw Error('Startup timeout: '+output);}
  }
@@ -77,10 +77,18 @@ test('transfer mode: player launch, sandboxed frame, exit and center report',asy
 
 test('seamless mode: signed callbacks within 50 ms and journal survives a crash',async t=>{
  const SECRET='callback-secret';
- const ctx=await boot(t,{GSD_CALLBACK_SECRET:SECRET,GSD_CALLBACK_IPS:'127.0.0.1'});
+ // localhost plays the dedicated game host; the site itself is reached as 127.0.0.1.
+ const ctx=await boot(t,port=>({GSD_CALLBACK_SECRET:SECRET,GSD_CALLBACK_IPS:'127.0.0.1',GSD_FRAME_ORIGIN:'http://localhost:'+port}));
  const {api,token,state}=ctx;
  const launch=await api('/api/casino/launch',token,'POST',{gameId:17,width:1000,height:600});
- assert.equal(launch.external,false);
+ assert.equal(launch.external,true,'the game opens from its own origin');
+ const gameHost=new URL(launch.frameUrl);assert.equal(gameHost.hostname,'localhost');assert.match(gameHost.pathname,/^\/api\/casino\/frame\/[0-9a-f]{48}$/);
+ const frame=await fetch(launch.frameUrl);
+ assert.equal(frame.status,200);assert.match(await frame.text(),/id="game"/);
+ assert.equal(frame.headers.get('content-security-policy'),'frame-ancestors https:','no sandbox: games keep storage and cookies');
+ assert.equal(frame.headers.get('x-frame-options'),null);
+ for(const p of ['/','/api/health','/api/me','/backoffice.html'])assert.equal((await fetch(gameHost.origin+p)).status,404,'game host serves frames only: '+p);
+ assert.equal((await fetch(ctx.base+'/api/health')).status,200,'the site itself is unaffected');
  assert.equal((await api('/api/me',token)).user.balance,50,'seamless launch moves no money');
  assert.ok(!state.commands.includes('balance_operation'));
  const login=[...state.users.keys()][0];

@@ -53,6 +53,7 @@ const FINAL=new Set(['closed','failed']);
 
 function createCasino({run,get,all,tx,now,client,config={},alert=()=>{},log=console}){
  const cfg={clubId:Number(config.clubId),loginPrefix:String(config.loginPrefix||'bb'),balanceDenomination:Number(config.balanceDenomination??100),gameDenomination:config.gameDenomination==null||config.gameDenomination===''?null:Number(config.gameDenomination),currency:String(config.currency||'EUR'),idleMs:Number(config.idleMs??180000),maxCredit:1500000,
+  frameOrigin:config.frameOrigin?new URL(config.frameOrigin).origin:'',
   mode:config.mode==='transfer'?'transfer':'seamless',callbackSkewMs:Number(config.callbackSkewSeconds??120)*1000,
   // GSDeluxe did not name a separate secret_key: without GSD_CALLBACK_SECRET the callback hash is
   // checked against the shared API keys we hold, and only a correctly signed request is accepted.
@@ -241,7 +242,7 @@ function createCasino({run,get,all,tx,now,client,config={},alert=()=>{},log=cons
   // that foreign origin itself, and the game keeps its own cookies and storage.
   const direct=gameUrl(html);if(direct)return {frameUrl:direct,external:true,game:game.name};
   const key=crypto.randomBytes(24).toString('hex');frames.set(key,{html,userId,expires:Date.now()+60000});
-  return {frameUrl:'/api/casino/frame/'+key,external:false,game:game.name};
+  return cfg.frameOrigin?{frameUrl:cfg.frameOrigin+'/api/casino/frame/'+key,external:true,game:game.name}:{frameUrl:'/api/casino/frame/'+key,external:false,game:game.name};
  }
  async function launch(userId,options){
   if(cfg.mode==='seamless'){
@@ -345,7 +346,11 @@ function createCasino({run,get,all,tx,now,client,config={},alert=()=>{},log=cons
 
 // configured: credentials present, so balances can always be swept back.
 // enabled: new games may be started (GSD_ENABLED=false stops launches only).
-function mount(app,{casino,auth,centerAuth,jsonError,configured,enabled,trustProxy=false}){
+// The game host serves game frames and nothing else, so no player ever signs in there.
+function frameHostGuard(frameHost){
+ return (req,res,next)=>frameHost&&req.hostname===frameHost&&!req.path.startsWith('/api/casino/frame/')?res.status(404).type('text/plain').send('Not found'):next();
+}
+function mount(app,{casino,auth,centerAuth,jsonError,configured,enabled,trustProxy=false,frameHost='',frameAncestors='https:'}){
  const player=(req,res,next)=>auth(req,res,()=>req.user.role==='user'?next():jsonError(res,403,'Casino është vetëm për lojtarët.'));
  const fail=(res,e)=>{if(!e.status)console.error('Casino:',e.message);jsonError(res,e.status||502,e.status?e.message:'Casino është përkohësisht e padisponueshme.');};
  const guard=(fn,launching=false)=>async(req,res)=>{if(!configured||(launching&&!enabled))return jsonError(res,503,'Casino nuk është aktive.',{code:'CASINO_DISABLED'});try{await fn(req,res);}catch(e){fail(res,e);}};
@@ -363,13 +368,16 @@ function mount(app,{casino,auth,centerAuth,jsonError,configured,enabled,trustPro
  app.post('/api/casino/launch',player,guard(async(req,res)=>{const gameId=Number(req.body?.gameId);if(!Number.isSafeInteger(gameId)||gameId<=0)return jsonError(res,400,'Loja e pavlefshme.');res.json(await casino.launch(req.user.id,{gameId,width:req.body.width,height:req.body.height}));},true));
  app.post('/api/casino/exit',player,guard(async(req,res)=>res.json(await casino.exit(req.user.id))));
  app.post('/api/casino/ping',player,guard(async(req,res)=>res.json(await casino.ping(req.user.id))));
- // One-time URL for the iframe (iframes cannot send the bearer header). The provider
- // document runs sandboxed in an opaque origin, so it can never read the player's token.
+ // One-time URL for the iframe (iframes cannot send the bearer header). On the dedicated
+ // game host (GSD_FRAME_ORIGIN) the provider document gets a normal origin of its own, so its
+ // games can use storage and cookies, while the browser keeps it away from the player's
+ // session on the site. Without that host it falls back to an opaque sandbox.
  app.get('/api/casino/frame/:key',(req,res)=>{
   const f=configured&&casino.frame(String(req.params.key));
   if(!f)return res.status(404).type('text/plain').send('Loja ka skaduar. Hapeni përsëri.');
-  res.setHeader('Content-Security-Policy','sandbox allow-scripts allow-forms allow-popups allow-pointer-lock allow-orientation-lock');
-  res.setHeader('X-Frame-Options','SAMEORIGIN');res.type('html').send(f.html);
+  if(frameHost&&req.hostname===frameHost){res.removeHeader('X-Frame-Options');res.setHeader('Content-Security-Policy','frame-ancestors '+frameAncestors);}
+  else{res.setHeader('Content-Security-Policy','sandbox allow-scripts allow-forms allow-popups allow-pointer-lock allow-orientation-lock');res.setHeader('X-Frame-Options','SAMEORIGIN');}
+  res.type('html').send(f.html);
  });
  app.get('/api/center/casino/sessions',centerAuth,(req,res)=>res.json({enabled:configured&&enabled,...casino.report({from:req.query.from,to:req.query.to})}));
  app.get('/api/center/casino/sessions/:id/provider',centerAuth,guard(async(req,res)=>res.json(await casino.inspect(Number(req.params.id)))));
@@ -377,4 +385,4 @@ function mount(app,{casino,auth,centerAuth,jsonError,configured,enabled,trustPro
  app.post('/api/center/casino/sessions/:id/resolve',centerAuth,guard(async(req,res)=>res.json({session:await casino.resolve(Number(req.params.id),Number(req.body?.amount),req.user.id)})));
 }
 
-module.exports={encrypt,decrypt,sign,gameUrl,GsdError,createClient,createCasino,mount};
+module.exports={encrypt,decrypt,sign,gameUrl,GsdError,createClient,createCasino,mount,frameHostGuard};
