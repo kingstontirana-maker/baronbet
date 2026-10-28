@@ -144,6 +144,15 @@ function createCasino({run,get,all,tx,now,client,config={},alert=()=>{},log=cons
  }
  const replayed=replayJournal();if(replayed)log.warn?.('Casino journal replayed',replayed,'transactions');
 
+ const refused=new Map();
+ // Names the documented-looking variant a refused hash matches (algorithm, field order, which
+ // key), so a wrong secret or formula shows up in the alert. Only the label is reported.
+ function hashHint(body){
+  const parts={command:body.command,timestamp:body.request_timestamp};
+  for(const s of cfg.callbackSecrets)for(const algo of ['sha1','md5','sha256'])for(const [order,text] of [['command+timestamp+secret',parts.command+parts.timestamp+s.value],['secret+command+timestamp',s.value+parts.command+parts.timestamp],['command+timestamp',parts.command+parts.timestamp]])
+   if(crypto.createHash(algo).update(text).digest('hex')===body.hash.toLowerCase())return algo+'('+order+') with '+s.label;
+  return 'no known key matches';
+ }
  // Request: {command,request_timestamp,hash,data}; hash = sha1(command+request_timestamp+secret).
  function callback(body,ip){
   const sha1=s=>crypto.createHash('sha1').update(s).digest('hex');
@@ -151,22 +160,32 @@ function createCasino({run,get,all,tx,now,client,config={},alert=()=>{},log=cons
   let secret=cfg.callbackSecrets[0]?.value||'';
   const reply=(status,data)=>({request:body,response:{status,response_timestamp:stamp,hash:sha1(status+stamp+secret),data}});
   const error=(code,message)=>reply('ERROR',{error_code:code,error_message:message});
+  // A refused callback leaves the game without a balance (black screen), so the reason is
+  // logged and reported, at most once a minute per reason. Secrets are never logged.
+  const refuse=(code,message,details={})=>{
+   const last=refused.get(message)||0;
+   if(Date.now()-last>60000){refused.set(message,Date.now());
+    const info={ip,command:String(body?.command||'').slice(0,20),request_timestamp:String(body?.request_timestamp||'').slice(0,30),server_time:stamp,...details};
+    log.warn?.('Casino callback refused:',message,JSON.stringify(info));
+    alert('casino:callback-refused:'+message,'casino_callback_refused','Callback casino i refuzuar: '+message,info);}
+   return error(code,message);
+  };
   try{
-   if(!body||typeof body!=='object'||typeof body.command!=='string'||typeof body.request_timestamp!=='string'||typeof body.hash!=='string'||!body.data||typeof body.data!=='object')return error('ERR4','Invalid request');
+   if(!body||typeof body!=='object'||typeof body.command!=='string'||typeof body.request_timestamp!=='string'||typeof body.hash!=='string'||!body.data||typeof body.data!=='object')return refuse('ERR4','Invalid request',{keys:body&&typeof body==='object'?Object.keys(body).join(',').slice(0,100):typeof body});
    if(Array.isArray(cfg.callbackIps)&&cfg.callbackIps.length&&!cfg.callbackIps.includes(ip)){alert('casino:callback-ip:'+ip,'casino_callback_ip','Callback casino nga IP e palejuar',{ip,command:body.command});return error('ERR3','IP not allowed');}
    const given=Buffer.from(body.hash.toLowerCase());
    const match=cfg.callbackSecrets.find(s=>{const expected=Buffer.from(sha1(body.command+body.request_timestamp+s.value));return expected.length===given.length&&crypto.timingSafeEqual(expected,given);});
-   if(!match)return error('ERR3','Invalid hash');
+   if(!match)return refuse('ERR3','Invalid hash',{hash_length:body.hash.length,hint:hashHint(body)});
    secret=match.value;
    const sent=Date.parse(body.request_timestamp.replace(' ','T')+'Z');
-   if(!Number.isFinite(sent)||Math.abs(Date.now()-sent)>cfg.callbackSkewMs)return error('ERR3','Request timestamp out of range');
+   if(!Number.isFinite(sent)||Math.abs(Date.now()-sent)>cfg.callbackSkewMs)return refuse('ERR3','Request timestamp out of range',{skew_seconds:Number.isFinite(sent)?Math.round((sent-Date.now())/1000):null});
    if(Array.isArray(cfg.callbackIps)&&!cfg.callbackIps.length&&!get('SELECT ip FROM casino_callback_ips WHERE ip=?',[ip])){
     tx(()=>run('INSERT OR IGNORE INTO casino_callback_ips(ip,secret,first_seen) VALUES(?,?,?)',[ip,match.label,now()]));
     alert('casino:callback-ip:'+ip,'casino_callback_ip','IP e re e GSDeluxe për callback-et',{ip,secret:match.label,hint:'Vendose te GSD_CALLBACK_IPS për të pranuar vetëm këtë IP.'});
    }
    const d=body.data,acc=get('SELECT user_id FROM casino_accounts WHERE login=?',[String(d.token||'')]);
-   if(!acc)return error('ERR1','Login does not exist');
-   if(String(d.currency_code||'').toUpperCase()!==cfg.currency)return error('ERR6','Currency mismatch');
+   if(!acc)return refuse('ERR1','Login does not exist',{data_keys:Object.keys(d).join(',').slice(0,200)});
+   if(String(d.currency_code||'').toUpperCase()!==cfg.currency)return refuse('ERR6','Currency mismatch',{currency_code:String(d.currency_code??'').slice(0,10)});
    const userId=Number(acc.user_id),ok=()=>reply('OK',{balance:available(get('SELECT balance,reserved_balance FROM users WHERE id=?',[userId])),currency_code:cfg.currency});
    if(body.command==='balance')return ok();
    if(body.command!=='changebalance')return error('ERR4','Unknown command');
