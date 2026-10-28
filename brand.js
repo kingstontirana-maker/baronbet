@@ -9,7 +9,7 @@ const BRANDS={
   baronbet:{name:'Baronbet',console:'EURO97'},
   escobet:{name:'EscoBet',console:'EscoBet',hue:216,mark:{symbol:'EB',text:'ESCO',accent:'BET'},
     // The player header crops the Baronbet wordmark with fixed offsets; this one is already tight.
-    siteCss:'.brand-wordmark img{position:static;left:auto;top:auto;width:100%;height:100%;object-fit:contain;object-position:left center}'}
+    siteCss:'.brand-wordmark{width:230px;height:48px}.brand-wordmark img{position:static;left:auto;top:auto;width:100%;height:100%;object-fit:contain;object-position:left center}'}
 };
 // The backoffice sidebar draws the default brand as "97" in a badge and "EURO" + accent "97".
 const CONSOLE_MARK='<span class="brand-symbol">97<span>●</span></span><span>EURO<span class="brand-number">97</span>';
