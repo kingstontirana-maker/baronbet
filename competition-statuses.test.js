@@ -28,14 +28,16 @@ const rule=status=>({status,maxStake:null,maxPayout:null});
 
 test('four statuses: active passes, hold waits, blocked and closed refuse',async()=>{
  const {call,control}=await setup();
- assert.deepEqual(control.check([{gameId:4}],1,2),{hold:[]});
+ assert.deepEqual(control.check([{gameId:4}],1,2),{hold:[],delay:0});
  await call('PUT /api/center/competitions/:kind/:id',{kind:'tournament',id:'3'},rule('hold'));
  assert.deepEqual(control.check([{gameId:4}],1,2).hold,['Premier League'],'hold sends the ticket to the operator');
  await call('PUT /api/center/competitions/:kind/:id',{kind:'event',id:'4'},rule('blocked'));
  assert.throws(()=>control.check([{gameId:4}],1,2),/bllokuar/);
  assert.deepEqual(control.check([{gameId:5}],1,2).hold,['Premier League'],'other events of the tournament stay on hold');
  await call('PUT /api/center/competitions/:kind/:id',{kind:'group',id:'2'},rule('closed'));
- assert.throws(()=>control.check([{gameId:5}],1,2),/England nuk ofrohet/);
+ assert.deepEqual(control.check([{gameId:5}],1,2).hold,['Premier League'],'the most specific level with a status wins');
+ await call('DELETE /api/center/competitions/:kind/:id',{kind:'tournament',id:'3'});
+ assert.throws(()=>control.check([{gameId:5}],1,2),/England nuk ofrohet/,'without its own status the tournament follows its group');
  assert.equal(validateRule({blocked:true,maxStake:null,maxPayout:null}).status,'blocked','legacy blocked flag still accepted');
  assert.throws(()=>validateRule({status:'paused',maxStake:null,maxPayout:null}),/Status/);
 });
@@ -77,7 +79,7 @@ test('user groups: members, players under agents and managers, limits and own ru
  groups.checkLimits(6,500,1000);
  await call('PUT /api/center/competitions/:kind/:id',{kind:'tournament',id:'3'},{...rule('closed'),groupId:g.id});
  assert.throws(()=>control.check([{gameId:4}],1,2,4,null,{groups:[g.id]}),/nuk ofrohet/);
- assert.deepEqual(control.check([{gameId:4}],1,2,6),{hold:[]},'other players are not affected');
+ assert.deepEqual(control.check([{gameId:4}],1,2,6),{hold:[],delay:0},'other players are not affected');
  assert.deepEqual(control.filter.games([{id:4,league_id:3,odd:'1|2|1|1|X'}]).length,1,'group rules never change what others see');
  const listing=await call('GET /api/center/competitions',{},{},{kind:'tournament',parent:'2',groupId:g.id});assert.equal(listing.items[0].rule.status,'closed');
  assert.equal((await call('GET /api/center/competitions',{},{},{kind:'tournament',parent:'2'})).items[0].rule,null);

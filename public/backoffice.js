@@ -65,7 +65,7 @@ async function acceptTicket(id,{bulk=false}={}){
     return api('/api/operator/tickets/'+id+'/accept','POST',{confirmOdds:true});
   }
 }
-function showDialog(title,body,eyebrow='MENAXHIMI'){$('dialog').classList.remove('offer-dialog');$('dialogTitle').textContent=title;$('dialogEyebrow').textContent=eyebrow;$('dialogBody').innerHTML=body;$('dialogMessage').hidden=true;if(!$('dialog').open)$('dialog').showModal();}
+function showDialog(title,body,eyebrow='MENAXHIMI'){$('dialog').classList.remove('offer-dialog','params-dialog');$('dialogTitle').textContent=title;$('dialogEyebrow').textContent=eyebrow;$('dialogBody').innerHTML=body;$('dialogMessage').hidden=true;if(!$('dialog').open)$('dialog').showModal();}
 function bindForm(id,handler){const form=$(id);if(!form)return;form.onsubmit=async e=>{e.preventDefault();const buttons=[...form.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);try{await handler(new FormData(form));}catch(error){if($('dialog').open){$('dialogMessage').textContent=error.message;$('dialogMessage').hidden=false;}else notice(error.message,true);}finally{buttons.forEach(b=>b.disabled=false);}};}
 function dateRange(){if(rangeState.preset==='all')return '';if(rangeState.preset==='custom'){if(!rangeState.from||!rangeState.to)return '';return '?'+new URLSearchParams({from:new Date(rangeState.from+'T00:00:00').toISOString(),to:new Date(rangeState.to+'T23:59:59.999').toISOString()});}const start=new Date(),end=new Date();start.setHours(0,0,0,0);end.setHours(23,59,59,999);const k=rangeState.preset;if(k==='yesterday'){start.setDate(start.getDate()-1);end.setDate(end.getDate()-1);}if(k==='week'||k==='lastweek'){start.setDate(start.getDate()-((start.getDay()+6)%7));if(k==='lastweek'){end.setTime(start.getTime()-1);start.setDate(start.getDate()-7);}}if(k==='month'||k==='lastmonth'){start.setDate(1);if(k==='lastmonth'){end.setTime(start.getTime()-1);start.setMonth(start.getMonth()-1);}}return '?'+new URLSearchParams({from:start.toISOString(),to:end.toISOString()});}
 function periodBar(){return `<div class="period-bar"><div class="period-tabs" aria-label="Periudha">${[['today','Sot'],['yesterday','Dje'],['week','Këtë javë'],['lastweek','Javën e kaluar'],['month','Këtë muaj'],['lastmonth','Muajin e kaluar'],['all','Gjithë periudha'],['custom','Zgjidh datat']].map(([k,label])=>`<button data-period="${k}" class="${rangeState.preset===k?'active':''}" aria-pressed="${rangeState.preset===k}">${label}</button>`).join('')}</div><span class="period-meta">${icon('calendar')}${esc(new Date().toLocaleDateString('sq-AL',{day:'numeric',month:'long',year:'numeric'}))}</span></div><form id="customRange" class="custom-range" ${rangeState.preset==='custom'?'':'hidden'}><label>Nga<input name="from" type="date" value="${esc(rangeState.from)}" required></label><label>Deri<input name="to" type="date" value="${esc(rangeState.to)}" required></label><button class="button primary">Apliko</button></form>`;}
@@ -455,6 +455,7 @@ async function renderRoute(){
   if(!me)return;const version=++routeVersion;if(routeAbort)routeAbort.abort();routeAbort=new AbortController();clearTimeout(routeTimer);$('dialog').close();notice('');
   currentRoute=location.hash.replace(/^#\/?/,'')||modules.find(allowed)?.key||'security';const [pathname,qs='']=currentRoute.split('?'),parts=pathname.split('/'),key=parts[0],query=new URLSearchParams(qs);
   document.body.classList.toggle('operator-queue',me.role==='operator'&&key==='ticket-accept');
+  document.body.classList.toggle('competition-fullscreen',key==='sport-competitions'&&query.get('view')==='full');
   const managementRoute=me.role==='center'&&['user-management','partners','operators','accounts','network','account'].includes(key);
   const navKey=managementRoute?'user-management':key==='account'?'accounts':key==='ticket'?'bets':key;const module=modules.find(m=>m.key===navKey);
   document.querySelectorAll('[data-nav]').forEach(a=>{const selected=a.dataset.nav===navKey;a.classList.toggle('active',selected);if(selected)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
@@ -525,26 +526,387 @@ async function acceptancePage(ctx){
 const competitionStatus={active:'Aktiv',hold:'Hold',blocked:'Bllokuar',closed:'Mbyllur'};
 const competitionStatusHelp={active:'Bastet pranohen normalisht.',hold:'Ndeshjet shfaqen; çdo biletë me to shkon në pritje te operatori.',blocked:'Ndeshjet shfaqen, por koeficientët janë të bllokuar.',closed:'Nuk shfaqet fare në platformë.'};
 const statusText=r=>({active:'🟢',hold:'🟡',blocked:'🔴',closed:'⚫'}[r.status||'active'])+' '+competitionStatus[r.status||'active'];
+// Parameters of one Sport & Competitions element, from the centre's limits sheet.
+const ticketTypes=[['all','Të gjitha'],['preSingle','Prematch single'],['preMulti','Prematch multi'],['liveSingle','Live single'],['liveMulti','Live multi']];
+const ticketLimits=[['maxWin','Fitimi maksimal (€)','Fitimi potencial mbi këtë vlerë refuzohet.'],['maxBet','Basti maksimal (€)','Basti mbi këtë vlerë refuzohet.'],['minBet','Basti minimal (€)','Basti nën këtë vlerë refuzohet.'],['sameTicket','Përsëritja e së njëjtës biletë','Sa herë mund ta luajë lojtari të njëjtën biletë.'],['sameTicketHold','Përsëritja që shkon në hold','Nga kjo përsëritje e sipër, bileta pret operatorin.'],['holdStake','Bast mbi këtë shkon në hold (€)','Basti mbi këtë vlerë pret pranimin manual.'],['holdWin','Fitim mbi këtë shkon në hold (€)','Fitimi mbi këtë vlerë pret pranimin manual.']];
+const elementSettings=[['payoutFactor','Payout (%)','p.sh. 95 = linja rillogaritet në 95% payout',.1,50],['minSelections','Minimum Selections In Ticket','p.sh. 2 = luhet vetëm me 2+ ndeshje',1,1],['maxCombinations','Ndeshje maksimale në biletë','p.sh. 15-20',1,1],['minOdd','Minimum Value (koeficienti min)','p.sh. 1.05; më poshtë bllokohet',.01,1],['maxOdd','Maximum Value (koeficienti max)','p.sh. 50; më lart bllokohet',.01,1],['maxOddGenerated','Koeficienti maksimal i gjeneruar','Koeficienti nuk shfaqet mbi këtë vlerë',.01,1],['oddFactor','Faktori i korrigjimit (%)','p.sh. -3 ul çdo koeficient me 3%',.1,-50],['processingSeconds','Koha e procesimit (sekonda)','Bileta pret kaq sekonda para pranimit automatik',1,0],['daysToOffer','Days To Offer Bets','Ndeshjet prematch ofrohen vetëm kaq ditë përpara',1,0]];
+const paramCount=p=>p?ticketTypes.reduce((n,[t])=>n+ticketLimits.filter(([k])=>p.limits?.[t]?.[k]!=null).length,0)+elementSettings.filter(([k])=>p[k]!=null||p.live?.[k]!=null).length+(p.live?.status?1:0):0;
+// The status and settings shown for prematch or live (live falls back to the prematch value).
+const RANK_UI={active:0,hold:1,blocked:2,closed:3};
+const modeStatus=(rule,mode)=>(mode==='live'&&rule?.params?.live?.status)||rule?.status||'active';
+const modeValue=(rule,mode,k)=>{const own=mode==='live'?rule?.params?.live?.[k]:rule?.params?.[k];return own!=null?{v:own,own:true}:mode==='live'&&rule?.params?.[k]!=null&&k!=='daysToOffer'?{v:rule.params[k],own:false}:null;};
+// Full PUT body for an element, keeping everything that is not being changed.
+function ruleBody(rule,{mode='pre',status,settings,limits,maxUserTotal,inheritedStatus='active'}={}){
+ const p=JSON.parse(JSON.stringify(rule?.params||{limits:{},live:{}}));p.live=p.live||{};p.limits=p.limits||{};
+ let base=rule?.status||inheritedStatus;
+ if(status!==undefined){if(mode==='live')p.live.status=status===base?null:status;else base=status;}
+ if(settings)for(const [k,v] of Object.entries(settings)){if(mode==='live'){if(k!=='daysToOffer')p.live[k]=v;}else p[k]=v;}
+ if(limits)p.limits=limits;
+ return {status:base,maxUserTotal:maxUserTotal!==undefined?maxUserTotal:rule?.max_user_total??null,params:p};
+}
+function competitionParamsDialog(row,kind,{title='',groupId='',mode='pre',inherited=null}={}){
+ const inheritedStatus=inherited?.status||'active';
+ const r=row.rule,p=r?.params||{limits:{}},live=mode==='live',status=live?(p.live?.status||''):(r?.status||inheritedStatus),total=['sport','group','custom-group','tournament'].includes(kind);
+ const scope={sport:'Sporti',group:'Tournament group','custom-group':'Tournament group (Qendra)',tournament:'Turnamenti',event:'Ndeshja',market:'Marketi në të gjitha ndeshjet','event-market':'Marketi në këtë ndeshje','tournament-market':'Marketi në këtë turnament','group-market':'Marketi në këtë tournament group','custom-group-market':'Marketi në këtë tournament group'}[kind]||kind;
+ const field=(name,value,step,min,placeholder='—')=>`<input name="${name}" type="number" step="${step}" ${min==null?'':'min="'+min+'"'} value="${value??''}" placeholder="${esc(String(placeholder))}" aria-label="${name}">`;
+ const statusOptions=[...(live?[['','Si prematch','Përdor statusin e prematch ('+competitionStatus[r?.status||'active']+').']]:[]),...Object.entries(competitionStatus).map(([k,v])=>[k,v,competitionStatusHelp[k]])];
+ const settings=elementSettings.filter(([k])=>!(live&&k==='daysToOffer'));
+ showDialog(row.name+(live?' · Live':' · Prematch'),`<form id="paramsForm" class="params-form">
+  ${!r&&inherited?`<p class="sb-inherited-alert">Pa status të vetin, ${esc(row.name)} merr <strong>${esc(competitionStatus[inherited.status])}</strong> nga ${esc(inherited.name)}. Statusi që ruan këtu ka përparësi mbi të.</p>`:''}
+  <p class="form-note">${esc(scope)}${title?' · '+esc(title):''}${groupId?' · vetëm për modelin e zgjedhur':' · gjithë rrjeti'}. Bosh = pa limit në këtë nivel; limitet e niveleve të tjera zbatohen gjithmonë dhe vlen më i rrepti.${live?' Fushat bosh në Live marrin vlerën e Prematch.':''}</p>
+  <fieldset class="status-choice params-status"><legend>State · ${live?'Live':'Prematch'}</legend>${statusOptions.map(([k,v,help])=>`<label><input type="radio" name="status" value="${k}" ${status===k?'checked':''}><span><strong>${v}</strong><span class="subline">${esc(help)}</span></span></label>`).join('')}</fieldset>
+  <section><h3>Parametrat · ${live?'Live':'Prematch'}</h3><div class="params-grid">${settings.map(([k,label,help,step,min])=>`<label>${label}${field(k,live?p.live?.[k]:p[k],step,min,live&&p[k]!=null&&k!=='daysToOffer'?p[k]+' (prematch)':'—')}<span class="subline">${help}</span></label>`).join('')}${total?`<label>Totali për përdorues (€)${field('maxUserTotal',r?.max_user_total,.01,0)}<span class="subline">Shuma totale që një lojtar mund të luajë këtu</span></label>`:''}</div></section>
+  <section><h3>Limitet sipas llojit të biletës</h3><p class="form-note">"Të gjitha" vlen për çdo lloj bilete që nuk ka vlerën e vet. Single = 1 ndeshje; multi = 2+ ndeshje; live = bileta ka të paktën një ndeshje live.</p>
+  <div class="params-table-wrap"><table class="params-table"><thead><tr><th>Parametri</th>${ticketTypes.map(([,l])=>`<th>${l}</th>`).join('')}</tr></thead><tbody>${ticketLimits.map(([k,label,help])=>`<tr><th scope="row">${label}<span class="subline">${help}</span></th>${ticketTypes.map(([t])=>`<td>${field('limit.'+t+'.'+k,p.limits?.[t]?.[k],k.startsWith('same')?1:.01,k.startsWith('same')?1:0)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>
+  <div class="params-actions">${r?'<button type="button" class="button" id="paramsReset">Hiq të gjitha rregullat</button>':''}<button type="button" class="button" id="paramsSaveModel">Ruaj si model</button><button class="button primary">Ruaj</button></div></form>`,'SPORT & COMPETITIONS');
+ $('dialog').classList.add('params-dialog');
+ const formBody=f=>{
+  const n=k=>{const v=f.get(k);return v==null||v===''?null:Number(v);};
+  const limits=Object.fromEntries(ticketTypes.map(([t])=>[t,Object.fromEntries(ticketLimits.map(([k])=>[k,n('limit.'+t+'.'+k)]))]));
+  const chosen=f.get('status');
+  return ruleBody(r,{mode,inheritedStatus,status:live&&!chosen?(r?.status||inheritedStatus):chosen,settings:Object.fromEntries(settings.map(([k])=>[k,n(k)])),limits,maxUserTotal:total?n('maxUserTotal'):undefined});
+ };
+ $('paramsSaveModel').onclick=()=>{try{const body=formBody(new FormData($('paramsForm')));saveModelDialog({...body,fromKind:kind,fromId:row.id},{groupId,summary:'Vlerat e formës dhe konfigurimi i çdo marketi të '+row.name+' ruhen si model. '+row.name+' nuk ndryshon derisa ta aplikosh modelin.'});}catch(e){$('dialogMessage').textContent=e.message;$('dialogMessage').hidden=false;}};
+ bindForm('paramsForm',async f=>{
+  const body=formBody(f);
+  await api('/api/center/competitions/'+kind+'/'+encodeURIComponent(row.id),'PUT',{groupId:groupId||undefined,...body});$('dialog').close();notice('Parametrat u ruajtën.');await renderRoute();
+ });
+ if(r)$('paramsReset').onclick=()=>resetCompetitionRule(row,kind,groupId);
+}
+async function resetCompetitionRule(row,kind,groupId){
+ if(!confirm('Të hiqen statusi dhe të gjitha parametrat e '+row.name+'?'))return;
+ try{await api('/api/center/competitions/'+kind+'/'+encodeURIComponent(row.id)+(groupId?'?groupId='+encodeURIComponent(groupId):''),'DELETE');if($('dialog').open)$('dialog').close();notice('Rregullat u hoqën.');await renderRoute();}catch(e){notice(e.message,true);}
+}
+function copyModelDialog(models,groupId){
+ const name=id=>models.find(m=>m.id===id)?.name||'Gjithë rrjeti';
+ showDialog('Copy Model',`<form id="copyModelForm" class="form-stack"><p class="form-note">Rregullat e modelit "${esc(name(groupId))}" do të zëvendësohen me ato të modelit burim.</p><label>Kopjo nga<select name="from">${[{id:'',name:'Gjithë rrjeti'},...models].filter(m=>m.id!==groupId).map(m=>`<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('')}</select></label><button class="button primary">Kopjo te ${esc(name(groupId))}</button></form>`,'SPORT & COMPETITIONS');
+ bindForm('copyModelForm',async f=>{const out=await api('/api/center/competitions/copy','POST',{from:f.get('from'),to:groupId});$('dialog').close();notice(out.copied+' rregulla u kopjuan.');await renderRoute();});
+}
+// Saved models: a status and parameters that apply with one click to events, tournaments and groups.
+// source: {fromKind,fromId} to save an element's stored parameters, or a full rule body.
+function saveModelDialog(source,{groupId='',summary=''}={}){
+ showDialog('Ruaj si model',`<form id="saveModelForm" class="form-stack"><label>Emri i modelit<input name="name" maxlength="80" required placeholder="p.sh. Liga e lartë"></label>${summary?`<p class="form-note">${esc(summary)}</p>`:''}<p class="form-note">Pas ruajtjes, modeli shfaqet te "Zgjidh modelin…" dhe aplikohet me një klik te eventet, turnamentet dhe grupet e tjera.</p><button class="button primary">Ruaj modelin</button></form>`,'SPORT & COMPETITIONS');
+ $('saveModelForm').elements.name.focus();
+ bindForm('saveModelForm',async f=>{const out=await api('/api/center/competition-templates','POST',{name:String(f.get('name')).trim(),...source,groupId:groupId||undefined});$('dialog').close();notice('Modeli "'+out.template.name+'" u ruajt. Tani mund ta aplikosh me një klik.');await renderRoute();});
+}
+async function applyModel(templateId,targets,groupId){
+ const out=await api('/api/center/competition-templates/'+encodeURIComponent(templateId)+'/apply','POST',{targets,groupId:groupId||undefined});
+ notice('Modeli u aplikua te '+out.applied+' element'+(out.applied===1?'':'e')+(out.marketRules?' me '+out.marketRules+' rregulla market-esh':'')+(out.failed.length?' · '+out.failed.length+' dështuan: '+out.failed[0].error:'')+'.',!!out.failed.length);
+ return out;
+}
+function modelSummary(t){
+ const p=t.params||{},bits=[competitionStatus[t.status]||t.status];
+ if(p.live?.status)bits.push('Live: '+competitionStatus[p.live.status]);
+ const all=p.limits?.all||{};if(all.maxBet!=null)bits.push('Bast max '+money(all.maxBet));if(all.maxWin!=null)bits.push('Fitim max '+money(all.maxWin));
+ if(p.payoutFactor!=null)bits.push('Payout '+p.payoutFactor+'%');if(p.minOdd!=null)bits.push('Koef. min '+p.minOdd);if(p.maxOdd!=null)bits.push('Koef. max '+p.maxOdd);
+ const n=paramCount(p),m=t.markets?.length||0;return bits.join(' · ')+(n?' · '+n+' parametra':'')+(m?' · '+m+' market-e':'');
+}
+// The Modelet popup: pick a model, then apply it to a player, an agent, a user group, a tournament
+// group, a tournament or an event. Players and agents get it for every bet; elements get it as their rules.
+async function manageModelsDialog(templates,ctx){
+ if(!templates.length){showDialog('Modelet','<p class="form-note">Nuk ka ende modele. Hap parametrat e një eventi, turnamenti ose grupi dhe kliko "Ruaj si model".</p>','SPORT & COMPETITIONS');return;}
+ const {assignments}=await api('/api/center/competition-templates/assignments');
+ const targets={account:'Përdorues',agent:'Agjent','user-group':'Grup përdoruesish',group:'Tournament group',tournament:'Turnament',event:'Event'};
+ const option=(value,label,selected)=>`<option value="${esc(value)}" ${selected?'selected':''}>${esc(label)}</option>`;
+ const elementOptions={
+  'user-group':ctx.userGroups.map(g=>option(g.id,g.name)),
+  group:[...ctx.customGroups.map(g=>option('custom-group|'+g.id,g.name+' (Qendra)')),...ctx.countryGroups.map(g=>option('group|'+g.id,g.name))],
+  tournament:ctx.tournaments.map(t=>option(t.id,(t.countryName?t.countryName+' / ':'')+t.name,t.id===ctx.tournament?.id)),
+  event:ctx.events.map(e=>option(e.id,e.name,e.id===ctx.event?.id))
+ };
+ showDialog('Modelet',`<form id="modelsForm" class="form-stack sb-models-form">
+  <label>Modeli<select name="model">${templates.map(t=>option(t.id,t.name+(t.uses?' · '+t.uses+' elemente':''))).join('')}</select></label>
+  <p class="form-note" id="modelSummary"></p>
+  <div class="sb-models-actions"><button type="button" class="button" id="modelRename">Riemërto</button><button type="button" class="button" id="modelDelete">Fshi modelin</button></div>
+  <fieldset class="sb-apply-box"><legend>Apliko te</legend>
+   <label>Lloji<select name="type">${Object.entries(targets).map(([k,v])=>option(k,v)).join('')}</select></label>
+   <div id="modelTargetField"></div>
+   <p class="form-note" id="modelTargetHelp"></p>
+   <button class="button primary">Apliko modelin</button>
+  </fieldset>
+  <section><h3>Përdoruesit dhe grupet me model</h3><div id="modelAssignments"></div></section>
+ </form>`,'SPORT & COMPETITIONS');
+ const form=$('modelsForm'),current=()=>templates.find(t=>t.id===form.elements.model.value);
+ const showSummary=()=>{$('modelSummary').textContent=modelSummary(current());};
+ const help={account:'Modeli vlen për çdo bast të këtij lojtari, në çdo sport, ligë dhe ndeshje.',agent:'Modeli vlen për çdo lojtar nën këtë agjent.','user-group':'Modeli vlen për çdo lojtar të grupit (edhe për lojtarët nën agjentët dhe menaxherët anëtarë).',group:'Statusi, parametrat dhe market-et e modelit zëvendësojnë ato të tournament group-it.',tournament:'Statusi, parametrat dhe market-et e modelit zëvendësojnë ato të turnamentit.',event:'Statusi, parametrat dhe market-et e modelit zëvendësojnë ato të eventit.'};
+ let picked=null;
+ function targetField(){
+  const type=form.elements.type.value;picked=null;$('modelTargetHelp').textContent=help[type];
+  if(type==='account'||type==='agent'){
+   $('modelTargetField').innerHTML=`<label>${type==='agent'?'Kërko agjentin':'Kërko përdoruesin'}<input id="modelAccountSearch" placeholder="Emri ose ID" autocomplete="off"></label><div id="modelAccountResults" class="sb-account-results"></div>`;
+   let timer;$('modelAccountSearch').oninput=()=>{clearTimeout(timer);timer=setTimeout(async()=>{const q=$('modelAccountSearch').value.trim();if(!q){$('modelAccountResults').innerHTML='';return;}try{const {accounts}=await api('/api/center/user-groups/candidates?q='+encodeURIComponent(q));const list=accounts.filter(a=>a.role===(type==='agent'?'agent':'user'));$('modelAccountResults').innerHTML=list.map(a=>`<label><input type="radio" name="account" value="${esc(a.id)}"> ${esc(a.username)} <span class="subline">#${esc(a.id)}</span></label>`).join('')||'<p class="form-note">Asnjë rezultat.</p>';$('modelAccountResults').querySelectorAll('input').forEach(i=>i.onchange=()=>{picked=i.value;});}catch(e){$('modelAccountResults').innerHTML='<p class="form-note">'+esc(e.message)+'</p>';}},250);};
+   $('modelAccountSearch').focus();return;
+  }
+  const options=elementOptions[type]||[];
+  $('modelTargetField').innerHTML=options.length?`<label>${esc(targets[type])}<select name="target">${options.join('')}</select></label>`:`<p class="form-note">${type==='event'?'Zgjidh fillimisht një turnament te Full View që të shfaqen eventet e tij.':'Nuk ka elemente për të zgjedhur.'}</p>`;
+ }
+ function renderAssignments(list){
+  $('modelAssignments').innerHTML=list.length?list.map(a=>`<div class="sb-model-row"><div><strong>${esc(a.target.name)}</strong><span class="subline">${esc({user:'Përdorues',agent:'Agjent',manager:'Menaxher',group:'Grup përdoruesish'}[a.target.role]||a.type)} · modeli ${esc(a.templateName)}</span></div><button type="button" class="button" data-unassign="${esc(a.type+'|'+a.targetId)}">Hiq</button></div>`).join(''):'<p class="form-note">Asnjë përdorues, agjent ose grup nuk ka ende model.</p>';
+  document.querySelectorAll('[data-unassign]').forEach(b=>b.onclick=async()=>{const [type,id]=b.dataset.unassign.split('|');try{await api('/api/center/competition-templates/assignments/'+encodeURIComponent(type)+'/'+encodeURIComponent(id),'DELETE');renderAssignments((await api('/api/center/competition-templates/assignments')).assignments);notice('Modeli u hoq.');}catch(e){notice(e.message,true);}});
+ }
+ form.elements.model.onchange=showSummary;form.elements.type.onchange=targetField;showSummary();targetField();renderAssignments(assignments);
+ $('modelRename').onclick=async()=>{const t=current(),name=prompt('Emri i ri:',t.name);if(!name?.trim()||name.trim()===t.name)return;try{await api('/api/center/competition-templates/'+encodeURIComponent(t.id),'PUT',{name:name.trim()});$('dialog').close();notice('Modeli u riemërtua.');await renderRoute();}catch(e){notice(e.message,true);}};
+ $('modelDelete').onclick=async()=>{const t=current();if(!confirm('Të fshihet modeli "'+t.name+'"? Elementet ku është aplikuar i mbajnë parametrat; përdoruesit dhe grupet nuk e kanë më.'))return;try{await api('/api/center/competition-templates/'+encodeURIComponent(t.id),'DELETE');$('dialog').close();notice('Modeli u fshi.');await renderRoute();}catch(e){notice(e.message,true);}};
+ bindForm('modelsForm',async f=>{
+  const model=f.get('model'),type=f.get('type');
+  if(type==='account'||type==='agent'){
+   if(!picked)throw Error(type==='agent'?'Zgjidh agjentin.':'Zgjidh përdoruesin.');
+   await api('/api/center/competition-templates/'+encodeURIComponent(model)+'/assign','POST',{type:'account',targetId:picked});
+   notice('Modeli "'+current().name+'" u caktua.');renderAssignments((await api('/api/center/competition-templates/assignments')).assignments);return;
+  }
+  if(type==='user-group'){
+   const id=f.get('target');if(!id)throw Error('Zgjidh grupin e përdoruesve.');
+   await api('/api/center/competition-templates/'+encodeURIComponent(model)+'/assign','POST',{type:'user-group',targetId:id});
+   notice('Modeli "'+current().name+'" u caktua te grupi.');renderAssignments((await api('/api/center/competition-templates/assignments')).assignments);return;
+  }
+  const value=f.get('target');if(!value)throw Error('Zgjidh elementin.');
+  const [kind,id]=type==='group'?value.split('|'):[type,value];
+  await applyModel(model,[{kind,id}],ctx.groupId);$('dialog').close();await renderRoute();
+ });
+}
+// Apply one model to many elements at once.
+function applyManyDialog(templates,lists,groupId,preselected=''){
+ const section=(title,kind,items)=>items.length?`<fieldset class="sb-apply-list"><legend>${title} <button type="button" class="link-button" data-select-all="${kind}">Zgjidh të gjitha</button></legend>${items.map(i=>`<label><input type="checkbox" name="target" value="${esc(kind+'|'+i.id)}" data-kind="${kind}"> ${esc(i.label)}${i.model?`<span class="subline">modeli: ${esc(i.model)}</span>`:''}</label>`).join('')}</fieldset>`:'';
+ showDialog('Apliko model',`<form id="applyModelForm" class="form-stack"><label>Modeli<select name="model" required>${templates.map(t=>`<option value="${esc(t.id)}" ${t.id===preselected?'selected':''}>${esc(t.name)}</option>`).join('')}</select></label><p class="form-note" id="applyModelSummary"></p>${lists.map(l=>section(l.title,l.kind,l.items)).join('')||'<p class="form-note">Nuk ka elemente në këtë përzgjedhje.</p>'}<p class="form-note">Statusi dhe parametrat e elementeve të zgjedhura zëvendësohen me ato të modelit.</p><button class="button primary">Apliko te të zgjedhurat</button></form>`,'SPORT & COMPETITIONS');
+ const form=$('applyModelForm'),summary=()=>{$('applyModelSummary').textContent=modelSummary(templates.find(t=>t.id===form.elements.model.value)||{});};summary();form.elements.model.onchange=summary;
+ document.querySelectorAll('[data-select-all]').forEach(b=>b.onclick=()=>{const boxes=[...form.querySelectorAll('input[data-kind="'+b.dataset.selectAll+'"]')],on=boxes.some(x=>!x.checked);boxes.forEach(x=>x.checked=on);});
+ bindForm('applyModelForm',async f=>{const targets=f.getAll('target').map(v=>{const i=v.indexOf('|');return {kind:v.slice(0,i),id:v.slice(i+1)};});if(!targets.length)throw Error('Zgjidh të paktën një element.');await applyModel(f.get('model'),targets,groupId);$('dialog').close();await renderRoute();});
+}
+async function competitionFullView(ctx,query){
+ const groupId=query.get('groupId')||'',mode=query.get('mode')==='live'?'live':'pre',warnings=[],signal=routeAbort.signal;
+ const read=(url,timeout=12000)=>api(url,'GET',undefined,undefined,AbortSignal.any([signal,AbortSignal.timeout(timeout)]));
+ const path=extra=>'/api/center/competitions?'+new URLSearchParams({groupId,...extra});
+ // Live tab: only the groups, tournaments and matches being played now.
+ const liveOnly=mode==='live';
+ let liveSet=liveOnly?await read(path({kind:'live',sport:query.get('sport')||'1'})).catch(()=>({events:[],tournaments:[],groupIds:[],customGroupIds:[],failed:true})):null;if(!ctx.valid())return;
+ const snapshot=await read(path({kind:'workspace',sport:query.get('sport')||(query.get('kind')==='group'?query.get('parent'):'')||'1',tournament:query.get('tournament')||'',event:query.get('event')||''}));if(!ctx.valid())return;
+ let sports={items:snapshot.sports};
+ if(!sports.items.length){try{sports=await read(path({kind:'sport'}));}catch(e){if(!ctx.valid())return;warnings.push('Sportet nuk u rifreskuan. Provo përsëri.');}}
+ const users=await read('/api/center/user-groups');if(!ctx.valid())return;
+ const {templates}=await read('/api/center/competition-templates');if(!ctx.valid())return;
+ const modelName=r=>templates.find(t=>t.id===r?.template_id)?.name||'';
+ const sport=query.get('sport')||(query.get('kind')==='group'?query.get('parent'):'')||sports.items.find(s=>String(s.id)==='1')?.id||sports.items[0]?.id||'';
+ let groups={items:snapshot.groups};
+ if(sport&&!snapshot.sports.length){try{groups=await read(path({kind:'group',parent:sport}));}catch(e){if(!ctx.valid())return;warnings.push('Grupet nuk u rifreskuan.');}}
+ const customGroups=groups.items.filter(g=>g.custom),countryGroups=groups.items.filter(g=>!g.custom);
+ const allTournaments=snapshot.tournaments;
+ const selected=groups.items.find(g=>String(g.id)===query.get('selection'))||null;
+ const scopeKind=selected&&!selected.custom?'group':'custom-group';
+ const sportRow=sports.items.find(s=>String(s.id)===String(sport));
+ const tournaments=selected?await read(path({kind:'tournament',parent:selected.id})):{items:allTournaments};if(!ctx.valid())return;
+ const liveTournamentIds=()=>new Set(liveSet.tournaments.map(t=>String(t.id)));
+ if(liveOnly)tournaments.items=selected?tournaments.items.filter(t=>liveTournamentIds().has(String(t.id))):liveSet.tournaments;
+ const visibleGroups=list=>liveOnly?list.filter(g=>g.custom?liveSet.customGroupIds.includes(g.id):liveSet.groupIds.includes(String(g.id))):list;
+ const tournament=tournaments.items.find(t=>t.id===query.get('tournament'))||null;
+ const url=extra=>'#/sport-competitions?'+new URLSearchParams({view:'full',sport,groupId,...(mode==='live'?{mode}:{}),...(selected?{selection:selected.id}:{}),...(tournament?{tournament:tournament.id}:{}),...(query.get('event')?{event:query.get('event')}:{}),...extra});
+ const dot=r=>r?.rule?`<i class="state-dot ${esc(modeStatus(r.rule,mode))}" title="${esc(competitionStatus[modeStatus(r.rule,mode)]||'')}${paramCount(r.rule.params)?' · '+paramCount(r.rule.params)+' parametra':''}"></i>`:'';
+ let sortDir=1;
+ const byName=(a,b)=>sortDir*a.localeCompare(b);
+ const groupLink=g=>`<a class="reference-group ${String(g.id)===String(selected?.id)?'selected':''}" href="${esc(url({selection:g.id,tournament:'',event:''}))}" data-group-name="${esc(g.name.toLowerCase())}"><span>${dot(g)}${esc(g.name)}</span>${g.custom?'<small>'+g.memberCount+'</small>':''}</a>`;
+ const tournamentLink=t=>{const label=(t.countryName?t.countryName+' / ':'')+t.name;return `<a class="reference-group ${t.id===tournament?.id?'selected':''}" href="${esc(url({tournament:t.id,event:''}))}" data-group-name="${esc(label.toLowerCase())}"><span>${dot(t)}${esc(label)}</span>${t.live?`<small class="sb-live-count">${t.live} live</small>`:''}</a>`;};
+ function groupTree(){const custom=visibleGroups(customGroups),countries=visibleGroups(countryGroups);return ([...custom].sort((a,b)=>byName(a.name,b.name)).map(groupLink).join('')||`<p class="form-note reference-empty">${liveOnly?'Asnjë grup i Qendrës me ndeshje live.':'Nuk ka grupe të krijuara nga Qendra.'}</p>`)+(countries.length?'<div class="reference-subheading">Shtetet / kategoritë</div>'+[...countries].sort((a,b)=>byName(a.name,b.name)).map(groupLink).join(''):'');}
+ const tournamentTree=()=>[...tournaments.items].sort((a,b)=>byName((a.countryName||'')+a.name,(b.countryName||'')+b.name)).map(tournamentLink).join('')||`<p class="form-note reference-empty">${liveOnly?(liveSet.failed?'Feed-i live nuk u ngarkua; riprovohet automatikisht.':'Nuk ka turnamente live tani.'):'Nuk ka turnamente.'}</p>`;
+ const events={items:liveOnly?liveSet.events.filter(e=>e.league_id===String(tournament?.id)):snapshot.events};
+ const event=events.items.find(e=>e.id===query.get('event'));
+ const target=event||tournament||selected||sportRow,targetKind=event?'event':tournament?'tournament':selected?scopeKind:'sport';
+ const marketKind=event?'event-market':target&&targetKind!=='sport'?targetKind+'-market':'market';
+ const markets=event?{items:snapshot.markets}:await read(path({kind:'market',...(target&&targetKind!=='sport'?{scopeKind:targetKind,scopeId:target.id}:{})}));if(!ctx.valid())return;
+ const crumbs=[sportRow?.name,selected?.name,tournament?.name,event?.name].filter(Boolean),title=crumbs.join(' / ');
+ const model=users.groups.find(g=>g.id===groupId);
+ const categories=['All','Main','Goals','First Half','Second Half','Handicap','Combined','Corner','Bookings','Goalscorers','Correct Results','Intervals','Players'];
+ const parents=target&&targetKind!=='sport'?(await read('/api/center/competitions/inherited?'+new URLSearchParams({groupId,kind:targetKind,id:target.id})).catch(()=>({parents:[]}))).parents:[];if(!ctx.valid())return;
+ // The nearest level above with a status decides until the element has a status of its own.
+ const nearest=parents.map(p=>({...p,status:(mode==='live'&&p.liveStatus)||p.status})).find(p=>!p.groupId)||null;
+ const inherited=nearest&&RANK_UI[nearest.status]>0?[nearest]:[];
+ const targetStatus=target?.rule?modeStatus(target.rule,mode):nearest?.status||'active',days=target?.rule?.params?.daysToOffer;
+ const parentLink=p=>p.kind==='sport'?url({selection:'',tournament:'',event:''}):p.kind==='tournament'?url({tournament:p.id,event:''}):url({selection:p.id,tournament:'',event:''});
+ ctx.commit(`<div class="competition-workspace competition-reference sb-model">
+ <aside class="competition-explorer">
+  <div class="competition-explorer-title">Sports / ${esc(crumbs.slice(0,2).join(' / ')||'')}</div>
+  <div class="reference-side-controls">
+   <label class="sb-inline">Sport<select id="fullSport">${sports.items.map(s=>`<option value="${esc(s.id)}" ${String(s.id)===String(sport)?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label>
+   <label class="sb-inline">Zbato për<select id="competitionScope"><option value="">Gjithë rrjeti</option>${users.groups.map(g=>`<option value="${esc(g.id)}" ${g.id===groupId?'selected':''}>${esc(g.name)}</option>`).join('')}</select></label>
+   <div class="sb-search"><input id="fullTreeSearch" placeholder="Search" aria-label="Kërko"><button class="icon-button" id="fullSort" title="Rendit A-Z / Z-A" aria-label="Rendit sipas emrit">A<sub>Z</sub>↑</button></div>
+   <div class="reference-side-heading"><strong>Tournament Groups</strong><button class="icon-button" id="createTournamentGroup" title="Krijo Tournament Group" aria-label="Krijo Tournament Group">+</button></div>
+  </div>
+  <nav id="fullTree" aria-label="Tournament Groups">${groupTree()}</nav>
+  <div class="reference-side-heading reference-tournaments-heading"><strong>Tournaments${liveOnly?' live':''}</strong><span>${tournaments.items.length}</span></div>
+  <nav id="fullTournaments" aria-label="Tournaments">${tournamentTree()}</nav>
+ </aside>
+ <section class="competition-detail">
+  <header class="reference-model sb-model-head"><strong><span class="sb-model-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c2 .7 3.2 2.5 3.6 5.2"/></svg></span>${esc(model?.name||'Gjithë rrjeti')}</strong><div><a class="button" href="#/sport-competitions">Compact View</a> <button class="button" id="manageModels">Modelet (${templates.length})</button> <button class="button" id="copyModel" title="Kopjo të gjitha rregullat nga rrjeti ose një grup tjetër përdoruesish">Copy Model</button></div></header>
+  <section class="reference-board">
+   <nav class="tabs sb-mode-tabs" aria-label="Prematch / Live"><a href="${esc(url({mode:''}))}" class="tab ${mode==='pre'?'active':''}">Prematch</a><a href="${esc(url({mode:'live'}))}" class="tab ${mode==='live'?'active':''}">Live</a></nav>
+   <div class="sb-target-row">
+    <div class="sb-target-path"><small>${esc({sport:'sport',group:'tournament group','custom-group':'tournament group',tournament:'tournament',event:'event'}[targetKind]||'')}</small><strong>${esc(title||'Marketet')}</strong></div>
+    <label class="sb-field">Turnament<select id="fullTournament"><option value="">—</option>${tournaments.items.map(t=>`<option value="${esc(t.id)}" ${t.id===tournament?.id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></label>
+    <label class="sb-field">Ndeshje<select id="fullEvent" ${tournament?'':'disabled'}><option value="">—</option>${events.items.map(e=>`<option value="${esc(e.id)}" ${e.id===event?.id?'selected':''}>${esc(e.name)}${e.minute?' · '+esc(e.minute)+(e.result?' · '+esc(e.result):''):''}</option>`).join('')}</select></label>
+    ${target?`<label class="sb-field">state<select id="targetState">${Object.entries(competitionStatus).map(([k,v])=>`<option value="${k}" ${targetStatus===k?'selected':''}>${v}</option>`).join('')}</select></label>${mode==='pre'?`<label class="sb-field">days2bet<input id="targetDays" type="number" min="0" max="365" step="1" value="${days??''}" placeholder="—"></label>`:''}<button class="icon-button sb-ok" id="targetSave" title="Ruaj state${mode==='pre'?' dhe days2bet':''}" aria-label="Ruaj">✓</button><button class="icon-button sb-cancel" id="targetReset" title="Hiq rregullat e ${esc(target.name)}" aria-label="Hiq rregullat" ${target.rule?'':'disabled'}>✕</button>`:''}
+   </div>
+   ${inherited.length?`<div class="sb-inherited-alert ${target.rule?'sb-overridden':''}" role="${target.rule?'note':'alert'}">${inherited.map(p=>{const from=`${esc({sport:'sporti','custom-group':'tournament group i Qendrës',group:'tournament group',tournament:'turnamenti'}[p.kind]||p.kind)} <a href="${esc(parentLink(p))}">${esc(p.name)}</a>`;return target.rule?`<span>${from} është <strong>${esc(competitionStatus[p.status])}</strong>, por ${esc(target.name)} ka statusin e vet (<strong>${esc(competitionStatus[targetStatus])}</strong>), që ka përparësi.</span>`:`<span><strong>${esc(competitionStatus[p.status])}</strong> nga ${from}. ${esc(target.name)} nuk ka status të vetin; vendos këtu statusin (p.sh. Aktiv) që ta ndryshosh vetëm këtë.</span>`;}).join('')}</div>`:''}
+   ${target?`<div class="sb-model-bar"><span class="sb-model-label">Modeli${modelName(target.rule)?`: <strong>${esc(modelName(target.rule))}</strong>`:target.rule?': <em>i personalizuar</em>':''}</span>${templates.length?`<select id="targetModel" aria-label="Zgjidh modelin"><option value="">Zgjidh modelin…</option>${templates.map(t=>`<option value="${esc(t.id)}" ${t.id===target.rule?.template_id?'selected':''}>${esc(t.name)}</option>`).join('')}</select><button class="button primary" id="targetApply">Apliko te ${esc(target.name)}</button><button class="button" id="applyMany">Apliko te shumë…</button>`:'<span class="form-note">Nuk ka ende modele.</span>'}<button class="button" id="targetSaveModel">Ruaj si model</button></div>`:''}
+   <div class="reference-load-status" role="status"><span id="fullLoadStatus">Duke përditësuar listat në sfond…</span><button class="button" id="fullRetry">Rifresko</button><select id="fullStatus" aria-label="Filtro sipas state"><option value="">State: All</option>${Object.entries(competitionStatus).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>
+   <div class="competition-market-tabs">${categories.map((c,i)=>`<button class="button ${i?'':'primary'}" data-market-category="${c}" aria-pressed="${!i}">${c}</button>`).join('')}</div>
+   <div class="sb-table-wrap"><table class="sb-table"><thead><tr><th class="sb-id">id</th><th class="sb-search-head"><input id="competitionSearch" placeholder="🔍 Search Market" aria-label="Search Market"></th><th>State</th><th>Payout</th><th>Minimum Selections In Ticket</th><th>Minimum Value:</th><th>Maximum Value:</th><th></th><th></th></tr></thead><tbody id="competitionRows"></tbody></table></div>
+   <div id="fullPagination" class="competition-pagination"></div>
+  </section>
+ </section></div>`);
+ $('fullRetry').onclick=()=>{void updateDirectory();void updateMarkets();};
+ $('fullSport').onchange=()=>location.hash=url({sport:$('fullSport').value,selection:'',tournament:'',event:''});
+ $('competitionScope').onchange=()=>location.hash=url({groupId:$('competitionScope').value});
+ $('fullTournament').onchange=()=>location.hash=url({tournament:$('fullTournament').value,event:''});
+ $('fullEvent').onchange=()=>location.hash=url({tournament:tournament.id,event:$('fullEvent').value});
+ $('fullTreeSearch').oninput=()=>document.querySelectorAll('[data-group-name]').forEach(a=>a.hidden=!a.dataset.groupName.includes($('fullTreeSearch').value.toLowerCase()));
+ $('fullSort').onclick=()=>{sortDir=-sortDir;$('fullSort').innerHTML=sortDir>0?'A<sub>Z</sub>↑':'Z<sub>A</sub>↓';$('fullTree').innerHTML=groupTree();$('fullTournaments').innerHTML=tournamentTree();$('fullTreeSearch').oninput();};
+ $('createTournamentGroup').onclick=()=>createTournamentGroup(sport,groups.items.filter(g=>!g.custom));
+ $('copyModel').onclick=()=>copyModelDialog(users.groups,groupId);
+ $('manageModels').onclick=()=>manageModelsDialog(templates,{userGroups:users.groups,customGroups,countryGroups,tournaments:tournaments.items,events:events.items,tournament,event,groupId}).catch(e=>notice(e.message,true));
+ if(target){
+  // Without stored parameters there is nothing to save yet: open the parameters, where the form can be saved as a model.
+  $('targetSaveModel').onclick=()=>{
+   const configured=marketKind===({event:'event-market',tournament:'tournament-market',group:'group-market','custom-group':'custom-group-market'}[targetKind])?markets.items.filter(m=>m.rule).length:0;
+   if(!target.rule&&!configured){openParams(target,targetKind);notice('Vendos parametrat e '+target.name+' dhe kliko "Ruaj si model" poshtë në dritare.');return;}
+   saveModelDialog({fromKind:targetKind,fromId:target.id},{groupId,summary:'Ruhen: '+(target.rule?modelSummary({status:target.rule.status,params:target.rule.params}):'pa parametra të elementit')+(configured?' · '+configured+' market-e të konfiguruar':'')+'.'});
+  };
+  if(templates.length){
+   $('targetApply').onclick=async()=>{const id=$('targetModel').value;if(!id){notice('Zgjidh një model.',true);return;}const b=$('targetApply');b.disabled=true;try{await applyModel(id,[{kind:targetKind,id:target.id}],groupId);await renderRoute();}catch(e){b.disabled=false;notice(e.message,true);}};
+   $('applyMany').onclick=()=>applyManyDialog(templates,[
+    {title:'Ndeshjet'+(tournament?' e '+tournament.name:''),kind:'event',items:events.items.map(e=>({id:e.id,label:e.name,model:modelName(e.rule)}))},
+    {title:'Turnamentet',kind:'tournament',items:tournaments.items.map(t=>({id:t.id,label:(t.countryName?t.countryName+' / ':'')+t.name,model:modelName(t.rule)}))},
+    ...[['custom-group',customGroups],['group',countryGroups]].map(([kind,list])=>({title:kind==='group'?'Shtetet / kategoritë':'Tournament groups të Qendrës',kind,items:list.map(g=>({id:g.id,label:g.name,model:modelName(g.rule)}))}))
+   ].filter(l=>l.items.length),groupId,$('targetModel').value);
+  }
+ }
+ const openParams=(row,kind)=>competitionParamsDialog(row,kind,{title,groupId,mode,inherited:row===target?nearest:null});
+ if(target){
+  $('targetSave').onclick=async()=>{const b=$('targetSave');b.disabled=true;try{const days=mode==='pre'?($('targetDays').value===''?null:Number($('targetDays').value)):undefined;await api('/api/center/competitions/'+targetKind+'/'+encodeURIComponent(target.id),'PUT',{groupId:groupId||undefined,...ruleBody(target.rule,{mode,inheritedStatus:nearest?.status||'active',status:$('targetState').value,settings:days===undefined?undefined:{daysToOffer:days}})});notice('U ruajt.');await renderRoute();}catch(e){b.disabled=false;notice(e.message,true);}};
+  $('targetReset').onclick=()=>resetCompetitionRule(target,targetKind,groupId);
+ }
+ let category='All',page=0;
+ const patterns={Main:/1x2|result|rezultat|double chance|draw no bet|both teams/i,Goals:/goal|gola|over|under/i,'First Half':/first half|1st half/i,'Second Half':/second half|2nd half/i,Handicap:/handicap/i,Combined:/combined|combination/i,Corner:/corner/i,Bookings:/book|card/i,Goalscorers:/scorer/i,'Correct Results':/correct|exact score/i,Intervals:/interval/i,Players:/player|scorer/i};
+ const cell=(rule,k,fmt=v=>v)=>{const m=modeValue(rule,mode,k);return m?`<span class="${m.own?'':'sb-inherited'}" ${m.own?'':'title="Nga Prematch"'}>${esc(String(fmt(m.v)))}</span>`:'';};
+ const actions=(id,has)=>`<td class="sb-act"><button class="reference-edit" data-competition-edit="${esc(id)}" title="Parametrat" aria-label="Parametrat">✎</button></td><td class="sb-act"><details class="sb-more"><summary aria-label="Më shumë">⋯</summary><div><button type="button" data-competition-edit="${esc(id)}">Parametrat</button>${has?`<button type="button" data-reset="${esc(id)}">Hiq rregullat</button>`:''}</div></details></td>`;
+ const row=(id,name,rule,global,attrs='')=>`<tr ${attrs}><td class="sb-id">${esc(id)}</td><td>${esc(name)}</td><td>${rule||global?`${competitionStatus[modeStatus(rule||global,mode)]}${!rule&&global?'<span class="subline">nga marketi global</span>':''}`:'<span class="sb-inherited" title="E hapur derisa Qendra ta konfigurojë">Aktiv</span>'}</td><td>${cell(rule,'payoutFactor',v=>v+'%')}</td><td>${cell(rule,'minSelections')}</td><td>${cell(rule,'minOdd')}</td><td>${cell(rule,'maxOdd')}</td>`;
+ function render(){
+  const q=$('competitionSearch').value.toLowerCase(),state=$('fullStatus').value;
+  // Ordered by the provider's market id, 1 upwards; markets without an id come last, by name.
+  const order=r=>{const n=Number(r.marketId);return r.marketId!=null&&r.marketId!==''&&Number.isFinite(n)?n:Infinity;};
+  const rows=markets.items.filter(r=>r.name.toLowerCase().includes(q)&&(!state||modeStatus(r.rule||r.globalRule,mode)===state)&&(category==='All'||patterns[category].test(r.name))).sort((a,b)=>order(a)-order(b)||a.name.localeCompare(b.name));
+  const pages=Math.max(1,Math.ceil(rows.length/14));page=Math.min(page,pages-1);
+  const head=target&&!q&&category==='All'&&!state?row('-1','default'+(target?' · '+target.name:''),target.rule,null,'class="sb-default"')+actions('__target',!!target.rule)+'</tr>':'';
+  $('competitionRows').innerHTML=(page===0?head:'')+rows.slice(page*14,page*14+14).map(r=>row(r.marketId??'—',r.name,r.rule,r.globalRule)+actions(r.id,!!r.rule)+'</tr>').join('')||'<tr><td colspan="9" class="form-note">Nuk ka market-e për këtë përzgjedhje. Zgjidh një turnament ose ndeshje që të ngarkohen market-et.</td></tr>';
+  $('fullPagination').innerHTML=`<button class="icon-button" id="fullPrev" aria-label="Faqja para" ${page?'':'disabled'}>‹</button><span>${page+1}/${pages}</span><button class="icon-button" id="fullNext" aria-label="Faqja pas" ${page+1<pages?'':'disabled'}>›</button>`;
+  $('fullPrev').onclick=()=>{page--;render();};$('fullNext').onclick=()=>{page++;render();};
+  const find=id=>id==='__target'?[target,targetKind]:[markets.items.find(r=>r.id===id),marketKind];
+  document.querySelectorAll('[data-competition-edit]').forEach(b=>b.onclick=()=>{b.closest('details')?.removeAttribute('open');const [r,k]=find(b.dataset.competitionEdit);openParams(r,k);});
+  document.querySelectorAll('[data-reset]').forEach(b=>b.onclick=()=>{const [r,k]=find(b.dataset.reset);resetCompetitionRule(r,k,groupId);});
+ }
+ $('competitionSearch').oninput=$('fullStatus').onchange=()=>{page=0;render();};
+ document.querySelectorAll('[data-market-category]').forEach(b=>b.onclick=()=>{category=b.dataset.marketCategory;page=0;document.querySelectorAll('[data-market-category]').forEach(t=>{t.classList.toggle('primary',t===b);t.setAttribute('aria-pressed',String(t===b));});render();});render();
+ // Render first. Slow countries and match feeds never block the workspace.
+ const status=text=>{if(ctx.valid())$('fullLoadStatus').textContent=text;};
+ const showDirectory=()=>{if(!ctx.valid()||selected||liveOnly)return;$('fullTournaments').innerHTML=tournamentTree();$('fullTreeSearch').oninput();document.querySelector('.reference-tournaments-heading>span').textContent=tournaments.items.length;};
+ const refreshMarkets=async()=>{
+  try{
+   // Editing must not be interrupted by a refresh.
+   if($('dialog').open||document.activeElement?.closest?.('.sb-table thead,.sb-target-row')||document.querySelector('.sb-more[open]'))return;
+   const league=tournament||tournaments.items[0];
+   if(!league){const updated=await read(path({kind:'market',...(target&&targetKind!=='sport'?{scopeKind:targetKind,scopeId:target.id}:{})}));if(ctx.valid()){markets.items=updated.items;render();}return;}
+   const fresh=liveOnly?{items:liveSet.events.filter(e=>e.league_id===String(league.id))}:await read(path({kind:'event',parent:league.id}));if(!ctx.valid())return;
+   if(event){const updated=fresh.items.find(e=>e.id===event.id);if(updated)Object.assign(event,updated);}
+   if(tournament){events.items=fresh.items;$('fullEvent').innerHTML=eventOptions();}
+   const sample=event||fresh.items[0];if(!sample)return;
+   const catalog=await read(path({kind:'market',parent:sample.id}),8000);if(!ctx.valid())return;
+   const updated=event?catalog:await read(path({kind:'market',...(target&&targetKind!=='sport'?{scopeKind:targetKind,scopeId:target.id}:{})}));if(!ctx.valid())return;
+   markets.items=updated.items;render();
+  }catch(e){if(ctx.valid())warnings.push('Ndeshjet ose marketet nuk u rifreskuan. Të dhënat e ruajtura mbeten të disponueshme.');}
+ };
+ const eventOptions=()=>'<option value="">—</option>'+events.items.map(e=>`<option value="${esc(e.id)}" ${e.id===event?.id?'selected':''}>${esc(e.name)}${e.minute?' · '+esc(e.minute)+(e.result?' · '+esc(e.result):''):''}</option>`).join('');
+ // Live tab: refresh what is being played; matches that end leave the lists.
+ async function refreshLive(){
+  const next=await read(path({kind:'live',sport}));if(!ctx.valid())return;liveSet=next;
+  if(selected){const current=await read(path({kind:'tournament',parent:selected.id}));if(!ctx.valid())return;tournaments.items=current.items.filter(t=>liveTournamentIds().has(String(t.id)));}
+  else tournaments.items=liveSet.tournaments;
+  if(tournament){const updated=liveSet.tournaments.find(t=>t.id===tournament.id);if(updated)Object.assign(tournament,updated);events.items=liveSet.events.filter(e=>e.league_id===String(tournament.id));$('fullEvent').innerHTML=eventOptions();}
+  $('fullTree').innerHTML=groupTree();$('fullTournaments').innerHTML=tournamentTree();
+  document.querySelector('.reference-tournaments-heading>span').textContent=tournaments.items.length;
+  $('fullTournament').innerHTML='<option value="">—</option>'+tournaments.items.map(t=>`<option value="${esc(t.id)}" ${t.id===tournament?.id?'selected':''}>${esc(t.name)}</option>`).join('');
+  $('fullTreeSearch').oninput();
+ }
+ const refreshDirectory=async()=>{
+  if(!sport)return;
+  if(liveOnly)return refreshLive();
+  const currentSports=await read(path({kind:'sport'}));if(!ctx.valid())return;
+  sports.items=currentSports.items;
+  $('fullSport').innerHTML=sports.items.map(s=>`<option value="${esc(s.id)}" ${String(s.id)===String(sport)?'selected':''}>${esc(s.name)}</option>`).join('');
+  const fresh=await read(path({kind:'group',parent:sport}));if(!ctx.valid())return;
+  groups.items=fresh.items;if(selected){const updated=fresh.items.find(g=>g.id===selected.id);if(updated)Object.assign(selected,updated);}customGroups.splice(0,customGroups.length,...fresh.items.filter(g=>g.custom));
+  countryGroups.splice(0,countryGroups.length,...fresh.items.filter(g=>!g.custom));$('fullTree').innerHTML=groupTree();
+  const countries=fresh.items.filter(g=>!g.custom);let cursor=0,done=0,failed=0;
+  await Promise.all(Array.from({length:Math.min(6,countries.length)},async()=>{while(cursor<countries.length&&ctx.valid()){const country=countries[cursor++];try{const d=await read(path({kind:'tournament',parent:country.id}));if(!ctx.valid())return;const ids=new Set(d.items.map(t=>t.id));for(let i=allTournaments.length-1;i>=0;i--)if(allTournaments[i].parent_id===country.id||ids.has(allTournaments[i].id))allTournaments.splice(i,1);allTournaments.push(...d.items.map(t=>({...t,parent_id:country.id,countryName:country.name})));showDirectory();}catch(e){if(!ctx.valid())return;failed++;}done++;status(`Live · ${allTournaments.length} turnamente · ${done}/${countries.length} shtete${failed?' · '+failed+' pa lidhje':''}`);}}));
+  if(!ctx.valid())return;
+  if(selected){const current=await read(path({kind:'tournament',parent:selected.id}));if(!ctx.valid())return;tournaments.items=current.items;$('fullTournaments').innerHTML=tournamentTree();}
+  if(tournament){const updated=tournaments.items.find(t=>t.id===tournament.id);if(updated)Object.assign(tournament,updated);}
+  $('fullTournament').innerHTML='<option value="">—</option>'+tournaments.items.map(t=>`<option value="${esc(t.id)}" ${t.id===tournament?.id?'selected':''}>${esc(t.name)}</option>`).join('');
+  $('fullTreeSearch').oninput();
+  if(failed)throw Error(failed+' shtete nuk u rifreskuan; do të riprovohen automatikisht.');
+ };
+ // Keep each feed updating independently, without replacing the page or interrupting editing.
+ let directoryBusy=false,marketsBusy=false;const timers=new Map();
+ const later=(key,fn,ms)=>{clearTimeout(timers.get(key));if(ctx.valid())timers.set(key,setTimeout(fn,ms));};
+ signal.addEventListener('abort',()=>{for(const timer of timers.values())clearTimeout(timer);timers.clear();},{once:true});
+ async function updateDirectory(){
+  if(directoryBusy||!ctx.valid())return;directoryBusy=true;clearTimeout(timers.get('directory'));
+  try{await refreshDirectory();if(ctx.valid())status(liveOnly?'Live · '+liveSet.events.length+' ndeshje live në '+liveSet.tournaments.length+' turnamente · '+new Date().toLocaleTimeString('sq-AL'):'Live · '+allTournaments.length+' turnamente · '+new Date().toLocaleTimeString('sq-AL'));}
+  catch(e){if(ctx.valid())status('API: '+e.message+' · Riprovohet automatikisht.');}
+  finally{directoryBusy=false;later('directory',updateDirectory,15000);}
+ }
+ async function updateMarkets(){
+  if(marketsBusy||!ctx.valid())return;marketsBusy=true;clearTimeout(timers.get('markets'));
+  try{warnings.length=0;await refreshMarkets();if(ctx.valid()&&warnings.length)status(warnings.join(' '));}
+  finally{marketsBusy=false;later('markets',updateMarkets,5000);}
+ }
+ void updateDirectory();void updateMarkets();
+}
+
 async function competitionsPage(ctx,query){
- const view=query.get('view');
+ const view=query.get('view'),full=view==='full';
+ if(full)return competitionFullView(ctx,query);
  if(view==='groups')return userGroupsPage(ctx);
  if(view==='group')return userGroupPage(ctx,query.get('id'));
  const kind=query.get('kind')||'sport',parent=query.get('parent')||'',groupId=query.get('groupId')||'';
  const names={'custom-group':'Tournament Group',sport:'Sportet',group:'Tournament Groups',tournament:'Turnamentet',event:'Eventet',market:parent?'Market-et e ndeshjes':'Market-et (të gjitha ndeshjet)','event-market':'Market i ndeshjes'},next={sport:'group',group:'tournament',tournament:'event'};
  const [data,groups]=await Promise.all([ctx.get('/api/center/competitions?'+new URLSearchParams({kind,parent,groupId})),ctx.get('/api/center/user-groups')]);if(!ctx.valid())return;
- const group=groups.groups.find(g=>g.id===groupId),here=extra=>'sport-competitions?'+new URLSearchParams({...(groupId?{groupId}:{}),...extra});
+ const group=groups.groups.find(g=>g.id===groupId),here=extra=>'sport-competitions?'+new URLSearchParams({...(full?{view:'full',sport:query.get('sport')||(kind==='group'?parent:'')}:{}),...(groupId?{groupId}:{}),...extra});
  const limitsText=r=>`Basti: ${r.max_stake==null?'Pa limit':money(r.max_stake)} · Fitimi: ${r.max_payout==null?'Pa limit':money(r.max_payout)}${r.max_user_total!=null?' · Total/user: '+money(r.max_user_total):''}`;
  const ruleKind=r=>kind==='market'?(parent?'event-market':'market'):r.custom?'custom-group':kind;
- const columns=[['Emri',r=>`<strong>${esc(r.name)}</strong><span class="subline">${r.custom?'Grup i Qendrës · '+r.memberCount+' turnamente':kind==='market'?(r.globalRule?'Për të gjitha ndeshjet: '+statusText(r.globalRule):'Market'):'ID '+esc(r.id)}${kind==='event'?' · '+(r.current_minute!=null?'Live':'Prematch'):''}</span>`],['Statusi',r=>r.rule?`${statusText(r.rule)}<span class="subline">${limitsText(r.rule)}</span>`:'Pa kufizim individual'],['Veprime',r=>`${next[kind]?link('Hap '+names[next[kind]],here({kind:next[kind],parent:r.id})):''} ${kind==='event'?link('Market-et',here({kind:'market',parent:r.id})):''} ${kind!=='sport'?`<button class="button" data-competition-edit="${esc(r.id)}">Ndrysho</button>`:''}`]];
+ const columns=[['Emri',r=>`<strong>${esc(r.name)}</strong><span class="subline">${r.custom?'Grup i Qendrës · '+r.memberCount+' turnamente':kind==='market'?(r.globalRule?'Për të gjitha ndeshjet: '+statusText(r.globalRule):'Market'):'ID '+esc(r.id)}${kind==='event'?' · '+(r.current_minute!=null?'Live':'Prematch'):''}</span>`],['Statusi',r=>r.rule?`${statusText(r.rule)}<span class="subline">${limitsText(r.rule)}</span>`:'Pa kufizim individual'],['Veprime',r=>`${next[kind]?link('Hap '+names[next[kind]],here({kind:next[kind],parent:r.id})):''} ${kind==='event'?link('Market-et',here({kind:'market',parent:r.id})):''} ${kind!=='sport'?`<button class="button" data-competition-edit="${esc(r.id)}">Ndrysho</button> <button class="button primary" data-competition-limit="${esc(r.id)}">Limito</button>`:''}`]];
  const scope=`<label class="inline-field">Zbato për <select id="competitionScope"><option value="">Të gjithë rrjeti</option>${groups.groups.map(g=>`<option value="${esc(g.id)}" ${g.id===groupId?'selected':''}>Grupi: ${esc(g.name)}</option>`).join('')}</select></label>`;
  const intro=group?`Rregullat për grupin ${group.name} (${group.players} përdorues). Zbatohen bashkë me rregullat e gjithë rrjetit; vlen më i rrepti. Për grupin, Mbyllur dhe Bllokuar refuzojnë bastet; shfaqja ndryshon vetëm me rregullat e gjithë rrjetit.`:'Kufizimet zbatohen për të gjithë rrjetin. Kufizimi më i rreptë i grupit, turnamentit, eventit ose market-it ka përparësi.';
  ctx.commit(panel(names[kind]+(group?' · '+group.name:''),intro,`<div class="toolbar">${scope}${link('Sportet',here({}))}${kind==='sport'?link('Market-et (të gjitha ndeshjet)',here({kind:'market'})):''}${link('Grupet e përdoruesve','sport-competitions?view=groups')}<button class="button" id="competitionBack">Kthehu</button>${kind==='group'&&!groupId?'<button class="button primary" id="createTournamentGroup">Krijo Tournament Group</button>':''}<input id="competitionSearch" placeholder="Kërko në këtë nivel…" aria-label="Kërko"><span class="result-count">${data.items.length} elemente</span></div><div id="competitionRows"></div>`)+panel('Kufizimet aktive'+(group?' · '+group.name:''),'Edhe kufizimet e eventeve që nuk shfaqen më në API ruhen këtu.',table(data.rules,[['Niveli',r=>esc(names[r.kind]||r.kind)],['Emri',r=>esc(r.name)],['Statusi',r=>statusText(r)],['Basti maksimal',r=>r.max_stake==null?'—':money(r.max_stake)],['Fitimi maksimal',r=>r.max_payout==null?'—':money(r.max_payout)],['Total për përdorues',r=>r.max_user_total==null?'—':money(r.max_user_total)],['Veprime',r=>`<button class="button" data-rule-remove="${esc(r.kind)}" data-rule-id="${esc(r.id)}">Hiq kufizimin</button>`]])));
- $('competitionScope').onchange=()=>{const q=new URLSearchParams(query);if($('competitionScope').value)q.set('groupId',$('competitionScope').value);else q.delete('groupId');q.delete('view');location.hash='/sport-competitions?'+q;};
+ const toolbar=$('competitionScope').closest('.toolbar');
+ const viewUrl='#/sport-competitions?'+new URLSearchParams(full?{...Object.fromEntries(query),view:''}:{view:'full',sport:'1',...(groupId?{groupId}:{})});
+ toolbar.insertAdjacentHTML('afterbegin',`<a class="button primary" id="competitionViewToggle" href="${esc(viewUrl)}" ${full?'':'target="_blank" rel="noopener"'}>${full?'Compact View':'Full View ↗'}</a>`);
+ if(!full)$('competitionViewToggle').onclick=e=>{
+  if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;
+  e.preventDefault();
+  // Copy the tab-scoped login before detaching the new window's opener.
+  const tab=window.open('about:blank','_blank');
+  if(!tab){notice('Lejo hapjen e tab-it të ri për Full View.',true);return;}
+  try{tab.sessionStorage.setItem('sportsbook_token',sessionToken);tab.opener=null;tab.location.replace(new URL(viewUrl,location.href).href);}catch(error){tab.close();notice('Full View nuk u hap. Provo përsëri.',true);}
+ };
+ $('competitionScope').onchange=()=>{const q=new URLSearchParams(query);if($('competitionScope').value)q.set('groupId',$('competitionScope').value);else q.delete('groupId');if(!full)q.delete('view');location.hash='/sport-competitions?'+q;};
  $('competitionBack').onclick=()=>history.back();
  if($('createTournamentGroup'))$('createTournamentGroup').onclick=()=>createTournamentGroup(parent,data.items.filter(r=>!r.custom));
- const render=()=>{$('competitionRows').innerHTML=table(data.items.filter(r=>r.name.toLowerCase().includes($('competitionSearch').value.toLowerCase())),columns);document.querySelectorAll('[data-competition-edit]').forEach(b=>b.onclick=()=>edit(data.items.find(r=>r.id===b.dataset.competitionEdit)));};$('competitionSearch').oninput=render;render();
- function edit(row){const r=row.rule,k=ruleKind(row),totalScope=k==='tournament'?'turnament':k==='group'||k==='custom-group'?'grup turnamentesh':'';
-  showDialog('Ndrysho · '+row.name,`<form id="competitionForm" class="form-stack"><p class="form-note">${group?'Vetëm për grupin '+esc(group.name)+'. ':''}${k==='market'?'Vlen për këtë market në të gjitha ndeshjet.':k==='event-market'?'Vlen vetëm për këtë market në këtë ndeshje.':'Vlen për këtë element dhe gjithçka brenda tij.'}</p><fieldset class="status-choice"><legend>Statusi</legend>${Object.entries(competitionStatus).map(([v,l])=>`<label><input type="radio" name="status" value="${v}" ${(r?.status||'active')===v?'checked':''}> <strong>${l}</strong><span class="subline">${competitionStatusHelp[v]}</span></label>`).join('')}</fieldset><div class="form-grid"><label>Basti maksimal për biletë (€)<input type="number" name="maxStake" min="0" max="100000000" step="0.01" value="${r?.max_stake??''}" placeholder="Pa limit"></label><label>Fitimi maksimal për biletë (€)<input type="number" name="maxPayout" min="0" max="100000000" step="0.01" value="${r?.max_payout??''}" placeholder="Pa limit"></label></div>${totalScope?`<label>Shuma totale maksimale për përdorues (€)<input type="number" name="maxUserTotal" min="0" max="100000000" step="0.01" value="${r?.max_user_total??''}" placeholder="Pa limit total"></label><p class="form-note">Mbledh shumën e të gjitha biletave të përdoruesit në këtë ${totalScope}, përfshirë ato në pritje. Një biletë me disa ndeshje këtu numërohet vetëm një herë. Biletat e anuluara, të refuzuara dhe void nuk numërohen.</p>`:''}<p class="form-note">Fusha bosh heq limitin individual. Kufizimet e niveleve sipër vazhdojnë të zbatohen.</p><button class="button primary" type="submit">Ruaj</button></form>`);
+ let page=0,category='All';
+ const categoryPatterns={Main:/1x2|result|rezultat|double chance|draw no bet|both teams/i,Goals:/goal|gola|over|under/i,'First Half':/first half|1st half|pjesa e par/i,'Second Half':/second half|2nd half|pjesa e dyt/i,Handicap:/handicap/i,Corner:/corner|kënd/i,Bookings:/book|card|karton/i,Players:/player|scorer|lojtar/i};
+ const render=()=>{const state=$('fullStatus')?.value;const rows=data.items.filter(r=>r.name.toLowerCase().includes($('competitionSearch').value.toLowerCase())&&(!state||(state==='custom'?!!r.rule:(r.rule?.status||'active')===state))&&(category==='All'||categoryPatterns[category].test(r.name)));const pages=Math.max(1,Math.ceil(rows.length/25));page=Math.min(page,pages-1);
+  $('competitionRows').innerHTML=table(full?rows.slice(page*25,page*25+25):rows,full?[['ID',r=>esc(r.id)],...columns.slice(0,1),['Statusi',r=>r.rule?statusText(r.rule):'<span class="subline">I trashëguar</span>'],['Basti maksimal',r=>r.rule?.max_stake==null?'—':money(r.rule.max_stake)],['Fitimi maksimal',r=>r.rule?.max_payout==null?'—':money(r.rule.max_payout)],...columns.slice(2)]:columns);
+  if(full){$('fullPagination').innerHTML=`<span>${rows.length} rezultate · Faqja ${page+1} / ${pages}</span><button class="button" id="fullPrev" ${page?'':'disabled'}>‹ Para</button><button class="button" id="fullNext" ${page+1<pages?'':'disabled'}>Pas ›</button>`;$('fullPrev').onclick=()=>{page--;render();};$('fullNext').onclick=()=>{page++;render();};}
+  document.querySelectorAll('[data-competition-edit]').forEach(b=>b.onclick=()=>edit(data.items.find(r=>r.id===b.dataset.competitionEdit)));document.querySelectorAll('[data-competition-limit]').forEach(b=>b.onclick=()=>edit(data.items.find(r=>r.id===b.dataset.competitionLimit),true));};$('competitionSearch').oninput=()=>{page=0;render();};if(full){$('fullStatus').onchange=()=>{page=0;render();};document.querySelectorAll('[data-market-category]').forEach(b=>b.onclick=()=>{category=b.dataset.marketCategory;page=0;document.querySelectorAll('[data-market-category]').forEach(t=>{t.classList.toggle('primary',t===b);t.setAttribute('aria-pressed',String(t===b));});render();});}render();
+ function edit(row,limitOnly=false){const r=row.rule,k=ruleKind(row),totalScope=k==='tournament'?'turnament':k==='group'||k==='custom-group'?'grup turnamentesh':'';
+  showDialog((limitOnly?'Limito':'Ndrysho')+' · '+row.name,`<form id="competitionForm" class="form-stack"><p class="form-note">${group?'Vetëm për grupin '+esc(group.name)+'. ':''}${k==='market'?'Vlen për këtë market në të gjitha ndeshjet.':k==='event-market'?'Vlen vetëm për këtë market në këtë ndeshje.':'Vlen për këtë element dhe gjithçka brenda tij.'}</p><fieldset class="status-choice"><legend>Statusi</legend>${Object.entries(competitionStatus).map(([v,l])=>`<label><input type="radio" name="status" value="${v}" ${(r?.status||'active')===v?'checked':''}> <strong>${l}</strong><span class="subline">${competitionStatusHelp[v]}</span></label>`).join('')}</fieldset><div class="form-grid"><label>Basti maksimal për biletë (€)<input type="number" name="maxStake" min="0" max="100000000" step="0.01" value="${r?.max_stake??''}" placeholder="Pa limit"></label><label>Fitimi maksimal për biletë (€)<input type="number" name="maxPayout" min="0" max="100000000" step="0.01" value="${r?.max_payout??''}" placeholder="Pa limit"></label></div>${totalScope?`<label>Shuma totale maksimale për përdorues (€)<input type="number" name="maxUserTotal" min="0" max="100000000" step="0.01" value="${r?.max_user_total??''}" placeholder="Pa limit total"></label><p class="form-note">Mbledh shumën e të gjitha biletave të përdoruesit në këtë ${totalScope}, përfshirë ato në pritje. Një biletë me disa ndeshje këtu numërohet vetëm një herë. Biletat e anuluara, të refuzuara dhe void nuk numërohen.</p>`:''}<p class="form-note">Fusha bosh heq limitin individual. Kufizimet e niveleve sipër vazhdojnë të zbatohen.</p><button class="button primary" type="submit">Ruaj</button></form>`);
+  if(limitOnly){const choices=$('competitionForm').querySelector('.status-choice');choices.hidden=true;choices.style.display='none';$('competitionForm').querySelector('[name=maxStake]').focus();}
   bindForm('competitionForm',async f=>{await api('/api/center/competitions/'+k+'/'+encodeURIComponent(row.id),'PUT',{groupId:groupId||undefined,status:f.get('status'),maxStake:f.get('maxStake')===''?null:Number(f.get('maxStake')),maxPayout:f.get('maxPayout')===''?null:Number(f.get('maxPayout')),maxUserTotal:!f.get('maxUserTotal')?null:Number(f.get('maxUserTotal'))});$('dialog').close();notice('U ruajt.');await renderRoute();});}
  document.querySelectorAll('[data-rule-remove]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await api('/api/center/competitions/'+b.dataset.ruleRemove+'/'+encodeURIComponent(b.dataset.ruleId)+(groupId?'?groupId='+encodeURIComponent(groupId):''),'DELETE');notice('Kufizimi u hoq.');await renderRoute();}catch(e){notice(e.message,true);b.disabled=false;}});
 }

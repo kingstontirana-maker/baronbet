@@ -92,3 +92,52 @@ body.center-workspace{--nav:#064b3b;--muted:#596b64;--line:#dce5e1;--green:#087f
 #acceptanceForm .acceptance-volume .form-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
 @media(max-width:900px){#acceptanceForm .acceptance-range-row,#acceptanceForm .acceptance-range-head{grid-template-columns:minmax(180px,1.5fr) repeat(2,minmax(100px,1fr));gap:12px}#acceptanceForm .acceptance-volume .form-grid{grid-template-columns:1fr}}
 @media(max-width:600px){#acceptanceForm .acceptance-range-head{display:none}#acceptanceForm .acceptance-range-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#acceptanceForm .acceptance-range-row>strong{grid-column:1/-1}#acceptanceForm .acceptance-field-caption{display:block;margin-bottom:6px;color:#687b90}#acceptanceForm .panel-body{padding:16px}#acceptanceForm .form-actions{flex-wrap:wrap}#acceptanceAccountResults .button{white-space:normal}}
+
+/* The dedicated competition tab shares the Center theme and fills the viewport. */
+body.competition-fullscreen .sidebar,body.competition-fullscreen .mobile-shade,body.competition-fullscreen .mobile-toggle{display:none}
+body.competition-fullscreen .main-shell{margin-left:0;min-height:100dvh}
+body.competition-fullscreen #main{max-width:none;padding:20px 24px;min-height:calc(100dvh - 73px)}
+body.competition-fullscreen .page-heading{margin-bottom:18px}
+body.competition-fullscreen .competition-workspace{min-height:calc(100dvh - 225px);gap:18px}
+body.competition-fullscreen .competition-explorer{background:#fff;border-color:var(--line);border-radius:12px;top:20px;box-shadow:var(--shadow)}
+body.competition-fullscreen .competition-explorer-title{background:var(--nav);color:#fff;padding:20px 16px}
+body.competition-fullscreen .competition-tree-row{border-color:var(--line);padding:12px 4px}
+body.competition-fullscreen .competition-tree-row a{color:#20352d}
+body.competition-fullscreen .competition-tree-row a:hover{color:var(--green)}
+body.competition-fullscreen .competition-tree-row small{color:var(--muted)}
+body.competition-fullscreen .competition-detail thead th{background:#f3f6f1;color:#476657;border-color:var(--line)}
+body.competition-fullscreen .competition-detail tbody tr:nth-child(even){background:#f8faf9}
+body.competition-fullscreen .competition-detail tbody tr:hover{background:#edf6f0}
+body.competition-fullscreen .competition-market-tabs{padding:12px 18px;gap:8px;border-bottom:1px solid var(--line)}
+body.competition-fullscreen .competition-market-tabs .button{border-radius:7px;padding:8px 13px;min-height:36px}
+body.competition-fullscreen .competition-pagination{padding:16px 18px;border-top:1px solid var(--line);color:var(--muted)}
+@media(max-width:760px){body.competition-fullscreen #main{padding:14px 12px}body.competition-fullscreen .topbar{padding:0 16px}body.competition-fullscreen .competition-workspace{gap:12px}}
+/* Compact trading layout, matching the reference hierarchy. */
+body.competition-fullscreen .topbar,body.competition-fullscreen .page-heading,body.competition-fullscreen .page-footer{display:none}
+body.competition-fullscreen #main{padding:10px;min-height:100dvh}
+body.competition-fullscreen .competition-reference{grid-template-columns:300px minmax(0,1fr);gap:10px;min-height:calc(100dvh - 20px);align-items:stretch}
+body.competition-fullscreen .competition-reference .competition-explorer{position:sticky;top:10px;height:calc(100dvh - 20px);border-radius:0;box-shadow:none;display:flex;flex-direction:column;min-height:0}
+body.competition-fullscreen .competition-reference .competition-explorer-title{padding:13px 12px;font-size:13px;letter-spacing:0;font-weight:500}
+.reference-side-controls{padding:12px 10px 0;display:grid;gap:14px}.reference-side-controls label{display:grid;grid-template-columns:55px minmax(0,1fr);align-items:center;font-size:12px}.reference-side-controls select{padding:7px;font-size:12px}.reference-side-controls input{width:100%;padding:7px 10px;border-radius:3px;font-size:12px}
+.reference-side-heading{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--green);font-size:13px;color:var(--green)}
+body.competition-fullscreen #fullTree{max-height:calc(100dvh - 230px);overflow:auto;padding:0 10px 10px}
+.reference-group{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:31px;border-bottom:1px solid var(--line);padding:6px;font-size:12px;color:#20352d}.reference-group[hidden]{display:none}.reference-group:hover{background:#edf6f0}.reference-group.selected{background:#e0eee7;color:#064b3b;box-shadow:inset 3px 0 var(--green);font-weight:600}.reference-group small{color:var(--muted)}
+.reference-model{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:white;border:1px solid var(--line);margin-bottom:10px;min-height:55px}.reference-model strong{font-size:17px;font-weight:600}.reference-model span{font-weight:400;color:var(--muted)}
+.reference-board{background:white;border:1px solid var(--line);min-height:calc(100dvh - 85px)}.reference-context{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 12px;border-bottom:1px solid var(--line);font-size:13px}.reference-context>div{display:flex;gap:6px;flex-shrink:0}.reference-selectors{display:flex;gap:20px;padding:14px 12px 5px;align-items:end}.reference-selectors label{display:grid;gap:5px;font-size:10px;color:var(--muted);min-width:110px}.reference-selectors label:first-child,.reference-selectors label:nth-child(2){flex:1;max-width:360px}.reference-selectors select{font-size:12px;padding:7px;border-radius:2px;width:100%}
+body.competition-fullscreen .competition-reference .competition-market-tabs{padding:8px 10px;gap:3px;border:0}
+body.competition-fullscreen .competition-reference .competition-market-tabs .button{border-radius:0;padding:5px 8px;min-height:30px;font-weight:400;font-size:12px}
+.reference-market-search{display:flex;align-items:center;gap:15px;padding:0 10px 8px}.reference-market-search input{width:min(520px,80%);border-radius:0;font-size:12px}.reference-market-search span{font-size:11px;color:var(--muted)}
+.competition-reference #competitionRows{padding:0 10px}.competition-reference table th{height:48px;letter-spacing:0;font-size:12px}.competition-reference table td{height:40px;padding:7px 10px}.competition-reference table th{padding:10px}.competition-reference th:nth-child(2){width:40%}.competition-reference td:first-child{font-size:10px;max-width:160px;overflow:hidden;text-overflow:ellipsis}.competition-reference td:last-child{width:130px}.competition-reference td .button{padding:4px 8px;min-height:27px;font-size:11px;border-radius:3px}
+.reference-edit{background:none;color:var(--green);padding:4px 8px;font-size:21px;vertical-align:middle}.competition-reference .competition-pagination{justify-content:flex-start;border:0!important;padding:6px 12px!important;gap:4px}.competition-reference .competition-pagination span{margin:0}
+@media(max-width:900px){body.competition-fullscreen .competition-reference{grid-template-columns:230px minmax(0,1fr)}.reference-context{align-items:flex-start;flex-direction:column}.reference-selectors{flex-wrap:wrap;gap:10px}}
+@media(max-width:600px){body.competition-fullscreen .competition-reference{grid-template-columns:1fr}body.competition-fullscreen #fullTree{max-height:180px}.reference-selectors label{max-width:none!important;min-width:130px}.reference-model span{font-size:13px}}
+
+/* Separate Center-created groups from the provider tournament directory. */
+.reference-tournaments-heading{margin:12px 10px 0;min-height:34px;flex-shrink:0}
+.reference-tournaments-heading>span{font-size:11px;color:var(--muted);font-weight:400}
+body.competition-fullscreen .competition-reference #fullTree{max-height:28dvh;flex-shrink:0}
+body.competition-fullscreen #fullTournaments{padding:0 10px 10px;overflow:auto;flex:1;max-height:none;min-height:0;scrollbar-gutter:stable}
+.reference-empty{padding:12px 6px;font-size:11px;line-height:1.5}
+@media(max-width:600px){body.competition-fullscreen .competition-reference .competition-explorer{position:static;height:auto}body.competition-fullscreen #fullTournaments{flex:auto;height:50dvh;min-height:240px}}
+.reference-load-status{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;background:#f3f6f1;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted)}
+.reference-load-status .button{min-height:28px;padding:5px 10px;font-size:11px}

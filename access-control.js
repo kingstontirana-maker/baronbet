@@ -55,7 +55,7 @@ module.exports = function accessControl({get, all, run, tx, now, hashPassword, v
   function checkBet(userId,stake,payout,excludeBet=null,selections=[]) {
     if(!active(userId)) fail('Account or ancestor is not active.');
     const groups=userGroups?userGroups.groupsOf(userId):[];
-    const verdict=checkCompetitions?checkCompetitions(excludeBet?all('SELECT game_id,league_id,market FROM bet_selections WHERE bet_id=?',[excludeBet]):selections,stake,payout,userId,excludeBet,{groups}):null;
+    const verdict=checkCompetitions?checkCompetitions(excludeBet?all('SELECT game_id,league_id,sport_id,market,market_id,odd,acceptance_type FROM bet_selections WHERE bet_id=?',[excludeBet]):selections,stake,payout,userId,excludeBet,{groups,accounts:lineage(userId).map(u=>String(u.id))}):null;
     if(userGroups)userGroups.checkLimits(userId,stake,payout,excludeBet);
     const effective=limits(userId);
     if(stake>effective.max_bet)betLimit(effective.max_bet,'stake','Bet exceeds inherited limits.');
@@ -86,7 +86,7 @@ module.exports = function accessControl({get, all, run, tx, now, hashPassword, v
       const exposure=Number(get(`SELECT COALESCE(SUM(potential_win),0) n FROM bets WHERE ${own.sql} AND status IN ('pending','accepted') AND id<>?`,[...own.params,excludeBet??-1]).n);
       if(exposure+payout>limits(ancestor.id).max_exposure) fail('Exposure limit exceeded.');
     }
-    return {hold:verdict?.hold||[]};
+    return {hold:verdict?.hold||[],delay:verdict?.delay||0};
   }
   function rememberLeagues(games){
     tx(()=>{for(const game of games){

@@ -24,8 +24,11 @@ test('API hierarchy, persisted limits, inherited checks and removal',async()=>{
  const custom=await call('POST /api/center/competition-groups',{}, {name:'Favorites',sportId:'1',tournamentIds:['3']});
  const listing=await call('GET /api/center/competitions',{}, {},{kind:'group',parent:'1'});assert.equal(listing.items[0].id,custom.id);assert.equal(listing.items[1].name,'England');
  assert.equal((await call('GET /api/center/competitions',{}, {},{kind:'tournament',parent:custom.id})).items[0].id,'3');
- await call('PUT /api/center/competitions/:kind/:id',{kind:'custom-group',id:custom.id},{blocked:true,maxStake:null,maxPayout:null});assert.throws(()=>control.check([{gameId:4}],1,2,9),/Favorites/);
- assert.equal(get('SELECT COUNT(*) n FROM audit_log').n,6);db.close();
+ await call('PUT /api/center/competitions/:kind/:id',{kind:'custom-group',id:custom.id},{blocked:true,maxStake:null,maxPayout:null});
+ // The tournament has a status of its own, so the blocked group above it does not apply.
+ control.check([{gameId:4}],1,2,9);
+ await call('DELETE /api/center/competitions/:kind/:id',{kind:'tournament',id:'3'});assert.throws(()=>control.check([{gameId:4}],1,2,9),/Favorites/);
+ assert.equal(get('SELECT COUNT(*) n FROM audit_log').n,7);db.close();
 });
 test('invalid numeric limits cannot bypass checks',()=>{for(const n of [-1,NaN,Infinity,'10'])assert.throws(()=>validateRule({blocked:false,maxStake:n,maxPayout:null}));assert.throws(()=>validateRule({blocked:'false',maxStake:null,maxPayout:null}));});
 test('per-user total also applies to tournament groups and center groups',async()=>{
@@ -55,4 +58,45 @@ test('per-user total also applies to tournament groups and center groups',async(
  control.check([{gameId:4}],3,6,7); // Premier League is outside Favorites
  await call('PUT /api/center/competitions/:kind/:id',{kind:'event',id:'4'},{blocked:false,maxStake:null,maxPayout:null,maxUserTotal:1});
  assert.equal(get("SELECT max_user_total FROM competition_rules WHERE kind='event'").max_user_total,null,'events keep per-ticket limits only');
+});
+
+test('market rules stay inside the selected tournament group, including feeds and restart',async()=>{
+ const db=new(await init()).Database();
+ const run=(sql,a=[])=>db.run(sql,a),all=(sql,a=[])=>{const s=db.prepare(sql);s.bind(a);const rows=[];while(s.step())rows.push(s.getAsObject());s.free();return rows;},get=(sql,a)=>all(sql,a)[0];
+ run('CREATE TABLE audit_log(actor_id,action,target_type,details)');
+ const routes=new Map(),app=Object.fromEntries(['post','get','put','delete'].map(m=>[m,(p,...f)=>routes.set(m+' '+p,f.at(-1))]));
+ let upstreamCalls=0;
+ const deps={run,all,get,tx:f=>f(),now:()=>new Date().toISOString(),proxy:async()=>{upstreamCalls++;return {status:200,text:'[]'};}};
+ let c=create(deps);c.mount(app,()=>{});
+ c.remember([{id:4,league_id:3,country_id:2,sport_id:1,league:'League A',country:'A'},{id:6,league_id:5,country_id:8,sport_id:1,league:'League B',country:'B'}]);
+ c.filter.markets([{market:'Total Goals',id:1,odd:2}],4);
+ async function call(method,params={},body={},query={}){let code=200,result;const res={status:n=>{code=n;return res;},json:r=>result=r};await routes.get(method)({params,body,query,user:{id:1}},res);assert.equal(code,200,JSON.stringify(result));return result;}
+ run("INSERT INTO competition_nodes VALUES('sport','1',NULL,'Football')");run("INSERT INTO competition_nodes VALUES('sport','13',NULL,'Aussie rules')");
+ const snapshot=await call('get /api/center/competitions',{},{},{kind:'workspace',tournament:'3'});
+ assert.equal(upstreamCalls,0,'workspace snapshot must not wait for the provider');assert.equal(snapshot.sports[0].id,'1','default to football rather than alphabetical first sport');
+ assert.equal(snapshot.tournaments.length,2);assert.equal(snapshot.events[0].id,'4');
+ for(const [kind,id] of [['group','2'],['tournament','3']]){
+  const list=await call('get /api/center/competitions',{},{},{kind:'market',scopeKind:kind,scopeId:id});assert.equal(list.items.length,1);
+  const rule={kind:kind+'-market',id:list.items[0].id};
+  await call('put /api/center/competitions/:kind/:id',rule,{status:'blocked',maxStake:10,maxPayout:100});
+  assert.throws(()=>c.check([{gameId:4,market:'Total Goals'}],1,2),/bllokuar/);
+  c.check([{gameId:6,market:'Total Goals'}],20,200);
+  assert.equal(c.filter.markets([{market:'Total Goals',odd:2}],4)[0].odd,'-');
+  assert.equal(c.filter.markets([{market:'Total Goals',odd:2}],6)[0].odd,2);
+  c=create(deps);c.mount(app,()=>{});assert.throws(()=>c.check([{gameId:4,market:'Total Goals'}],1,2),/bllokuar/);
+  await call('delete /api/center/competitions/:kind/:id',rule);
+ }
+ run("INSERT INTO competition_nodes VALUES('custom-group','favorites','1','Favorites')");run("INSERT INTO competition_group_members VALUES('favorites','3')");
+ const list=await call('get /api/center/competitions',{},{},{kind:'market',scopeKind:'custom-group',scopeId:'favorites'});
+ await call('put /api/center/competitions/:kind/:id',{kind:'custom-group-market',id:list.items[0].id},{status:'active',maxStake:5,maxPayout:null});
+ assert.throws(()=>c.check([{gameId:4,market:'Total Goals'}],6,12),/Basti/);c.check([{gameId:6,market:'Total Goals'}],6,12);db.close();
+});
+
+test('prematch market catalog returns without waiting for an unresponsive live feed',{timeout:1000},async()=>{
+ const db=new(await init()).Database();
+ const run=(sql,a=[])=>db.run(sql,a),all=(sql,a=[])=>{const s=db.prepare(sql);s.bind(a);const rows=[];while(s.step())rows.push(s.getAsObject());s.free();return rows;},get=(sql,a)=>all(sql,a)[0];
+ const routes=new Map(),app=Object.fromEntries(['post','get','put','delete'].map(m=>[m,(p,...f)=>routes.set(m+' '+p,f.at(-1))]));
+ const control=create({run,all,get,tx:f=>f(),now:()=>'',proxy:path=>path.startsWith('/ajax/livegame/')?new Promise(()=>{}):Promise.resolve({status:200,text:JSON.stringify([{market:'Total Goals'}])})});control.mount(app,()=>{});
+ let result;await routes.get('get /api/center/competitions')({query:{kind:'market',parent:'4'},body:{},user:{id:1}},{json:r=>result=r,status:()=>{throw Error('Unexpected error response');}});
+ assert.equal(result.items[0].name,'Total Goals');db.close();
 });
